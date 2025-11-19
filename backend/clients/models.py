@@ -1,0 +1,41 @@
+from django.db import models
+
+
+class Client(models.Model):
+    """
+    Client model for managing guest information.
+    Unique identifier is CPF (Brazilian individual taxpayer registry).
+    """
+    full_name = models.CharField(max_length=255, verbose_name="Full Name")
+    cpf = models.CharField(
+        max_length=14,
+        unique=True,
+        verbose_name="CPF",
+        help_text="Format: XXX.XXX.XXX-XX"
+    )
+    phone = models.CharField(
+        max_length=20,
+        verbose_name="Phone",
+        help_text="Format: +55 (XX) XXXXX-XXXX"
+    )
+    email = models.EmailField(blank=True, null=True, verbose_name="Email")
+    address = models.TextField(blank=True, null=True, verbose_name="Address")
+    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    tags = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Tags",
+        help_text="List of tags like 'VIP', 'Frequent Guest', etc."
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Client"
+        verbose_name_plural = "Clients"
+        ordering = ['full_name']
+    
+    def __str__(self):
+        return f"{self.full_name} (CPF: {self.cpf})"
+
