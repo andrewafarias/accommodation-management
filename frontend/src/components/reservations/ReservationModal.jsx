@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
@@ -15,7 +15,8 @@ export function ReservationModal({
   reservation = null, 
   units = [],
   prefilledData = {},
-  onSave 
+  onSave,
+  onDelete
 }) {
   const [formData, setFormData] = useState({
     client_name: '',
@@ -32,6 +33,17 @@ export function ReservationModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [showNewClientForm, setShowNewClientForm] = useState(false);
+  const [newClientData, setNewClientData] = useState({
+    full_name: '',
+    cpf: '',
+    phone: '',
+    email: '',
+  });
+  
+  // Use refs to track if we've already initialized the form
+  const initializedRef = useRef(false);
+  const prefilledDataRef = useRef(prefilledData);
 
   // Status options in Portuguese
   const statusOptions = [
@@ -61,7 +73,10 @@ export function ReservationModal({
 
   // Initialize form data when modal opens or reservation changes
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initializedRef.current) {
+      initializedRef.current = true;
+      prefilledDataRef.current = prefilledData;
+      
       if (reservation) {
         // Edit mode - parse existing datetime
         const checkInDate = reservation.check_in ? reservation.check_in.split('T')[0] : '';
@@ -84,17 +99,20 @@ export function ReservationModal({
         // Create mode with prefilled data
         setFormData({
           client_name: '',
-          check_in_date: prefilledData.check_in || '',
+          check_in_date: prefilledDataRef.current.check_in || '',
           check_in_time: '14:00',
-          check_out_date: prefilledData.check_out || '',
+          check_out_date: prefilledDataRef.current.check_out || '',
           check_out_time: '12:00',
-          accommodation_unit: prefilledData.unit_id || '',
+          accommodation_unit: prefilledDataRef.current.unit_id || '',
           total_price: '',
           status: 'PENDING',
         });
         setClientSearchTerm('');
       }
       setError(null);
+    } else if (!isOpen) {
+      // Reset when modal closes
+      initializedRef.current = false;
     }
   }, [isOpen, reservation, prefilledData]);
 
@@ -117,6 +135,93 @@ export function ReservationModal({
         ...prev,
         client_name: selectedClient.id
       }));
+    } else {
+      // Clear client_name if no match
+      setFormData(prev => ({
+        ...prev,
+        client_name: ''
+      }));
+    }
+  };
+
+  const handleNewClientChange = (e) => {
+    const { name, value } = e.target;
+    setNewClientData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCreateClient = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await api.post('clients/', newClientData);
+      const newClient = response.data;
+      
+      // Add to clients list
+      setClients(prev => [...prev, newClient]);
+      
+      // Select the new client
+      setClientSearchTerm(newClient.full_name);
+      setFormData(prev => ({
+        ...prev,
+        client_name: newClient.id
+      }));
+      
+      // Hide the new client form
+      setShowNewClientForm(false);
+      
+      // Reset new client data
+      setNewClientData({
+        full_name: '',
+        cpf: '',
+        phone: '',
+        email: '',
+      });
+    } catch (err) {
+      console.error('Error creating client:', err);
+      let errorMessage = 'Erro ao criar cliente.';
+      
+      if (err.response?.data) {
+        const data = err.response.data;
+        if (data.cpf) {
+          errorMessage = `CPF: ${Array.isArray(data.cpf) ? data.cpf[0] : data.cpf}`;
+        } else if (data.detail) {
+          errorMessage = data.detail;
+        }
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!reservation) return;
+    
+    if (!window.confirm(`Tem certeza que deseja excluir a reserva #${reservation.id}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.delete(`reservations/${reservation.id}/`);
+      
+      // Call the onDelete callback
+      if (onDelete) {
+        await onDelete(reservation);
+      }
+      
+      // Close modal
+      onClose();
+    } catch (err) {
+      console.error('Error deleting reservation:', err);
+      setError('Erro ao excluir reserva. Verifique se não há transações associadas.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -228,24 +333,92 @@ export function ReservationModal({
             <label htmlFor="client_name" className="block text-sm font-medium text-gray-700 mb-1">
               Cliente *
             </label>
-            <input
-              type="text"
-              id="client_name"
-              name="client_name"
-              list="clients-list"
-              value={clientSearchTerm}
-              onChange={handleClientSearch}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Digite o nome do cliente"
-            />
-            <datalist id="clients-list">
-              {clients.map(client => (
-                <option key={client.id} value={client.full_name}>
-                  {client.cpf} - {client.phone}
-                </option>
-              ))}
-            </datalist>
+            
+            {!showNewClientForm ? (
+              <>
+                <input
+                  type="text"
+                  id="client_name"
+                  name="client_name"
+                  list="clients-list"
+                  value={clientSearchTerm}
+                  onChange={handleClientSearch}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Digite o nome do cliente"
+                />
+                <datalist id="clients-list">
+                  {clients.map(client => (
+                    <option key={client.id} value={client.full_name}>
+                      {client.cpf} - {client.phone}
+                    </option>
+                  ))}
+                </datalist>
+                <button
+                  type="button"
+                  onClick={() => setShowNewClientForm(true)}
+                  className="mt-1 text-xs text-blue-600 hover:text-blue-800"
+                >
+                  + Criar novo cliente
+                </button>
+              </>
+            ) : (
+              <div className="space-y-2 p-3 border border-gray-200 rounded-md bg-gray-50">
+                <p className="text-xs font-medium text-gray-700">Novo Cliente</p>
+                <input
+                  type="text"
+                  name="full_name"
+                  value={newClientData.full_name}
+                  onChange={handleNewClientChange}
+                  placeholder="Nome completo *"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="text"
+                  name="cpf"
+                  value={newClientData.cpf}
+                  onChange={handleNewClientChange}
+                  placeholder="CPF *"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={newClientData.phone}
+                  onChange={handleNewClientChange}
+                  placeholder="Telefone *"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+                <input
+                  type="email"
+                  name="email"
+                  value={newClientData.email}
+                  onChange={handleNewClientChange}
+                  placeholder="Email (opcional)"
+                  className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <div className="flex space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleCreateClient}
+                    disabled={loading || !newClientData.full_name || !newClientData.cpf || !newClientData.phone}
+                    className="flex-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Criar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewClientForm(false)}
+                    className="flex-1 px-2 py-1 text-xs bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Check-in Date and Time */}
@@ -375,21 +548,36 @@ export function ReservationModal({
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? 'Salvando...' : 'Salvar'}
-            </Button>
+          <div className="flex justify-between pt-4">
+            {/* Delete button (only shown when editing) */}
+            {reservation && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={loading}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Excluir
+              </Button>
+            )}
+            
+            <div className={`flex space-x-3 ${reservation ? 'ml-auto' : 'ml-auto'}`}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
           </div>
         </form>
       </div>

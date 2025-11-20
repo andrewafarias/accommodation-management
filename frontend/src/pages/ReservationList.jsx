@@ -59,6 +59,12 @@ export function ReservationList() {
     setEditingReservation(null);
   };
 
+  // Handle delete from modal
+  const handleDeleteFromModal = async () => {
+    // Refresh the list after deleting
+    await fetchData();
+  };
+
   // Handle delete
   const handleDelete = async (reservation) => {
     if (!window.confirm(`Tem certeza que deseja excluir a reserva #${reservation.id}?`)) {
@@ -144,6 +150,7 @@ export function ReservationList() {
         reservation={editingReservation}
         units={accommodations}
         onSave={handleSave}
+        onDelete={handleDeleteFromModal}
       />
     </div>
   );

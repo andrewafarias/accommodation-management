@@ -73,9 +73,18 @@ export function Calendar() {
     setPrefilledData({});
   };
 
-  const handleReservationSave = () => {
+  const handleReservationSave = async () => {
     // Refresh calendar data after saving
-    fetchCalendarData();
+    await fetchCalendarData();
+    // Close modal
+    setModalOpen(false);
+    setSelectedReservation(null);
+    setPrefilledData({});
+  };
+
+  const handleReservationDelete = async () => {
+    // Refresh calendar data after deleting
+    await fetchCalendarData();
   };
 
   if (loading) {
@@ -186,6 +195,7 @@ export function Calendar() {
         units={accommodations}
         prefilledData={prefilledData}
         onSave={handleReservationSave}
+        onDelete={handleReservationDelete}
       />
     </div>
   );

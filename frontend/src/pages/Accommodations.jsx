@@ -43,7 +43,7 @@ export function Accommodations() {
   };
 
   // Handle saving accommodation (create or update)
-  const handleSave = async (accommodationData) => {
+  const handleSave = async () => {
     // The modal already saves the data, we just need to refresh and close
     await fetchAccommodations();
     setIsModalOpen(false);
