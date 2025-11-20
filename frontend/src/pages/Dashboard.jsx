@@ -1,9 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Home, Users, DollarSign, TrendingUp, Sparkles, CalendarCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, subMonths, isAfter, isBefore } from 'date-fns';
 import api from '../services/api';
+import { PeriodSelector } from '../components/dashboard/PeriodSelector';
+import { ActiveReservationsWidget } from '../components/dashboard/ActiveReservationsWidget';
+import { PendingPaymentsWidget } from '../components/dashboard/PendingPaymentsWidget';
 
 export function Dashboard() {
   const [stats, setStats] = useState({
@@ -15,13 +18,13 @@ export function Dashboard() {
   const [chartData, setChartData] = useState([]);
   const [dirtyUnits, setDirtyUnits] = useState([]);
   const [upcomingArrivals, setUpcomingArrivals] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [startDate, setStartDate] = useState(subMonths(new Date(), 6));
+  const [endDate, setEndDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -36,13 +39,14 @@ export function Dashboard() {
 
       // Fetch reservations
       const reservationsRes = await api.get('reservations/');
-      const reservations = reservationsRes.data.results || reservationsRes.data;
+      const reservationsData = reservationsRes.data.results || reservationsRes.data;
+      setReservations(reservationsData);
       
       // Get today's date in ISO format (YYYY-MM-DD)
       const today = format(new Date(), 'yyyy-MM-dd');
       
       // Count check-ins today
-      const checkInsToday = reservations.filter(reservation => {
+      const checkInsToday = reservationsData.filter(reservation => {
         const checkInDate = format(new Date(reservation.check_in), 'yyyy-MM-dd');
         return checkInDate === today && reservation.status !== 'CANCELLED';
       }).length;
@@ -50,7 +54,7 @@ export function Dashboard() {
       // Calculate upcoming arrivals (next 7 days, excluding today)
       const todayDate = new Date();
       const sevenDaysFromNow = addDays(todayDate, 7);
-      const upcoming = reservations.filter(reservation => {
+      const upcoming = reservationsData.filter(reservation => {
         if (reservation.status === 'CANCELLED') return false;
         const checkInDate = parseISO(reservation.check_in);
         return checkInDate > todayDate && checkInDate <= sevenDaysFromNow;
@@ -59,13 +63,14 @@ export function Dashboard() {
 
       // Fetch financial transactions
       const transactionsRes = await api.get('financials/');
-      const transactions = transactionsRes.data.results || transactionsRes.data;
+      const transactionsData = transactionsRes.data.results || transactionsRes.data;
+      setTransactions(transactionsData);
       
       // Count unpaid transactions (where paid_date is null)
-      const pendingPayments = transactions.filter(t => !t.paid_date).length;
+      const pendingPayments = transactionsData.filter(t => !t.paid_date).length;
       
       // Calculate total revenue (sum of income transactions that are paid)
-      const totalRevenue = transactions
+      const totalRevenue = transactionsData
         .filter(t => t.transaction_type === 'INCOME' && t.paid_date)
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
@@ -81,10 +86,16 @@ export function Dashboard() {
       const monthlyData = {};
       const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       
-      transactions.forEach(transaction => {
+      transactionsData.forEach(transaction => {
         if (!transaction.paid_date) return; // Only consider paid transactions
         
         const date = parseISO(transaction.paid_date);
+        
+        // Filter by date range
+        if (isBefore(date, startDate) || isAfter(date, endDate)) {
+          return;
+        }
+        
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         const monthLabel = `${monthNames[date.getMonth()]}/${String(date.getFullYear()).slice(-2)}`;
         
@@ -105,10 +116,9 @@ export function Dashboard() {
         }
       });
       
-      // Convert to array and sort by date (most recent last 6 months)
+      // Convert to array and sort by date
       const sortedData = Object.values(monthlyData)
-        .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
-        .slice(-6); // Last 6 months
+        .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
       
       setChartData(sortedData);
 
@@ -117,6 +127,15 @@ export function Dashboard() {
     } finally {
       setLoading(false);
     }
+  }, [startDate, endDate]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
+
+  const handlePeriodChange = (newStartDate, newEndDate) => {
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
   };
 
   const statCards = [
@@ -257,10 +276,17 @@ export function Dashboard() {
         </Card>
       </div>
 
+      {/* New Widgets Row - Active Reservations and Pending Payments */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <ActiveReservationsWidget reservations={reservations} />
+        <PendingPaymentsWidget transactions={transactions} />
+      </div>
+
       {/* Chart */}
       <Card>
-        <CardHeader>
-          <CardTitle>Receita vs Despesa (Últimos 6 Meses)</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Receita vs Despesa</CardTitle>
+          <PeriodSelector onPeriodChange={handlePeriodChange} />
         </CardHeader>
         <CardContent>
           {chartData.length === 0 ? (
