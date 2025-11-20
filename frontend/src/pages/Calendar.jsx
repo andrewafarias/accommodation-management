@@ -43,12 +43,12 @@ export function Calendar() {
     }
   };
 
-  const handlePreviousWeek = () => {
-    setStartDate(prevDate => subDays(prevDate, 7));
+  const handlePrevious30Days = () => {
+    setStartDate(prevDate => subDays(prevDate, 30));
   };
 
-  const handleNextWeek = () => {
-    setStartDate(prevDate => addDays(prevDate, 7));
+  const handleNext30Days = () => {
+    setStartDate(prevDate => addDays(prevDate, 30));
   };
 
   const handleToday = () => {
@@ -111,7 +111,7 @@ export function Calendar() {
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button
-              onClick={handlePreviousWeek}
+              onClick={handlePrevious30Days}
               variant="outline"
               size="sm"
               className="flex items-center"
@@ -129,7 +129,7 @@ export function Calendar() {
             </Button>
             
             <Button
-              onClick={handleNextWeek}
+              onClick={handleNext30Days}
               variant="outline"
               size="sm"
               className="flex items-center"
