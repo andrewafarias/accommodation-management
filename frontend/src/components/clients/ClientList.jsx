@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit, Trash2, Paperclip, User } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 /**
@@ -86,8 +86,21 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {client.full_name}
+                    <div className="flex items-center">
+                      {client.profile_picture ? (
+                        <img
+                          src={client.profile_picture}
+                          alt={client.full_name}
+                          className="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                          <User className="w-6 h-6 text-gray-500" />
+                        </div>
+                      )}
+                      <div className="text-sm font-medium text-gray-900">
+                        {client.full_name}
+                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -123,6 +136,17 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
+                      {client.document_file && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(client.document_file, '_blank')}
+                          className="text-green-600 hover:text-green-900"
+                          title="View attached document"
+                        >
+                          <Paperclip className="w-4 h-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="sm"
