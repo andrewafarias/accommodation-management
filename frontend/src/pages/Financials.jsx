@@ -4,7 +4,8 @@ import { Button } from '../components/ui/Button';
 import { TransactionTable } from '../components/financials/TransactionTable';
 import { TransactionModal } from '../components/financials/TransactionModal';
 import { FinancialReport } from '../components/financials/FinancialReport';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Printer } from 'lucide-react';
+import { DetailedFinancialModal } from '../components/financials/DetailedFinancialModal';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Printer, FileText } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import api from '../services/api';
 
@@ -13,6 +14,7 @@ export function Financials() {
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDetailedModalOpen, setIsDetailedModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   const [showAllDates, setShowAllDates] = useState(false);
@@ -187,6 +189,10 @@ export function Financials() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
           <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)}>
+              <FileText className="w-4 h-4 mr-2" />
+              Extrato Detalhado
+            </Button>
             <Button variant="outline" onClick={handlePrintReport}>
               <Printer className="w-4 h-4 mr-2" />
               Imprimir Relatório
@@ -358,6 +364,16 @@ export function Financials() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddTransaction}
+      />
+
+      {/* Detailed Financial Modal */}
+      <DetailedFinancialModal
+        isOpen={isDetailedModalOpen}
+        onClose={() => setIsDetailedModalOpen(false)}
+        transactions={transactions}
+        startDate={startDate}
+        endDate={endDate}
+        showAllDates={showAllDates}
       />
       </div>
     </div>
