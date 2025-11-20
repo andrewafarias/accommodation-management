@@ -12,6 +12,7 @@ export function ReservationList() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState(null);
+  const [sortBy, setSortBy] = useState('created_at'); // 'created_at' or 'check_in'
 
   // Fetch reservations and accommodations on mount
   useEffect(() => {
@@ -66,7 +67,7 @@ export function ReservationList() {
 
     try {
       await api.delete(`reservations/${reservation.id}/`);
-      // Refresh the list
+      // CRITICAL FIX: Refresh the list immediately after deletion
       await fetchData();
     } catch (error) {
       console.error('Error deleting reservation:', error);
@@ -78,6 +79,16 @@ export function ReservationList() {
     setIsModalOpen(false);
     setEditingReservation(null);
   };
+
+  // Sort reservations based on selected criteria
+  const sortedReservations = [...reservations].sort((a, b) => {
+    if (sortBy === 'check_in') {
+      return new Date(a.check_in) - new Date(b.check_in);
+    } else {
+      // Sort by created_at (newest first)
+      return new Date(b.created_at) - new Date(a.created_at);
+    }
+  });
 
   return (
     <div className="space-y-6">
@@ -93,14 +104,32 @@ export function ReservationList() {
       {/* Reservation List Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Calendar className="w-6 h-6 mr-2" />
-            Lista de Reservas
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center">
+              <Calendar className="w-6 h-6 mr-2" />
+              Lista de Reservas
+            </CardTitle>
+            
+            {/* Sort Dropdown */}
+            <div className="flex items-center space-x-2">
+              <label htmlFor="sort-by" className="text-sm font-medium text-gray-700">
+                Ordenar por:
+              </label>
+              <select
+                id="sort-by"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="created_at">Data de Criação</option>
+                <option value="check_in">Data de Check-in</option>
+              </select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <ReservationTable
-            reservations={reservations}
+            reservations={sortedReservations}
             onEdit={handleEdit}
             onDelete={handleDelete}
             loading={loading}
