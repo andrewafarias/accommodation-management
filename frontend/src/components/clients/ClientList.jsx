@@ -15,6 +15,26 @@ import { Button } from '../ui/Button';
 export function ClientList({ clients = [], onEdit, onDelete, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Format phone from international format (+5511999998888) to display format (11) 99999-8888
+  const formatPhoneDisplay = (phone) => {
+    if (!phone) return '-';
+    
+    // Remove all non-digits
+    const digits = phone.replace(/\D/g, '');
+    
+    // Remove country code if present (55)
+    const localDigits = digits.startsWith('55') ? digits.slice(2) : digits;
+    
+    // Apply phone mask
+    if (localDigits.length <= 2) return localDigits;
+    if (localDigits.length <= 10) {
+      // (DD) XXXX-XXXX format
+      return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 6)}-${localDigits.slice(6, 10)}`;
+    }
+    // (DD) XXXXX-XXXX format (mobile with 9 digits)
+    return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 7)}-${localDigits.slice(7, 11)}`;
+  };
+
   // Filter clients based on search term
   const filteredClients = useMemo(() => {
     if (!searchTerm.trim()) return clients;
@@ -110,7 +130,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {client.phone || '-'}
+                      {formatPhoneDisplay(client.phone)}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

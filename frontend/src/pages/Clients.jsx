@@ -45,12 +45,20 @@ export function Clients() {
   // Handle saving client (create or update)
   const handleSave = async (clientData) => {
     try {
+      // When sending FormData, we need to let the browser set the Content-Type
+      // with the correct boundary for multipart/form-data
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      
       if (editingClient) {
         // Update existing client
-        await api.put(`clients/${editingClient.id}/`, clientData);
+        await api.put(`clients/${editingClient.id}/`, clientData, config);
       } else {
         // Create new client
-        await api.post('clients/', clientData);
+        await api.post('clients/', clientData, config);
       }
       // Refresh the list
       await fetchClients();

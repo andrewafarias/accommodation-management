@@ -35,7 +35,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       setFormData({
         full_name: client.full_name || '',
         cpf: client.cpf || '',
-        phone: client.phone || '',
+        // Convert international format to display format for editing
+        phone: client.phone ? formatPhoneDisplay(client.phone) : '',
         email: client.email || '',
         address: client.address || '',
         notes: client.notes || '',
@@ -73,6 +74,39 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
   };
 
+  // Format phone as user types (DD) XXXXX-XXXX or (DD) XXXX-XXXX
+  const formatPhoneDisplay = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // Remove country code if present (55)
+    const localDigits = digits.startsWith('55') ? digits.slice(2) : digits;
+    
+    // Apply phone mask
+    if (localDigits.length <= 2) return localDigits;
+    if (localDigits.length <= 6) return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2)}`;
+    if (localDigits.length <= 10) {
+      // (DD) XXXX-XXXX format
+      return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 6)}-${localDigits.slice(6)}`;
+    }
+    // (DD) XXXXX-XXXX format (mobile with 9 digits)
+    return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 7)}-${localDigits.slice(7, 11)}`;
+  };
+
+  // Convert phone from display format to international format (+5511999998888)
+  const formatPhoneInternational = (value) => {
+    // Remove all non-digits
+    const digits = value.replace(/\D/g, '');
+    
+    // If already has country code, return as is
+    if (digits.startsWith('55')) {
+      return `+${digits}`;
+    }
+    
+    // Add country code
+    return `+55${digits}`;
+  };
+
   // Validate CPF format
   const isValidCPF = (cpf) => {
     const digits = cpf.replace(/\D/g, '');
@@ -85,6 +119,9 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     
     if (name === 'cpf') {
       const formatted = formatCPF(value);
+      setFormData(prev => ({ ...prev, [name]: formatted }));
+    } else if (name === 'phone') {
+      const formatted = formatPhoneDisplay(value);
       setFormData(prev => ({ ...prev, [name]: formatted }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -182,7 +219,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       // Append all text fields
       submitData.append('full_name', formData.full_name);
       submitData.append('cpf', formData.cpf);
-      submitData.append('phone', formData.phone);
+      // Convert phone to international format before sending
+      submitData.append('phone', formatPhoneInternational(formData.phone));
       if (formData.email) submitData.append('email', formData.email);
       if (formData.address) submitData.append('address', formData.address);
       if (formData.notes) submitData.append('notes', formData.notes);
