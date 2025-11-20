@@ -126,6 +126,13 @@ export function ReservationModal({
     setError(null);
 
     try {
+      // Validate that a valid client is selected
+      if (!formData.client_name || typeof formData.client_name !== 'number') {
+        setError('Selecione um cliente da lista ou crie um novo antes de reservar.');
+        setLoading(false);
+        return;
+      }
+
       // Combine date and time into ISO datetime format
       const checkIn = `${formData.check_in_date}T${formData.check_in_time}:00`;
       const checkOut = `${formData.check_out_date}T${formData.check_out_time}:00`;
@@ -139,9 +146,9 @@ export function ReservationModal({
         status: formData.status,
       };
       
-      // Add total_price if provided
-      if (formData.total_price) {
-        payload.total_price = formData.total_price;
+      // Add total_price if provided (convert to number)
+      if (formData.total_price && formData.total_price !== '') {
+        payload.total_price = parseFloat(formData.total_price);
       }
 
       let response;
@@ -167,10 +174,14 @@ export function ReservationModal({
         const data = err.response.data;
         
         // Check for field-specific errors
-        if (data.check_in) {
+        if (data.client) {
+          errorMessage = Array.isArray(data.client) ? data.client[0] : data.client;
+        } else if (data.check_in) {
           errorMessage = Array.isArray(data.check_in) ? data.check_in[0] : data.check_in;
         } else if (data.check_out) {
           errorMessage = Array.isArray(data.check_out) ? data.check_out[0] : data.check_out;
+        } else if (data.accommodation_unit) {
+          errorMessage = Array.isArray(data.accommodation_unit) ? data.accommodation_unit[0] : data.accommodation_unit;
         } else if (data.non_field_errors) {
           errorMessage = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors;
         } else if (data.detail) {
@@ -179,9 +190,21 @@ export function ReservationModal({
           errorMessage = data.message;
         } else if (typeof data === 'string') {
           errorMessage = data;
+        } else {
+          // Try to display all error fields
+          const errorFields = Object.keys(data).filter(key => data[key]);
+          if (errorFields.length > 0) {
+            const firstField = errorFields[0];
+            const firstError = Array.isArray(data[firstField]) ? data[firstField][0] : data[firstField];
+            errorMessage = `${firstField}: ${firstError}`;
+          }
         }
+      } else if (err.response?.status === 500) {
+        errorMessage = 'Erro interno do servidor. Por favor, tente novamente mais tarde.';
       } else if (err.response?.data?.detail) {
         errorMessage = err.response.data.detail;
+      } else if (err.message) {
+        errorMessage = `Erro: ${err.message}`;
       }
       
       setError(errorMessage);

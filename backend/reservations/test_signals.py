@@ -122,3 +122,121 @@ class ReservationSignalTest(TestCase):
         
         # Verify still only one transaction exists
         self.assertEqual(Transaction.objects.filter(reservation=reservation).count(), 1)
+    
+    def test_checked_in_reservation_creates_transaction(self):
+        """Test that creating a checked-in reservation with price creates a transaction"""
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=self.now,
+            check_out=self.now + timedelta(days=2),
+            status=Reservation.CHECKED_IN,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Check that transaction was created
+        transactions = Transaction.objects.filter(reservation=reservation)
+        self.assertEqual(transactions.count(), 1)
+        
+        transaction = transactions.first()
+        self.assertEqual(transaction.transaction_type, Transaction.INCOME)
+        self.assertEqual(transaction.amount, Decimal("1000.00"))
+        self.assertEqual(transaction.category, Transaction.LODGING)
+        self.assertEqual(transaction.reservation, reservation)
+    
+    def test_checked_out_reservation_creates_transaction(self):
+        """Test that creating a checked-out reservation with price creates a transaction"""
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=self.now,
+            check_out=self.now + timedelta(days=2),
+            status=Reservation.CHECKED_OUT,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Check that transaction was created
+        transactions = Transaction.objects.filter(reservation=reservation)
+        self.assertEqual(transactions.count(), 1)
+        
+        transaction = transactions.first()
+        self.assertEqual(transaction.transaction_type, Transaction.INCOME)
+        self.assertEqual(transaction.amount, Decimal("1000.00"))
+        self.assertEqual(transaction.category, Transaction.LODGING)
+        self.assertEqual(transaction.reservation, reservation)
+    
+    def test_cancelling_reservation_deletes_unpaid_transactions(self):
+        """Test that changing status to CANCELLED deletes unpaid transactions"""
+        # Create a confirmed reservation (which creates a transaction)
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=self.now,
+            check_out=self.now + timedelta(days=2),
+            status=Reservation.CONFIRMED,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Verify transaction was created
+        self.assertEqual(Transaction.objects.filter(reservation=reservation).count(), 1)
+        
+        # Cancel the reservation
+        reservation.status = Reservation.CANCELLED
+        reservation.save()
+        
+        # Check that unpaid transaction was deleted
+        transactions = Transaction.objects.filter(reservation=reservation)
+        self.assertEqual(transactions.count(), 0)
+    
+    def test_cancelling_reservation_keeps_paid_transactions(self):
+        """Test that changing status to CANCELLED keeps paid transactions"""
+        # Create a confirmed reservation (which creates a transaction)
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=self.now,
+            check_out=self.now + timedelta(days=2),
+            status=Reservation.CONFIRMED,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Verify transaction was created and mark it as paid
+        transaction = Transaction.objects.filter(reservation=reservation).first()
+        self.assertIsNotNone(transaction)
+        transaction.paid_date = self.now.date()
+        transaction.save()
+        
+        # Cancel the reservation
+        reservation.status = Reservation.CANCELLED
+        reservation.save()
+        
+        # Check that paid transaction still exists
+        transactions = Transaction.objects.filter(reservation=reservation)
+        self.assertEqual(transactions.count(), 1)
+    
+    def test_pending_to_confirmed_creates_transaction(self):
+        """Test that changing status from PENDING to CONFIRMED creates a transaction"""
+        # Create a pending reservation
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=self.now,
+            check_out=self.now + timedelta(days=2),
+            status=Reservation.PENDING,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Verify no transaction was created
+        self.assertEqual(Transaction.objects.filter(reservation=reservation).count(), 0)
+        
+        # Confirm the reservation
+        reservation.status = Reservation.CONFIRMED
+        reservation.save()
+        
+        # Check that transaction was created
+        transactions = Transaction.objects.filter(reservation=reservation)
+        self.assertEqual(transactions.count(), 1)
+        
+        transaction = transactions.first()
+        self.assertEqual(transaction.transaction_type, Transaction.INCOME)
+        self.assertEqual(transaction.amount, Decimal("1000.00"))
