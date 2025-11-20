@@ -4,13 +4,15 @@ import {
   Calendar, 
   Users, 
   Home, 
-  DollarSign 
+  DollarSign,
+  Building2
 } from 'lucide-react';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Unidades', href: '/accommodations', icon: Building2 },
   { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Reservations', href: '/reservations', icon: Home },
+  { name: 'Reservas', href: '/reservations', icon: Home },
   { name: 'Clients', href: '/clients', icon: Users },
   { name: 'Financials', href: '/financials', icon: DollarSign },
 ];
