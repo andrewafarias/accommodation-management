@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
+import { ReservationModal } from '../components/reservations/ReservationModal';
 import { format, addDays, subDays } from 'date-fns';
 import api from '../services/api';
 
@@ -12,6 +13,9 @@ export function Calendar() {
   const [startDate, setStartDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [prefilledData, setPrefilledData] = useState({});
 
   useEffect(() => {
     fetchCalendarData();
@@ -49,6 +53,29 @@ export function Calendar() {
 
   const handleToday = () => {
     setStartDate(new Date());
+  };
+
+  const handleCellClick = (data) => {
+    setSelectedReservation(null);
+    setPrefilledData(data);
+    setModalOpen(true);
+  };
+
+  const handleReservationClick = (reservation) => {
+    setSelectedReservation(reservation);
+    setPrefilledData({});
+    setModalOpen(true);
+  };
+
+  const handleModalClose = () => {
+    setModalOpen(false);
+    setSelectedReservation(null);
+    setPrefilledData({});
+  };
+
+  const handleReservationSave = () => {
+    // Refresh calendar data after saving
+    fetchCalendarData();
   };
 
   if (loading) {
@@ -90,7 +117,7 @@ export function Calendar() {
               className="flex items-center"
             >
               <ChevronLeft className="w-4 h-4" />
-              Previous Week
+              Anterior
             </Button>
             
             <Button
@@ -98,7 +125,7 @@ export function Calendar() {
               variant="outline"
               size="sm"
             >
-              Today
+              Hoje
             </Button>
             
             <Button
@@ -107,13 +134,13 @@ export function Calendar() {
               size="sm"
               className="flex items-center"
             >
-              Next Week
+              Próximo
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
           
           <div className="text-sm font-medium text-gray-700 bg-gray-100 px-4 py-2 rounded-lg">
-            Starting: {format(startDate, 'dd/MM/yyyy')}
+            Início: {format(startDate, 'dd/MM/yyyy')}
           </div>
         </div>
       </div>
@@ -144,10 +171,22 @@ export function Calendar() {
               reservations={reservations}
               startDate={startDate}
               daysToShow={30}
+              onCellClick={handleCellClick}
+              onReservationClick={handleReservationClick}
             />
           )}
         </CardContent>
       </Card>
+
+      {/* Reservation Modal */}
+      <ReservationModal
+        isOpen={modalOpen}
+        onClose={handleModalClose}
+        reservation={selectedReservation}
+        units={accommodations}
+        prefilledData={prefilledData}
+        onSave={handleReservationSave}
+      />
     </div>
   );
 }
