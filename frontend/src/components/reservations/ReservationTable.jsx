@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Edit } from 'lucide-react';
+import { Search, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { format, parseISO } from 'date-fns';
 
@@ -11,9 +11,9 @@ import { format, parseISO } from 'date-fns';
  * - Search by client name or unit name
  * - Display reservation details with formatted dates
  * - Status badges with colors
- * - Edit action
+ * - Edit and Delete actions
  */
-export function ReservationTable({ reservations = [], onEdit, loading }) {
+export function ReservationTable({ reservations = [], onEdit, onDelete, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filter reservations based on search term
@@ -162,15 +162,26 @@ export function ReservationTable({ reservations = [], onEdit, loading }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(reservation)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      <Edit className="w-4 h-4 mr-1" />
-                      Edit
-                    </Button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(reservation)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onDelete(reservation)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Excluir
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

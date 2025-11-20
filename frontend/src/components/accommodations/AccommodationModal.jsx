@@ -93,12 +93,10 @@ export function AccommodationModal({
       }
 
       // Call the onSave callback with the new/updated accommodation
+      // The parent will handle closing the modal and refreshing the list
       if (onSave) {
-        onSave(response.data);
+        await onSave(response.data);
       }
-
-      // Close modal
-      onClose();
     } catch (err) {
       console.error('Error saving accommodation:', err);
       setError(

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 import { ReservationTable } from '../components/reservations/ReservationTable';
 import { ReservationModal } from '../components/reservations/ReservationModal';
-import { Calendar } from 'lucide-react';
+import { Calendar, Plus } from 'lucide-react';
 import api from '../services/api';
 
 export function ReservationList() {
@@ -37,6 +38,12 @@ export function ReservationList() {
     }
   };
 
+  // Handle opening modal for new reservation
+  const handleNewReservation = () => {
+    setEditingReservation(null);
+    setIsModalOpen(true);
+  };
+
   // Handle opening modal for editing
   const handleEdit = (reservation) => {
     setEditingReservation(reservation);
@@ -47,6 +54,24 @@ export function ReservationList() {
   const handleSave = async () => {
     // Refresh the list after saving
     await fetchData();
+    setIsModalOpen(false);
+    setEditingReservation(null);
+  };
+
+  // Handle delete
+  const handleDelete = async (reservation) => {
+    if (!window.confirm(`Tem certeza que deseja excluir a reserva #${reservation.id}?`)) {
+      return;
+    }
+
+    try {
+      await api.delete(`reservations/${reservation.id}/`);
+      // Refresh the list
+      await fetchData();
+    } catch (error) {
+      console.error('Error deleting reservation:', error);
+      alert('Falha ao excluir reserva. Verifique se não há transações associadas.');
+    }
   };
 
   const handleModalClose = () => {
@@ -59,6 +84,10 @@ export function ReservationList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+        <Button onClick={handleNewReservation}>
+          <Plus className="w-5 h-5 mr-2" />
+          Nova Reserva
+        </Button>
       </div>
 
       {/* Reservation List Card */}
@@ -73,6 +102,7 @@ export function ReservationList() {
           <ReservationTable
             reservations={reservations}
             onEdit={handleEdit}
+            onDelete={handleDelete}
             loading={loading}
           />
         </CardContent>
