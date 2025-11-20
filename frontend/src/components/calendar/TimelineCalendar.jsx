@@ -46,27 +46,37 @@ export function TimelineCalendar({
     const checkIn = startOfDay(parseISO(reservation.check_in));
     const checkOut = startOfDay(parseISO(reservation.check_out));
     
-    // Find start index (where reservation begins in visible range)
-    const startIndex = dates.findIndex(date => isSameDay(date, checkIn) || date > checkIn);
-    if (startIndex === -1) return null; // Reservation ends before visible range
+    const firstVisibleDate = dates[0];
+    const lastVisibleDate = dates[dates.length - 1];
     
-    // Calculate the actual start position (may need to start before visible range)
-    let offsetDays = 0;
-    if (dates[0] > checkIn) {
-      // Reservation starts before visible range
-      offsetDays = Math.floor((dates[0] - checkIn) / (1000 * 60 * 60 * 24));
+    // Check if reservation overlaps with visible range
+    if (checkOut <= firstVisibleDate || checkIn > lastVisibleDate) {
+      return null; // Reservation is completely outside visible range
     }
     
-    // Find end index (where reservation ends in visible range)
-    const endIndex = dates.findIndex(date => date >= checkOut);
-    const actualEndIndex = endIndex === -1 ? dates.length : endIndex;
-    
-    // Calculate number of days to display
+    // Calculate total days of reservation
     const totalDays = Math.floor((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-    const visibleStartIndex = offsetDays > 0 ? 0 : startIndex;
-    const visibleDays = actualEndIndex - visibleStartIndex;
     
-    if (visibleDays <= 0) return null; // Not in visible range
+    // Determine visible start position
+    let visibleStartIndex = 0;
+    if (checkIn >= firstVisibleDate) {
+      // Reservation starts within visible range
+      visibleStartIndex = dates.findIndex(date => isSameDay(date, checkIn));
+    }
+    // If checkIn < firstVisibleDate, visibleStartIndex stays 0 (starts before visible range)
+    
+    // Determine visible end position
+    let visibleEndIndex = dates.length;
+    if (checkOut <= lastVisibleDate) {
+      // Reservation ends within visible range
+      const endIdx = dates.findIndex(date => date >= checkOut);
+      if (endIdx !== -1) visibleEndIndex = endIdx;
+    }
+    // If checkOut > lastVisibleDate, visibleEndIndex stays at dates.length (extends beyond visible range)
+    
+    const visibleDays = visibleEndIndex - visibleStartIndex;
+    
+    if (visibleDays <= 0) return null;
     
     return {
       left: visibleStartIndex * cellWidth,
@@ -173,7 +183,7 @@ export function TimelineCalendar({
                     <div
                       key={index}
                       className={cn(
-                        'border-r hover:bg-blue-50 cursor-pointer transition-colors',
+                        'border-r hover:bg-blue-50 cursor-pointer transition-colors relative group',
                         isSameDay(date, new Date()) && 'bg-blue-50/50'
                       )}
                       style={{ width: `${cellWidth}px` }}
@@ -181,7 +191,12 @@ export function TimelineCalendar({
                         unit_id: unit.id,
                         check_in: format(date, 'yyyy-MM-dd'),
                       })}
-                    />
+                    >
+                      {/* Base Price Display */}
+                      <div className="absolute bottom-1 left-1 text-[10px] text-gray-400 group-hover:text-gray-600 group-hover:font-semibold transition-all">
+                        R$ {parseFloat(unit.base_price).toFixed(0)}
+                      </div>
+                    </div>
                   ))}
                 </div>
 
