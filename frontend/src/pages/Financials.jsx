@@ -15,6 +15,7 @@ export function Financials() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [showAllDates, setShowAllDates] = useState(false);
   
   // Date range state - default to current month
   const [startDate, setStartDate] = useState(() => 
@@ -31,18 +32,30 @@ export function Financials() {
   useEffect(() => {
     let filtered = [...transactions];
 
+    // Filter by date range (unless "All Dates" is active)
+    if (!showAllDates) {
+      const rangeStart = new Date(startDate);
+      const rangeEnd = new Date(endDate);
+      filtered = filtered.filter((t) => {
+        const dueDate = new Date(t.due_date);
+        return dueDate >= rangeStart && dueDate <= rangeEnd;
+      });
+    }
+
+    // Filter by transaction type
     if (activeFilter === 'INCOME') {
       filtered = filtered.filter((t) => t.transaction_type === 'INCOME');
     } else if (activeFilter === 'EXPENSE') {
       filtered = filtered.filter((t) => t.transaction_type === 'EXPENSE');
     }
 
+    // Filter by category
     if (categoryFilter !== 'ALL') {
       filtered = filtered.filter((t) => t.category === categoryFilter);
     }
 
     setFilteredTransactions(filtered);
-  }, [transactions, activeFilter, categoryFilter]);
+  }, [transactions, activeFilter, categoryFilter, startDate, endDate, showAllDates]);
 
   const fetchTransactions = async () => {
     try {
@@ -95,13 +108,18 @@ export function Financials() {
 
   // Calculate monthly summary
   const calculateMonthlySummary = () => {
-    const rangeStart = new Date(startDate);
-    const rangeEnd = new Date(endDate);
+    let rangeTransactions = transactions;
 
-    const rangeTransactions = transactions.filter((t) => {
-      const dueDate = new Date(t.due_date);
-      return dueDate >= rangeStart && dueDate <= rangeEnd;
-    });
+    // Apply date filter unless "All Dates" is active
+    if (!showAllDates) {
+      const rangeStart = new Date(startDate);
+      const rangeEnd = new Date(endDate);
+
+      rangeTransactions = transactions.filter((t) => {
+        const dueDate = new Date(t.due_date);
+        return dueDate >= rangeStart && dueDate <= rangeEnd;
+      });
+    }
 
     const income = rangeTransactions
       .filter((t) => t.transaction_type === 'INCOME' && t.is_paid)
@@ -157,12 +175,10 @@ export function Financials() {
     <div className="space-y-6">
       {/* Print Report Component - Only visible when printing */}
       <FinancialReport 
-        transactions={filteredTransactions}
+        transactions={transactions}
         startDate={startDate}
         endDate={endDate}
-        income={income}
-        expenses={expenses}
-        netProfit={netProfit}
+        showAllDates={showAllDates}
       />
 
       {/* Main Content - Hidden when printing */}
@@ -186,6 +202,18 @@ export function Financials() {
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="showAllDates"
+                checked={showAllDates}
+                onChange={(e) => setShowAllDates(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+              />
+              <label htmlFor="showAllDates" className="text-sm font-medium text-gray-700">
+                Ignorar Datas / Ver Tudo
+              </label>
+            </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Data Início
@@ -194,7 +222,8 @@ export function Financials() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={showAllDates}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
             <div className="flex-1">
@@ -205,7 +234,8 @@ export function Financials() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                disabled={showAllDates}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -219,7 +249,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Receitas (Período)
+                  {showAllDates ? 'Receitas (Todas)' : 'Receitas (Período)'}
                 </p>
                 <p className="mt-2 text-2xl font-bold text-green-600">
                   {formatCurrency(income)}
@@ -237,7 +267,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Despesas (Período)
+                  {showAllDates ? 'Despesas (Todas)' : 'Despesas (Período)'}
                 </p>
                 <p className="mt-2 text-2xl font-bold text-red-600">
                   {formatCurrency(expenses)}
@@ -255,7 +285,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Lucro Líquido (Período)
+                  {showAllDates ? 'Lucro Líquido (Todas)' : 'Lucro Líquido (Período)'}
                 </p>
                 <p
                   className={`mt-2 text-2xl font-bold ${
