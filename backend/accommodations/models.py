@@ -59,6 +59,17 @@ class AccommodationUnit(models.Model):
         default=CLEAN,
         verbose_name="Status"
     )
+    auto_dirty_days = models.PositiveIntegerField(
+        default=3,
+        verbose_name="Auto Dirty Days",
+        help_text="Number of days after which a clean unit automatically becomes dirty"
+    )
+    last_cleaned_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Last Cleaned At",
+        help_text="Timestamp of when the unit was last cleaned"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

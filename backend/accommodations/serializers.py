@@ -18,6 +18,8 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'base_price',
             'color_hex',
             'status',
+            'auto_dirty_days',
+            'last_cleaned_at',
             'created_at',
             'updated_at',
         ]
