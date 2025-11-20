@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { TransactionTable } from '../components/financials/TransactionTable';
 import { TransactionModal } from '../components/financials/TransactionModal';
+import { FinancialReport } from '../components/financials/FinancialReport';
 import { Plus, TrendingUp, TrendingDown, DollarSign, Printer } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import api from '../services/api';
@@ -13,6 +14,7 @@ export function Financials() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [categoryFilter, setCategoryFilter] = useState('ALL');
   
   // Date range state - default to current month
   const [startDate, setStartDate] = useState(() => 
@@ -35,8 +37,12 @@ export function Financials() {
       filtered = filtered.filter((t) => t.transaction_type === 'EXPENSE');
     }
 
+    if (categoryFilter !== 'ALL') {
+      filtered = filtered.filter((t) => t.category === categoryFilter);
+    }
+
     setFilteredTransactions(filtered);
-  }, [transactions, activeFilter]);
+  }, [transactions, activeFilter, categoryFilter]);
 
   const fetchTransactions = async () => {
     try {
@@ -70,6 +76,20 @@ export function Financials() {
       await fetchTransactions();
     } catch (error) {
       console.error('Error marking transaction as paid:', error);
+    }
+  };
+
+  const handleDeleteTransaction = async (transactionId) => {
+    if (!window.confirm('Tem certeza que deseja excluir esta transação?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`financials/${transactionId}/`);
+      await fetchTransactions();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      alert('Erro ao excluir transação. Tente novamente.');
     }
   };
 
@@ -115,6 +135,16 @@ export function Financials() {
     { id: 'EXPENSE', label: 'Despesas' },
   ];
 
+  const categoryOptions = [
+    { value: 'ALL', label: 'Todas as Categorias' },
+    { value: 'LODGING', label: 'Hospedagem' },
+    { value: 'MAINTENANCE', label: 'Manutenção' },
+    { value: 'UTILITIES', label: 'Utilidades' },
+    { value: 'SUPPLIES', label: 'Suprimentos' },
+    { value: 'SALARY', label: 'Salário' },
+    { value: 'OTHER', label: 'Outro' },
+  ];
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -125,20 +155,32 @@ export function Financials() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrintReport}>
-            <Printer className="w-4 h-4 mr-2" />
-            Imprimir Relatório
-          </Button>
-          <Button onClick={() => setIsModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Transação
-          </Button>
+      {/* Print Report Component - Only visible when printing */}
+      <FinancialReport 
+        transactions={filteredTransactions}
+        startDate={startDate}
+        endDate={endDate}
+        income={income}
+        expenses={expenses}
+        netProfit={netProfit}
+      />
+
+      {/* Main Content - Hidden when printing */}
+      <div className="no-print">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handlePrintReport}>
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir Relatório
+            </Button>
+            <Button onClick={() => setIsModalOpen(true)}>
+              <Plus className="w-4 h-4 mr-2" />
+              Nova Transação
+            </Button>
+          </div>
         </div>
-      </div>
 
       {/* Date Range Filter */}
       <Card>
@@ -236,17 +278,39 @@ export function Financials() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>Transações</CardTitle>
-            <div className="flex gap-2">
-              {filterButtons.map((filter) => (
-                <Button
-                  key={filter.id}
-                  variant={activeFilter === filter.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setActiveFilter(filter.id)}
+            <div className="flex gap-4 items-center">
+              {/* Category Filter Dropdown */}
+              <div className="flex items-center gap-2">
+                <label htmlFor="categoryFilter" className="text-sm font-medium text-gray-700">
+                  Categoria:
+                </label>
+                <select
+                  id="categoryFilter"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
-                  {filter.label}
-                </Button>
-              ))}
+                  {categoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              {/* Type Filter Buttons */}
+              <div className="flex gap-2">
+                {filterButtons.map((filter) => (
+                  <Button
+                    key={filter.id}
+                    variant={activeFilter === filter.id ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setActiveFilter(filter.id)}
+                  >
+                    {filter.label}
+                  </Button>
+                ))}
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -254,6 +318,7 @@ export function Financials() {
           <TransactionTable
             transactions={filteredTransactions}
             onMarkAsPaid={handleMarkAsPaid}
+            onDelete={handleDeleteTransaction}
           />
         </CardContent>
       </Card>
@@ -264,6 +329,7 @@ export function Financials() {
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddTransaction}
       />
+      </div>
     </div>
   );
 }

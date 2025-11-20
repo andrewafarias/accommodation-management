@@ -13,6 +13,7 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,7 +28,14 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
     setIsSubmitting(true);
 
     try {
-      await onSubmit(formData);
+      const dataToSubmit = { ...formData };
+      
+      // If isPaid is checked, set paid_date to today
+      if (isPaid) {
+        dataToSubmit.paid_date = new Date().toISOString().split('T')[0];
+      }
+      
+      await onSubmit(dataToSubmit);
       // Reset form
       setFormData({
         transaction_type: 'EXPENSE',
@@ -37,6 +45,7 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
         due_date: new Date().toISOString().split('T')[0],
         description: '',
       });
+      setIsPaid(false);
       onClose();
     } catch (error) {
       console.error('Error submitting transaction:', error);
@@ -201,6 +210,23 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
                 className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 placeholder="Adicione detalhes sobre a transação..."
               />
+            </div>
+
+            {/* Already Paid Checkbox */}
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isPaid"
+                checked={isPaid}
+                onChange={(e) => setIsPaid(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label
+                htmlFor="isPaid"
+                className="ml-2 text-sm font-medium text-gray-700"
+              >
+                Já está pago/recebido?
+              </label>
             </div>
 
             {/* Actions */}
