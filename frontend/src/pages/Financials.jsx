@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button';
 import { TransactionTable } from '../components/financials/TransactionTable';
 import { TransactionModal } from '../components/financials/TransactionModal';
-import { Plus, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, TrendingDown, DollarSign, Printer } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import api from '../services/api';
 
@@ -13,6 +13,14 @@ export function Financials() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  
+  // Date range state - default to current month
+  const [startDate, setStartDate] = useState(() => 
+    format(startOfMonth(new Date()), 'yyyy-MM-dd')
+  );
+  const [endDate, setEndDate] = useState(() => 
+    format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  );
 
   useEffect(() => {
     fetchTransactions();
@@ -67,20 +75,19 @@ export function Financials() {
 
   // Calculate monthly summary
   const calculateMonthlySummary = () => {
-    const now = new Date();
-    const monthStart = startOfMonth(now);
-    const monthEnd = endOfMonth(now);
+    const rangeStart = new Date(startDate);
+    const rangeEnd = new Date(endDate);
 
-    const monthlyTransactions = transactions.filter((t) => {
+    const rangeTransactions = transactions.filter((t) => {
       const dueDate = new Date(t.due_date);
-      return dueDate >= monthStart && dueDate <= monthEnd;
+      return dueDate >= rangeStart && dueDate <= rangeEnd;
     });
 
-    const income = monthlyTransactions
+    const income = rangeTransactions
       .filter((t) => t.transaction_type === 'INCOME' && t.is_paid)
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-    const expenses = monthlyTransactions
+    const expenses = rangeTransactions
       .filter((t) => t.transaction_type === 'EXPENSE' && t.is_paid)
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
@@ -96,6 +103,10 @@ export function Financials() {
       style: 'currency',
       currency: 'BRL',
     }).format(amount);
+  };
+
+  const handlePrintReport = () => {
+    window.print();
   };
 
   const filterButtons = [
@@ -117,11 +128,47 @@ export function Financials() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Transação
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handlePrintReport}>
+            <Printer className="w-4 h-4 mr-2" />
+            Imprimir Relatório
+          </Button>
+          <Button onClick={() => setIsModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Transação
+          </Button>
+        </div>
       </div>
+
+      {/* Date Range Filter */}
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data Início
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data Fim
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Monthly Summary Cards */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -130,7 +177,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Receitas (Mês)
+                  Receitas (Período)
                 </p>
                 <p className="mt-2 text-2xl font-bold text-green-600">
                   {formatCurrency(income)}
@@ -148,7 +195,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Despesas (Mês)
+                  Despesas (Período)
                 </p>
                 <p className="mt-2 text-2xl font-bold text-red-600">
                   {formatCurrency(expenses)}
@@ -166,7 +213,7 @@ export function Financials() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Lucro Líquido (Mês)
+                  Lucro Líquido (Período)
                 </p>
                 <p
                   className={`mt-2 text-2xl font-bold ${
