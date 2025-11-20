@@ -38,6 +38,12 @@ export function TransactionTable({ transactions, onMarkAsPaid }) {
     return labels[category] || category;
   };
 
+  const truncateText = (text, maxLength = 50) => {
+    if (!text) return '-';
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   if (transactions.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">
@@ -59,6 +65,9 @@ export function TransactionTable({ transactions, onMarkAsPaid }) {
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Categoria
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Descrição
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Valor
@@ -93,6 +102,12 @@ export function TransactionTable({ transactions, onMarkAsPaid }) {
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {getCategoryLabel(transaction.category)}
+              </td>
+              <td 
+                className="px-6 py-4 text-sm text-gray-900 max-w-xs"
+                title={transaction.description || ''}
+              >
+                {truncateText(transaction.description, 50)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                 {formatCurrency(transaction.amount)}
