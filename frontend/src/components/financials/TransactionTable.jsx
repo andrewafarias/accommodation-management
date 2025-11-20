@@ -1,8 +1,8 @@
 import { format } from 'date-fns';
 import { Button } from '../ui/Button';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Trash2 } from 'lucide-react';
 
-export function TransactionTable({ transactions, onMarkAsPaid }) {
+export function TransactionTable({ transactions, onMarkAsPaid, onDelete }) {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -109,8 +109,21 @@ export function TransactionTable({ transactions, onMarkAsPaid }) {
               >
                 {truncateText(transaction.description, 50)}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                {formatCurrency(transaction.amount)}
+              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <span
+                  className={
+                    transaction.is_paid
+                      ? transaction.transaction_type === 'INCOME'
+                        ? 'text-green-700 font-semibold'
+                        : 'text-red-700 font-semibold'
+                      : 'text-gray-500'
+                  }
+                >
+                  {formatCurrency(transaction.amount)}
+                </span>
+                {!transaction.is_paid && (
+                  <span className="ml-2 text-xs text-yellow-600">(Pendente)</span>
+                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {getPaymentMethodLabel(transaction.payment_method)}
@@ -127,17 +140,27 @@ export function TransactionTable({ transactions, onMarkAsPaid }) {
                 )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
-                {!transaction.is_paid && (
+                <div className="flex gap-2">
+                  {!transaction.is_paid && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onMarkAsPaid(transaction.id)}
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-1" />
+                      Marcar como Pago
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => onMarkAsPaid(transaction.id)}
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                    onClick={() => onDelete(transaction.id)}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    <CheckCircle className="w-4 h-4 mr-1" />
-                    Marcar como Pago
+                    <Trash2 className="w-4 h-4" />
                   </Button>
-                )}
+                </div>
               </td>
             </tr>
           ))}
