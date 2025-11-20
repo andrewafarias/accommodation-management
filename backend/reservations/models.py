@@ -59,6 +59,12 @@ class Reservation(models.Model):
         verbose_name="Total Price (BRL)",
         help_text="Manual price override. If not set, will be calculated automatically."
     )
+    price_breakdown = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Price Breakdown",
+        help_text="List of price items: [{'name': 'Diária', 'value': 100.00}, ...]"
+    )
     
     # Reservation status
     status = models.CharField(

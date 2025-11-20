@@ -25,7 +25,10 @@ export function ReservationModal({
     check_out_date: '',
     check_out_time: '12:00',
     accommodation_unit: '',
+    guest_count_adults: 1,
+    guest_count_children: 0,
     total_price: '',
+    price_breakdown: [],
     status: 'PENDING',
   });
   
@@ -91,7 +94,10 @@ export function ReservationModal({
           check_out_date: checkOutDate,
           check_out_time: checkOutTime,
           accommodation_unit: reservation.accommodation_unit?.id || '',
+          guest_count_adults: reservation.guest_count_adults || 1,
+          guest_count_children: reservation.guest_count_children || 0,
           total_price: reservation.total_price || '',
+          price_breakdown: reservation.price_breakdown || [],
           status: reservation.status || 'PENDING',
         });
         setClientSearchTerm(reservation.client?.full_name || '');
@@ -104,7 +110,10 @@ export function ReservationModal({
           check_out_date: prefilledDataRef.current.check_out || '',
           check_out_time: '12:00',
           accommodation_unit: prefilledDataRef.current.unit_id || '',
+          guest_count_adults: 1,
+          guest_count_children: 0,
           total_price: '',
+          price_breakdown: [],
           status: 'PENDING',
         });
         setClientSearchTerm('');
@@ -150,6 +159,36 @@ export function ReservationModal({
       ...prev,
       [name]: value
     }));
+  };
+
+  const addBreakdownItem = () => {
+    setFormData(prev => ({
+      ...prev,
+      price_breakdown: [...prev.price_breakdown, { name: '', value: '' }]
+    }));
+  };
+
+  const removeBreakdownItem = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      price_breakdown: prev.price_breakdown.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateBreakdownItem = (index, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      price_breakdown: prev.price_breakdown.map((item, i) => 
+        i === index ? { ...item, [field]: value } : item
+      )
+    }));
+  };
+
+  const calculateBreakdownTotal = () => {
+    return formData.price_breakdown.reduce((sum, item) => {
+      const value = parseFloat(item.value) || 0;
+      return sum + value;
+    }, 0);
   };
 
   const handleCreateClient = async () => {
@@ -248,12 +287,25 @@ export function ReservationModal({
         check_in: checkIn,
         check_out: checkOut,
         accommodation_unit: formData.accommodation_unit,
+        guest_count_adults: parseInt(formData.guest_count_adults, 10),
+        guest_count_children: parseInt(formData.guest_count_children, 10),
         status: formData.status,
       };
       
       // Add total_price if provided (convert to number)
       if (formData.total_price && formData.total_price !== '') {
         payload.total_price = parseFloat(formData.total_price);
+      }
+
+      // Add price_breakdown if items exist
+      if (formData.price_breakdown && formData.price_breakdown.length > 0) {
+        // Filter out empty items and convert values to numbers
+        payload.price_breakdown = formData.price_breakdown
+          .filter(item => item.name && item.value)
+          .map(item => ({
+            name: item.name,
+            value: parseFloat(item.value)
+          }));
       }
 
       let response;
@@ -528,6 +580,99 @@ export function ReservationModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Guest Count - Adults and Children */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="guest_count_adults" className="block text-sm font-medium text-gray-700 mb-1">
+                Adultos *
+              </label>
+              <input
+                type="number"
+                id="guest_count_adults"
+                name="guest_count_adults"
+                value={formData.guest_count_adults}
+                onChange={handleChange}
+                min="0"
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="guest_count_children" className="block text-sm font-medium text-gray-700 mb-1">
+                Crianças
+              </label>
+              <input
+                type="number"
+                id="guest_count_children"
+                name="guest_count_children"
+                value={formData.guest_count_children}
+                onChange={handleChange}
+                min="0"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Price Breakdown Section */}
+          <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Discriminação de Valores
+              </label>
+              <button
+                type="button"
+                onClick={addBreakdownItem}
+                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+              >
+                + Adicionar Item
+              </button>
+            </div>
+            
+            {formData.price_breakdown.length === 0 ? (
+              <p className="text-xs text-gray-500 italic">Nenhum item adicionado</p>
+            ) : (
+              <div className="space-y-2">
+                {formData.price_breakdown.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={item.name}
+                      onChange={(e) => updateBreakdownItem(index, 'name', e.target.value)}
+                      placeholder="Nome (ex: Diária)"
+                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <input
+                      type="number"
+                      value={item.value}
+                      onChange={(e) => updateBreakdownItem(index, 'value', e.target.value)}
+                      placeholder="Valor"
+                      min="0"
+                      step="0.01"
+                      className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeBreakdownItem(index)}
+                      className="text-red-600 hover:text-red-800 text-xs"
+                      title="Remover"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                
+                {formData.price_breakdown.length > 0 && (
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-300 mt-2">
+                    <span className="text-sm font-medium text-gray-700">Subtotal:</span>
+                    <span className="text-sm font-bold text-gray-900">
+                      R$ {calculateBreakdownTotal().toFixed(2)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Total Price */}
