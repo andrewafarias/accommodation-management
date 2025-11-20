@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { Button } from '../ui/Button';
-import { CheckCircle, Trash2 } from 'lucide-react';
+import { CheckCircle, Trash2, Check, Clock } from 'lucide-react';
 
 export function TransactionTable({ transactions, onMarkAsPaid, onDelete }) {
   const formatCurrency = (amount) => {
@@ -112,29 +112,27 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete }) {
               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <span
                   className={
-                    transaction.is_paid
-                      ? transaction.transaction_type === 'INCOME'
-                        ? 'text-green-700 font-semibold'
-                        : 'text-red-700 font-semibold'
-                      : 'text-gray-500'
+                    transaction.transaction_type === 'INCOME'
+                      ? 'text-green-600 font-semibold'
+                      : 'text-red-600 font-semibold'
                   }
                 >
+                  {transaction.transaction_type === 'INCOME' ? '+ ' : '- '}
                   {formatCurrency(transaction.amount)}
                 </span>
-                {!transaction.is_paid && (
-                  <span className="ml-2 text-xs text-yellow-600">(Pendente)</span>
-                )}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {getPaymentMethodLabel(transaction.payment_method)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm">
                 {transaction.is_paid ? (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <Check className="w-3 h-3" />
                     Pago ({formatDate(transaction.paid_date)})
                   </span>
                 ) : (
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <Clock className="w-3 h-3" />
                     Pendente
                   </span>
                 )}
