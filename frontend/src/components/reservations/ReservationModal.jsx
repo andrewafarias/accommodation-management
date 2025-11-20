@@ -19,9 +19,12 @@ export function ReservationModal({
 }) {
   const [formData, setFormData] = useState({
     client_name: '',
-    check_in: '',
-    check_out: '',
+    check_in_date: '',
+    check_in_time: '14:00',
+    check_out_date: '',
+    check_out_time: '12:00',
     accommodation_unit: '',
+    total_price: '',
     status: 'PENDING',
   });
   
@@ -60,12 +63,20 @@ export function ReservationModal({
   useEffect(() => {
     if (isOpen) {
       if (reservation) {
-        // Edit mode
+        // Edit mode - parse existing datetime
+        const checkInDate = reservation.check_in ? reservation.check_in.split('T')[0] : '';
+        const checkInTime = reservation.check_in ? reservation.check_in.split('T')[1]?.substring(0, 5) || '14:00' : '14:00';
+        const checkOutDate = reservation.check_out ? reservation.check_out.split('T')[0] : '';
+        const checkOutTime = reservation.check_out ? reservation.check_out.split('T')[1]?.substring(0, 5) || '12:00' : '12:00';
+        
         setFormData({
           client_name: reservation.client?.id || '',
-          check_in: reservation.check_in || '',
-          check_out: reservation.check_out || '',
+          check_in_date: checkInDate,
+          check_in_time: checkInTime,
+          check_out_date: checkOutDate,
+          check_out_time: checkOutTime,
           accommodation_unit: reservation.accommodation_unit?.id || '',
+          total_price: reservation.total_price || '',
           status: reservation.status || 'PENDING',
         });
         setClientSearchTerm(reservation.client?.full_name || '');
@@ -73,9 +84,12 @@ export function ReservationModal({
         // Create mode with prefilled data
         setFormData({
           client_name: '',
-          check_in: prefilledData.check_in || '',
-          check_out: prefilledData.check_out || '',
+          check_in_date: prefilledData.check_in || '',
+          check_in_time: '14:00',
+          check_out_date: prefilledData.check_out || '',
+          check_out_time: '12:00',
           accommodation_unit: prefilledData.unit_id || '',
+          total_price: '',
           status: 'PENDING',
         });
         setClientSearchTerm('');
@@ -112,14 +126,23 @@ export function ReservationModal({
     setError(null);
 
     try {
+      // Combine date and time into ISO datetime format
+      const checkIn = `${formData.check_in_date}T${formData.check_in_time}:00`;
+      const checkOut = `${formData.check_out_date}T${formData.check_out_time}:00`;
+      
       // Prepare data for API
       const payload = {
         client: formData.client_name,
-        check_in: formData.check_in,
-        check_out: formData.check_out,
+        check_in: checkIn,
+        check_out: checkOut,
         accommodation_unit: formData.accommodation_unit,
         status: formData.status,
       };
+      
+      // Add total_price if provided
+      if (formData.total_price) {
+        payload.total_price = formData.total_price;
+      }
 
       let response;
       if (reservation) {
@@ -132,18 +155,36 @@ export function ReservationModal({
 
       // Call the onSave callback with the new/updated reservation
       if (onSave) {
-        onSave(response.data);
+        await onSave(response.data);
       }
-
-      // Close modal
-      onClose();
     } catch (err) {
       console.error('Error saving reservation:', err);
-      setError(
-        err.response?.data?.detail || 
-        err.response?.data?.message ||
-        'Erro ao salvar reserva. Verifique os dados e tente novamente.'
-      );
+      
+      // Extract specific error messages from the API response
+      let errorMessage = 'Erro ao salvar reserva. Verifique os dados e tente novamente.';
+      
+      if (err.response?.status === 400) {
+        const data = err.response.data;
+        
+        // Check for field-specific errors
+        if (data.check_in) {
+          errorMessage = Array.isArray(data.check_in) ? data.check_in[0] : data.check_in;
+        } else if (data.check_out) {
+          errorMessage = Array.isArray(data.check_out) ? data.check_out[0] : data.check_out;
+        } else if (data.non_field_errors) {
+          errorMessage = Array.isArray(data.non_field_errors) ? data.non_field_errors[0] : data.non_field_errors;
+        } else if (data.detail) {
+          errorMessage = data.detail;
+        } else if (data.message) {
+          errorMessage = data.message;
+        } else if (typeof data === 'string') {
+          errorMessage = data;
+        }
+      } else if (err.response?.data?.detail) {
+        errorMessage = err.response.data.detail;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -207,36 +248,68 @@ export function ReservationModal({
             </datalist>
           </div>
 
-          {/* Check-in Date */}
-          <div>
-            <label htmlFor="check_in" className="block text-sm font-medium text-gray-700 mb-1">
-              Check-in *
-            </label>
-            <input
-              type="date"
-              id="check_in"
-              name="check_in"
-              value={formData.check_in}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* Check-in Date and Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="check_in_date" className="block text-sm font-medium text-gray-700 mb-1">
+                Data Check-in *
+              </label>
+              <input
+                type="date"
+                id="check_in_date"
+                name="check_in_date"
+                value={formData.check_in_date}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="check_in_time" className="block text-sm font-medium text-gray-700 mb-1">
+                Hora Check-in *
+              </label>
+              <input
+                type="time"
+                id="check_in_time"
+                name="check_in_time"
+                value={formData.check_in_time}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
-          {/* Check-out Date */}
-          <div>
-            <label htmlFor="check_out" className="block text-sm font-medium text-gray-700 mb-1">
-              Check-out *
-            </label>
-            <input
-              type="date"
-              id="check_out"
-              name="check_out"
-              value={formData.check_out}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          {/* Check-out Date and Time */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="check_out_date" className="block text-sm font-medium text-gray-700 mb-1">
+                Data Check-out *
+              </label>
+              <input
+                type="date"
+                id="check_out_date"
+                name="check_out_date"
+                value={formData.check_out_date}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="check_out_time" className="block text-sm font-medium text-gray-700 mb-1">
+                Hora Check-out *
+              </label>
+              <input
+                type="time"
+                id="check_out_time"
+                name="check_out_time"
+                value={formData.check_out_time}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Accommodation Unit */}
@@ -259,6 +332,25 @@ export function ReservationModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Total Price */}
+          <div>
+            <label htmlFor="total_price" className="block text-sm font-medium text-gray-700 mb-1">
+              Preço Total (R$)
+            </label>
+            <input
+              type="number"
+              id="total_price"
+              name="total_price"
+              value={formData.total_price}
+              onChange={handleChange}
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="0.00"
+            />
+            <p className="text-xs text-gray-500 mt-1">Deixe em branco para calcular automaticamente</p>
           </div>
 
           {/* Status */}

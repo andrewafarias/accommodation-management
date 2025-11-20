@@ -50,6 +50,16 @@ class Reservation(models.Model):
         verbose_name="Children Guests"
     )
     
+    # Pricing - manual override support
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Total Price (BRL)",
+        help_text="Manual price override. If not set, will be calculated automatically."
+    )
+    
     # Reservation status
     status = models.CharField(
         max_length=20,

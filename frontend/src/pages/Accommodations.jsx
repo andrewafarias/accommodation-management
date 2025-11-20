@@ -44,20 +44,10 @@ export function Accommodations() {
 
   // Handle saving accommodation (create or update)
   const handleSave = async (accommodationData) => {
-    try {
-      if (editingAccommodation) {
-        // Update existing accommodation
-        await api.put(`accommodations/${editingAccommodation.id}/`, accommodationData);
-      } else {
-        // Create new accommodation
-        await api.post('accommodations/', accommodationData);
-      }
-      // Refresh the list
-      await fetchAccommodations();
-    } catch (error) {
-      console.error('Error saving accommodation:', error);
-      throw error;
-    }
+    // The modal already saves the data, we just need to refresh and close
+    await fetchAccommodations();
+    setIsModalOpen(false);
+    setEditingAccommodation(null);
   };
 
   // Handle delete
