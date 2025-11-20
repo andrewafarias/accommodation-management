@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Home, Users, DollarSign, TrendingUp } from 'lucide-react';
+import { Home, Users, DollarSign, TrendingUp, Sparkles, CalendarCheck } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { format } from 'date-fns';
+import { format, addDays, parseISO } from 'date-fns';
 import api from '../services/api';
 
 export function Dashboard() {
@@ -13,6 +13,8 @@ export function Dashboard() {
     totalRevenue: 0,
   });
   const [chartData, setChartData] = useState([]);
+  const [dirtyUnits, setDirtyUnits] = useState([]);
+  const [upcomingArrivals, setUpcomingArrivals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,6 +29,10 @@ export function Dashboard() {
       const accommodationsRes = await api.get('accommodations/');
       const accommodations = accommodationsRes.data.results || accommodationsRes.data;
       const cleanUnits = accommodations.filter(unit => unit.status === 'CLEAN').length;
+      
+      // Filter dirty units for cleaning widget
+      const dirty = accommodations.filter(unit => unit.status === 'DIRTY');
+      setDirtyUnits(dirty);
 
       // Fetch reservations
       const reservationsRes = await api.get('reservations/');
@@ -38,8 +44,18 @@ export function Dashboard() {
       // Count check-ins today
       const checkInsToday = reservations.filter(reservation => {
         const checkInDate = format(new Date(reservation.check_in), 'yyyy-MM-dd');
-        return checkInDate === today;
+        return checkInDate === today && reservation.status !== 'CANCELLED';
       }).length;
+      
+      // Calculate upcoming arrivals (next 7 days, excluding today)
+      const todayDate = new Date();
+      const sevenDaysFromNow = addDays(todayDate, 7);
+      const upcoming = reservations.filter(reservation => {
+        if (reservation.status === 'CANCELLED') return false;
+        const checkInDate = parseISO(reservation.check_in);
+        return checkInDate > todayDate && checkInDate <= sevenDaysFromNow;
+      }).sort((a, b) => new Date(a.check_in) - new Date(b.check_in));
+      setUpcomingArrivals(upcoming);
 
       // Fetch financial transactions
       const transactionsRes = await api.get('financials/');
@@ -60,17 +76,41 @@ export function Dashboard() {
         totalRevenue,
       });
 
-      // Mock chart data for Income vs Expenses
-      // In a real implementation, this would aggregate data from the API
-      const mockChartData = [
-        { month: 'Jan', income: 12000, expenses: 4000 },
-        { month: 'Feb', income: 15000, expenses: 5000 },
-        { month: 'Mar', income: 18000, expenses: 4500 },
-        { month: 'Apr', income: 16000, expenses: 5500 },
-        { month: 'May', income: 20000, expenses: 6000 },
-        { month: 'Jun', income: 22000, expenses: 5500 },
-      ];
-      setChartData(mockChartData);
+      // Generate chart data from real transactions
+      // Group by month and aggregate income vs expenses
+      const monthlyData = {};
+      const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      
+      transactions.forEach(transaction => {
+        if (!transaction.paid_date) return; // Only consider paid transactions
+        
+        const date = parseISO(transaction.paid_date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthLabel = `${monthNames[date.getMonth()]}/${String(date.getFullYear()).slice(-2)}`;
+        
+        if (!monthlyData[monthKey]) {
+          monthlyData[monthKey] = {
+            month: monthLabel,
+            income: 0,
+            expenses: 0,
+            sortKey: monthKey,
+          };
+        }
+        
+        const amount = parseFloat(transaction.amount);
+        if (transaction.transaction_type === 'INCOME') {
+          monthlyData[monthKey].income += amount;
+        } else if (transaction.transaction_type === 'EXPENSE') {
+          monthlyData[monthKey].expenses += amount;
+        }
+      });
+      
+      // Convert to array and sort by date (most recent last 6 months)
+      const sortedData = Object.values(monthlyData)
+        .sort((a, b) => a.sortKey.localeCompare(b.sortKey))
+        .slice(-6); // Last 6 months
+      
+      setChartData(sortedData);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -148,25 +188,100 @@ export function Dashboard() {
         })}
       </div>
 
+      {/* Widgets Row */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Cleaning Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-orange-700">
+              <Sparkles className="w-5 h-5 mr-2" />
+              Limpeza Pendente
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dirtyUnits.length === 0 ? (
+              <p className="text-sm text-gray-500">Todas as unidades estão limpas! 🎉</p>
+            ) : (
+              <ul className="space-y-2">
+                {dirtyUnits.map(unit => (
+                  <li key={unit.id} className="flex items-center text-sm">
+                    <span 
+                      className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
+                      style={{ backgroundColor: unit.color_hex }}
+                    />
+                    <span className="font-medium text-gray-700">{unit.name}</span>
+                    <span className="ml-2 text-gray-500">- Sujo</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Arrivals Widget */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center text-blue-700">
+              <CalendarCheck className="w-5 h-5 mr-2" />
+              Próximas Chegadas (7 dias)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcomingArrivals.length === 0 ? (
+              <p className="text-sm text-gray-500">Nenhuma chegada nos próximos 7 dias.</p>
+            ) : (
+              <ul className="space-y-2">
+                {upcomingArrivals.slice(0, 5).map(reservation => (
+                  <li key={reservation.id} className="text-sm">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-700">
+                        {reservation.client.full_name}
+                      </span>
+                      <span className="text-gray-500">
+                        {format(parseISO(reservation.check_in), 'dd/MM/yyyy')}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {reservation.accommodation_unit.name}
+                    </div>
+                  </li>
+                ))}
+                {upcomingArrivals.length > 5 && (
+                  <li className="text-xs text-gray-400 italic">
+                    +{upcomingArrivals.length - 5} mais...
+                  </li>
+                )}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>Income vs Expenses</CardTitle>
+          <CardTitle>Receita vs Despesa (Últimos 6 Meses)</CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip 
-                formatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`}
-              />
-              <Legend />
-              <Bar dataKey="income" fill="#3b82f6" name="Income" />
-              <Bar dataKey="expenses" fill="#ef4444" name="Expenses" />
-            </BarChart>
-          </ResponsiveContainer>
+          {chartData.length === 0 ? (
+            <div className="h-[300px] flex items-center justify-center text-gray-500">
+              Nenhum dado financeiro disponível ainda.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                />
+                <Legend />
+                <Bar dataKey="income" fill="#10b981" name="Receita" />
+                <Bar dataKey="expenses" fill="#ef4444" name="Despesa" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
     </div>
