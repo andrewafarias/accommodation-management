@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit, Trash2, User, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 /**
@@ -15,6 +15,7 @@ import { Button } from '../ui/Button';
  */
 export function ClientList({ clients = [], onEdit, onDelete, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedImage, setExpandedImage] = useState(null);
 
   // Format phone from international format (+5511999998888) to display format (11) 99999-8888
   const formatPhoneDisplay = (phone) => {
@@ -84,6 +85,9 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Photo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -106,6 +110,20 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {client.profile_picture ? (
+                      <img
+                        src={client.profile_picture}
+                        alt={client.full_name}
+                        className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                        onClick={() => setExpandedImage(client.profile_picture)}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                        <User className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {client.full_name}
@@ -179,6 +197,29 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
       {filteredClients.length > 0 && (
         <div className="text-sm text-gray-500 text-right">
           Showing {filteredClients.length} of {clients.length} client{clients.length !== 1 ? 's' : ''}
+        </div>
+      )}
+
+      {/* Expandable Image Modal */}
+      {expandedImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 p-4"
+          onClick={() => setExpandedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-full">
+            <button
+              onClick={() => setExpandedImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-gray-300 transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={expandedImage}
+              alt="Expanded profile"
+              className="max-w-full max-h-[90vh] rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
         </div>
       )}
     </div>
