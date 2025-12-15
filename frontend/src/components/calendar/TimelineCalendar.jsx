@@ -1,7 +1,59 @@
 import { useMemo } from 'react';
-import { format, addDays, startOfDay, isSameDay, parseISO } from 'date-fns';
+import { format, addDays, startOfDay, isSameDay, parseISO, getYear } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
+
+// Brazilian National Holidays (fixed dates and Easter-based)
+const getBrazilianHolidays = (year) => {
+  const holidays = [
+    // Fixed holidays
+    { date: `${year}-01-01`, name: 'Ano Novo' },
+    { date: `${year}-04-21`, name: 'Tiradentes' },
+    { date: `${year}-05-01`, name: 'Dia do Trabalho' },
+    { date: `${year}-09-07`, name: 'Independência do Brasil' },
+    { date: `${year}-10-12`, name: 'Nossa Senhora Aparecida' },
+    { date: `${year}-11-02`, name: 'Finados' },
+    { date: `${year}-11-15`, name: 'Proclamação da República' },
+    { date: `${year}-12-25`, name: 'Natal' },
+  ];
+  
+  // Calculate Easter-based holidays
+  const easter = calculateEaster(year);
+  const easterDate = new Date(year, easter.month - 1, easter.day);
+  
+  // Carnival (47 days before Easter)
+  const carnival = addDays(easterDate, -47);
+  holidays.push({ date: format(carnival, 'yyyy-MM-dd'), name: 'Carnaval' });
+  
+  // Good Friday (2 days before Easter)
+  const goodFriday = addDays(easterDate, -2);
+  holidays.push({ date: format(goodFriday, 'yyyy-MM-dd'), name: 'Sexta-feira Santa' });
+  
+  // Corpus Christi (60 days after Easter)
+  const corpusChristi = addDays(easterDate, 60);
+  holidays.push({ date: format(corpusChristi, 'yyyy-MM-dd'), name: 'Corpus Christi' });
+  
+  return holidays;
+};
+
+// Calculate Easter using Computus algorithm
+const calculateEaster = (year) => {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return { month, day };
+};
 
 /**
  * TimelineCalendar Component
@@ -10,6 +62,7 @@ import { cn } from '../../lib/utils';
  * - Y-Axis: Lists accommodation units
  * - X-Axis: Displays dates horizontally
  * - Cells: Shows reservations as colored bars spanning check-in/out dates
+ * - Holiday highlighting for Brazilian holidays
  */
 export function TimelineCalendar({ 
   units = [], 
@@ -25,9 +78,36 @@ export function TimelineCalendar({
     return Array.from({ length: daysToShow }, (_, i) => addDays(start, i));
   }, [startDate, daysToShow]);
 
+  // Get holidays for all years in the visible range
+  const holidays = useMemo(() => {
+    const years = [...new Set(dates.map(d => getYear(d)))];
+    const allHolidays = {};
+    years.forEach(year => {
+      getBrazilianHolidays(year).forEach(holiday => {
+        allHolidays[holiday.date] = holiday.name;
+      });
+    });
+    return allHolidays;
+  }, [dates]);
+
+  // Check if a date is a holiday
+  const isHoliday = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return holidays[dateStr] || null;
+  };
+
   // Calculate cell width for responsive design
   const cellWidth = 120; // pixels per day cell
   const sidebarWidth = 200; // pixels for the sidebar
+
+  // Helper to get a light tint color from a hex color
+  const getLightTint = (hexColor, opacity = 0.1) => {
+    // Convert hex to RGB and return as rgba
+    const r = parseInt(hexColor.slice(1, 3), 16);
+    const g = parseInt(hexColor.slice(3, 5), 16);
+    const b = parseInt(hexColor.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
 
   // Helper function to get status-based styling
   const getStatusColor = (status) => {
@@ -152,26 +232,40 @@ export function TimelineCalendar({
           <div style={{ minWidth: `${dates.length * cellWidth}px` }}>
             {/* Date Header */}
             <div className="h-12 border-b bg-gray-100 flex">
-              {dates.map((date, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'border-r flex flex-col items-center justify-center text-xs',
-                    isSameDay(date, new Date()) && 'bg-blue-50 border-blue-300'
-                  )}
-                  style={{ width: `${cellWidth}px` }}
-                >
-                  <div className="font-semibold text-gray-700">
-                    {format(date, 'EEE', { locale: ptBR })}
+              {dates.map((date, index) => {
+                const holidayName = isHoliday(date);
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      'border-r flex flex-col items-center justify-center text-xs',
+                      isSameDay(date, new Date()) && 'bg-blue-50 border-blue-300',
+                      holidayName && 'bg-red-100 border-red-300'
+                    )}
+                    style={{ width: `${cellWidth}px` }}
+                    title={holidayName || undefined}
+                  >
+                    <div className={cn(
+                      'font-semibold text-gray-700',
+                      holidayName && 'text-red-700'
+                    )}>
+                      {format(date, 'EEE', { locale: ptBR })}
+                    </div>
+                    <div className={cn(
+                      'text-gray-600',
+                      isSameDay(date, new Date()) && 'text-blue-600 font-bold',
+                      holidayName && 'text-red-600 font-bold'
+                    )}>
+                      {format(date, 'dd/MM')}
+                    </div>
+                    {holidayName && (
+                      <div className="text-[8px] text-red-600 truncate max-w-full px-1">
+                        {holidayName}
+                      </div>
+                    )}
                   </div>
-                  <div className={cn(
-                    'text-gray-600',
-                    isSameDay(date, new Date()) && 'text-blue-600 font-bold'
-                  )}>
-                    {format(date, 'dd/MM')}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Grid Rows - One per Unit */}
@@ -179,25 +273,34 @@ export function TimelineCalendar({
               <div key={unit.id} className="relative h-20 border-b">
                 {/* Grid Cells */}
                 <div className="absolute inset-0 flex">
-                  {dates.map((date, index) => (
-                    <div
-                      key={index}
-                      className={cn(
-                        'border-r hover:bg-blue-50 cursor-pointer transition-colors relative group',
-                        isSameDay(date, new Date()) && 'bg-blue-50/50'
-                      )}
-                      style={{ width: `${cellWidth}px` }}
-                      onClick={() => onCellClick && onCellClick({
-                        unit_id: unit.id,
-                        check_in: format(date, 'yyyy-MM-dd'),
-                      })}
-                    >
-                      {/* Base Price Display */}
-                      <div className="absolute bottom-1 left-1 text-[10px] text-gray-400 group-hover:text-gray-600 group-hover:font-semibold transition-all">
-                        R$ {parseFloat(unit.base_price).toFixed(0)}
+                  {dates.map((date, index) => {
+                    const holidayName = isHoliday(date);
+                    // Apply light unit color to cells
+                    const cellBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.15);
+                    return (
+                      <div
+                        key={index}
+                        className={cn(
+                          'border-r hover:bg-blue-50 cursor-pointer transition-colors relative group',
+                          isSameDay(date, new Date()) && 'ring-2 ring-inset ring-blue-400',
+                          holidayName && 'ring-1 ring-inset ring-red-300'
+                        )}
+                        style={{ 
+                          width: `${cellWidth}px`,
+                          backgroundColor: holidayName ? `rgba(254, 202, 202, 0.3)` : cellBgColor
+                        }}
+                        onClick={() => onCellClick && onCellClick({
+                          unit_id: unit.id,
+                          check_in: format(date, 'yyyy-MM-dd'),
+                        })}
+                      >
+                        {/* Base Price Display */}
+                        <div className="absolute bottom-1 left-1 text-[10px] text-gray-400 group-hover:text-gray-600 group-hover:font-semibold transition-all">
+                          R$ {parseFloat(unit.base_price).toFixed(0)}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Reservation Bars */}

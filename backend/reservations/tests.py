@@ -100,7 +100,8 @@ class ReservationOverlapValidationTest(TestCase):
             overlapping_reservation.save()
         
         self.assertIn('check_in', context.exception.message_dict)
-        self.assertIn('already reserved', str(context.exception.message_dict['check_in']))
+        # Check for the friendly Portuguese conflict message
+        self.assertIn('conflitando', str(context.exception.message_dict['check_in']))
         
     def test_partial_overlap_at_start_fails(self):
         """Test that reservation starting during existing reservation is rejected."""

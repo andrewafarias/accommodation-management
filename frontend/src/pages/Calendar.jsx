@@ -4,13 +4,14 @@ import { Button } from '../components/ui/Button';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
-import { format, addDays, subDays } from 'date-fns';
+import { format, subDays, startOfMonth, addMonths, subMonths } from 'date-fns';
 import api from '../services/api';
 
 export function Calendar() {
   const [accommodations, setAccommodations] = useState([]);
   const [reservations, setReservations] = useState([]);
-  const [startDate, setStartDate] = useState(new Date());
+  // Start 2 days before today as per requirement
+  const [startDate, setStartDate] = useState(() => subDays(new Date(), 2));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,16 +44,19 @@ export function Calendar() {
     }
   };
 
-  const handlePrevious30Days = () => {
-    setStartDate(prevDate => subDays(prevDate, 30));
+  // Navigate to start of previous month (as per requirement)
+  const handlePreviousMonth = () => {
+    setStartDate(prevDate => startOfMonth(subMonths(prevDate, 1)));
   };
 
-  const handleNext30Days = () => {
-    setStartDate(prevDate => addDays(prevDate, 30));
+  // Navigate to start of next month (as per requirement)
+  const handleNextMonth = () => {
+    setStartDate(prevDate => startOfMonth(addMonths(prevDate, 1)));
   };
 
   const handleToday = () => {
-    setStartDate(new Date());
+    // Start 2 days before today as per requirement
+    setStartDate(subDays(new Date(), 2));
   };
 
   const handleCellClick = (data) => {
@@ -120,13 +124,13 @@ export function Calendar() {
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
             <Button
-              onClick={handlePrevious30Days}
+              onClick={handlePreviousMonth}
               variant="outline"
               size="sm"
               className="flex items-center"
             >
               <ChevronLeft className="w-4 h-4" />
-              Anterior
+              Mês Anterior
             </Button>
             
             <Button
@@ -138,12 +142,12 @@ export function Calendar() {
             </Button>
             
             <Button
-              onClick={handleNext30Days}
+              onClick={handleNextMonth}
               variant="outline"
               size="sm"
               className="flex items-center"
             >
-              Próximo
+              Próximo Mês
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>

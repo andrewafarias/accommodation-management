@@ -118,18 +118,17 @@ class Reservation(models.Model):
         )
         
         if overlapping.exists():
-            # Build detailed error message
+            # Build friendly error message (as per requirement)
             conflicts = []
             for reservation in overlapping:
                 conflicts.append(
-                    f"Conflict with reservation #{reservation.pk}: "
-                    f"{reservation.check_in.strftime('%d/%m/%Y %H:%M')} - "
-                    f"{reservation.check_out.strftime('%d/%m/%Y %H:%M')} "
-                    f"(Client: {reservation.client.full_name})"
+                    f"Esta reserva está conflitando com a de {reservation.client.full_name}, "
+                    f"entrada dia {reservation.check_in.strftime('%d/%m/%Y %H:%M')} e "
+                    f"saída {reservation.check_out.strftime('%d/%m/%Y %H:%M')}."
                 )
             
             raise ValidationError({
-                'check_in': 'This accommodation unit is already reserved for the selected dates. ' + '; '.join(conflicts)
+                'check_in': ' '.join(conflicts)
             })
     
     def save(self, *args, **kwargs):

@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { format } from 'date-fns';
 
@@ -17,6 +17,10 @@ export function DetailedFinancialModal({
   showAllDates
 }) {
   if (!isOpen) return null;
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -96,10 +100,10 @@ export function DetailedFinancialModal({
       {/* Modal */}
       <div className="relative bg-white rounded-lg shadow-xl w-full max-w-6xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-6 border-b">
+        <div className="sticky top-0 bg-white z-10 flex items-center justify-between p-6 border-b no-print">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Extrato Detalhado
+              Relatório Detalhado
             </h2>
             <p className="text-sm text-gray-600 mt-1">
               {showAllDates 
@@ -107,12 +111,18 @@ export function DetailedFinancialModal({
                 : `Período: ${formatDate(startDate)} a ${formatDate(endDate)}`}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

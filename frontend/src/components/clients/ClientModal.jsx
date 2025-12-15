@@ -62,35 +62,20 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     setErrors({});
   }, [client, isOpen]);
 
-  // Format CPF as user types (XXX.XXX.XXX-XX)
+  // Format CPF - store only digits (numbers only as per requirement)
   const formatCPF = (value) => {
-    // Remove all non-digits
+    // Remove all non-digits and limit to 11 characters
     const digits = value.replace(/\D/g, '');
-    
-    // Apply CPF mask
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
-    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+    return digits.slice(0, 11);
   };
 
-  // Format phone as user types (DD) XXXXX-XXXX or (DD) XXXX-XXXX
+  // Format phone - store only digits (numbers only as per requirement)
+  // Format: [international code] [ddd] [number] - e.g., 5511999998888
   const formatPhoneDisplay = (value) => {
     // Remove all non-digits
     const digits = value.replace(/\D/g, '');
-    
-    // Remove country code if present (55)
-    const localDigits = digits.startsWith('55') ? digits.slice(2) : digits;
-    
-    // Apply phone mask
-    if (localDigits.length <= 2) return localDigits;
-    if (localDigits.length <= 6) return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2)}`;
-    if (localDigits.length <= 10) {
-      // (DD) XXXX-XXXX format
-      return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 6)}-${localDigits.slice(6)}`;
-    }
-    // (DD) XXXXX-XXXX format (mobile with 9 digits)
-    return `(${localDigits.slice(0, 2)}) ${localDigits.slice(2, 7)}-${localDigits.slice(7, 11)}`;
+    // Limit to 13 digits (55 + 2 DDD + 9 number)
+    return digits.slice(0, 13);
   };
 
   // Convert phone from display format to international format (+5511999998888)
@@ -107,10 +92,18 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     return `+55${digits}`;
   };
 
-  // Validate CPF format
+  // Validate CPF format (must be only numbers, 11 digits)
   const isValidCPF = (cpf) => {
     const digits = cpf.replace(/\D/g, '');
     return digits.length === 11;
+  };
+
+  // Validate phone format (must be valid Brazilian phone: +55 DDD XXXXXXXX or XXXXXXXXX)
+  const isValidPhone = (phone) => {
+    const digits = phone.replace(/\D/g, '');
+    // Brazilian phone: country code (55) + DDD (2) + number (8 or 9)
+    // Total: 12-13 digits with country code, or 10-11 without
+    return (digits.length >= 10 && digits.length <= 13);
   };
 
   // Handle input changes
@@ -176,29 +169,31 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     const newErrors = {};
 
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Full name is required';
+      newErrors.full_name = 'Nome completo é obrigatório';
     }
 
     if (!formData.cpf.trim()) {
-      newErrors.cpf = 'CPF is required';
+      newErrors.cpf = 'CPF é obrigatório';
     } else if (!isValidCPF(formData.cpf)) {
-      newErrors.cpf = 'CPF must be 11 digits';
+      newErrors.cpf = 'CPF inválido';
     } else {
       // Check if CPF is unique (exclude current client when editing)
       const cpfExists = existingCpfs.some(
         existingCpf => existingCpf === formData.cpf && (!client || client.cpf !== formData.cpf)
       );
       if (cpfExists) {
-        newErrors.cpf = 'CPF already exists';
+        newErrors.cpf = 'CPF já cadastrado';
       }
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
+      newErrors.phone = 'Telefone é obrigatório';
+    } else if (!isValidPhone(formData.phone)) {
+      newErrors.phone = 'Número inválido';
     }
 
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
+      newErrors.email = 'E-mail inválido';
     }
 
     setErrors(newErrors);
@@ -302,11 +297,11 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 name="cpf"
                 value={formData.cpf}
                 onChange={handleChange}
-                maxLength={14}
+                maxLength={11}
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.cpf ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="XXX.XXX.XXX-XX"
+                placeholder="Somente números (11 dígitos)"
               />
               {errors.cpf && (
                 <p className="mt-1 text-sm text-red-500">{errors.cpf}</p>
@@ -318,7 +313,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
               {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone <span className="text-red-500">*</span>
+                  Telefone <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -328,7 +323,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                     errors.phone ? 'border-red-500' : 'border-gray-300'
                   }`}
-                  placeholder="+55 (XX) XXXXX-XXXX"
+                  placeholder="5511999998888"
                 />
                 {errors.phone && (
                   <p className="mt-1 text-sm text-red-500">{errors.phone}</p>

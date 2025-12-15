@@ -164,7 +164,7 @@ export function ReservationModal({
   const addBreakdownItem = () => {
     setFormData(prev => ({
       ...prev,
-      price_breakdown: [...prev.price_breakdown, { name: '', value: '' }]
+      price_breakdown: [...prev.price_breakdown, { name: '', value: '', quantity: 1 }]
     }));
   };
 
@@ -184,11 +184,22 @@ export function ReservationModal({
     }));
   };
 
+  // Calculate total considering quantity * unit value for each item
   const calculateBreakdownTotal = () => {
     return formData.price_breakdown.reduce((sum, item) => {
       const value = parseFloat(item.value) || 0;
-      return sum + value;
+      const quantity = parseFloat(item.quantity) || 1;
+      return sum + (value * quantity);
     }, 0);
+  };
+
+  // Insert breakdown total into total price field
+  const handleInsertBreakdownTotal = () => {
+    const total = calculateBreakdownTotal();
+    setFormData(prev => ({
+      ...prev,
+      total_price: total.toFixed(2)
+    }));
   };
 
   const handleCreateClient = async () => {
@@ -299,12 +310,13 @@ export function ReservationModal({
 
       // Add price_breakdown if items exist
       if (formData.price_breakdown && formData.price_breakdown.length > 0) {
-        // Filter out empty items and convert values to numbers
+        // Filter out empty items and convert values to numbers, include quantity
         payload.price_breakdown = formData.price_breakdown
           .filter(item => item.name && item.value)
           .map(item => ({
             name: item.name,
-            value: parseFloat(item.value)
+            value: parseFloat(item.value),
+            quantity: parseFloat(item.quantity) || 1
           }));
       }
 
@@ -634,41 +646,74 @@ export function ReservationModal({
               <p className="text-xs text-gray-500 italic">Nenhum item adicionado</p>
             ) : (
               <div className="space-y-2">
-                {formData.price_breakdown.map((item, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) => updateBreakdownItem(index, 'name', e.target.value)}
-                      placeholder="Nome (ex: Diária)"
-                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      value={item.value}
-                      onChange={(e) => updateBreakdownItem(index, 'value', e.target.value)}
-                      placeholder="Valor"
-                      min="0"
-                      step="0.01"
-                      className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeBreakdownItem(index)}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                      title="Remover"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                {/* Header for breakdown fields */}
+                <div className="flex gap-2 items-center text-xs text-gray-600 font-medium">
+                  <span className="flex-1">Nome</span>
+                  <span className="w-20 text-center">Qtd</span>
+                  <span className="w-28 text-center">Valor Unit.</span>
+                  <span className="w-24 text-center">Total</span>
+                  <span className="w-4"></span>
+                </div>
+                {formData.price_breakdown.map((item, index) => {
+                  const itemTotal = (parseFloat(item.value) || 0) * (parseFloat(item.quantity) || 1);
+                  return (
+                    <div key={index} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => updateBreakdownItem(index, 'name', e.target.value)}
+                        placeholder="Nome (ex: Diária)"
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        value={item.quantity || 1}
+                        onChange={(e) => updateBreakdownItem(index, 'quantity', e.target.value)}
+                        placeholder="Qtd"
+                        min="1"
+                        step="1"
+                        className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                      />
+                      <input
+                        type="number"
+                        value={item.value}
+                        onChange={(e) => updateBreakdownItem(index, 'value', e.target.value)}
+                        placeholder="Valor"
+                        min="0"
+                        step="0.01"
+                        className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <span className="w-24 text-sm text-gray-700 text-right">
+                        R$ {itemTotal.toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeBreakdownItem(index)}
+                        className="text-red-600 hover:text-red-800 text-xs w-4"
+                        title="Remover"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
                 
                 {formData.price_breakdown.length > 0 && (
                   <div className="flex justify-between items-center pt-2 border-t border-gray-300 mt-2">
                     <span className="text-sm font-medium text-gray-700">Subtotal:</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      R$ {calculateBreakdownTotal().toFixed(2)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        R$ {calculateBreakdownTotal().toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleInsertBreakdownTotal}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors"
+                        title="Inserir no preço total"
+                      >
+                        Usar como Total
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>

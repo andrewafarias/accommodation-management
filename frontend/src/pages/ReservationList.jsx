@@ -1,18 +1,26 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ReservationTable } from '../components/reservations/ReservationTable';
 import { ReservationModal } from '../components/reservations/ReservationModal';
 import { Calendar, Plus } from 'lucide-react';
+import { parseISO, getMonth, getYear } from 'date-fns';
 import api from '../services/api';
 
 export function ReservationList() {
   const [reservations, setReservations] = useState([]);
   const [accommodations, setAccommodations] = useState([]);
+  const [allAccommodations, setAllAccommodations] = useState([]); // Includes deleted units from reservations
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingReservation, setEditingReservation] = useState(null);
   const [sortBy, setSortBy] = useState('created_at'); // 'created_at' or 'check_in'
+  
+  // Filters
+  const [filterMonth, setFilterMonth] = useState('ALL');
+  const [filterYear, setFilterYear] = useState('ALL');
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterAccommodation, setFilterAccommodation] = useState('ALL');
 
   // Fetch reservations and accommodations on mount
   useEffect(() => {
@@ -32,12 +40,63 @@ export function ReservationList() {
       const accommodationsRes = await api.get('accommodations/');
       const accommodationsData = accommodationsRes.data.results || accommodationsRes.data;
       setAccommodations(accommodationsData);
+      
+      // Build list of all accommodations including deleted ones (from reservation data)
+      const accommodationMap = new Map();
+      accommodationsData.forEach(acc => accommodationMap.set(acc.id, acc));
+      reservationsData.forEach(res => {
+        if (res.accommodation_unit && !accommodationMap.has(res.accommodation_unit.id)) {
+          accommodationMap.set(res.accommodation_unit.id, {
+            ...res.accommodation_unit,
+            _deleted: true
+          });
+        }
+      });
+      setAllAccommodations(Array.from(accommodationMap.values()));
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Get available years from reservations
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    reservations.forEach(res => {
+      if (res.check_in) {
+        years.add(getYear(parseISO(res.check_in)));
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a);
+  }, [reservations]);
+
+  // Month options
+  const monthOptions = [
+    { value: 'ALL', label: 'Todos os Meses' },
+    { value: '0', label: 'Janeiro' },
+    { value: '1', label: 'Fevereiro' },
+    { value: '2', label: 'Março' },
+    { value: '3', label: 'Abril' },
+    { value: '4', label: 'Maio' },
+    { value: '5', label: 'Junho' },
+    { value: '6', label: 'Julho' },
+    { value: '7', label: 'Agosto' },
+    { value: '8', label: 'Setembro' },
+    { value: '9', label: 'Outubro' },
+    { value: '10', label: 'Novembro' },
+    { value: '11', label: 'Dezembro' },
+  ];
+
+  // Status options
+  const statusOptions = [
+    { value: 'ALL', label: 'Todos os Status' },
+    { value: 'PENDING', label: 'Pendente' },
+    { value: 'CONFIRMED', label: 'Confirmado' },
+    { value: 'CHECKED_IN', label: 'Check-in Feito' },
+    { value: 'CHECKED_OUT', label: 'Check-out Feito' },
+    { value: 'CANCELLED', label: 'Cancelado' },
+  ];
 
   // Handle opening modal for new reservation
   const handleNewReservation = () => {
@@ -86,15 +145,48 @@ export function ReservationList() {
     setEditingReservation(null);
   };
 
-  // Sort reservations based on selected criteria
-  const sortedReservations = [...reservations].sort((a, b) => {
-    if (sortBy === 'check_in') {
-      return new Date(a.check_in) - new Date(b.check_in);
-    } else {
-      // Sort by created_at (newest first)
-      return new Date(b.created_at) - new Date(a.created_at);
+  // Filter and sort reservations based on selected criteria
+  const filteredAndSortedReservations = useMemo(() => {
+    let filtered = [...reservations];
+    
+    // Filter by month
+    if (filterMonth !== 'ALL') {
+      filtered = filtered.filter(res => {
+        if (!res.check_in) return false;
+        return getMonth(parseISO(res.check_in)) === parseInt(filterMonth);
+      });
     }
-  });
+    
+    // Filter by year
+    if (filterYear !== 'ALL') {
+      filtered = filtered.filter(res => {
+        if (!res.check_in) return false;
+        return getYear(parseISO(res.check_in)) === parseInt(filterYear);
+      });
+    }
+    
+    // Filter by status
+    if (filterStatus !== 'ALL') {
+      filtered = filtered.filter(res => res.status === filterStatus);
+    }
+    
+    // Filter by accommodation (including deleted)
+    if (filterAccommodation !== 'ALL') {
+      filtered = filtered.filter(res => 
+        res.accommodation_unit?.id === parseInt(filterAccommodation)
+      );
+    }
+    
+    // Sort
+    return filtered.sort((a, b) => {
+      if (sortBy === 'check_in') {
+        return new Date(a.check_in) - new Date(b.check_in);
+      } else {
+        // Sort by created_at (newest first)
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+    });
+  }, [reservations, filterMonth, filterYear, filterStatus, filterAccommodation, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -107,35 +199,99 @@ export function ReservationList() {
         </Button>
       </div>
 
-      {/* Reservation List Card */}
+      {/* Filter Controls */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              <Calendar className="w-6 h-6 mr-2" />
-              Lista de Reservas
-            </CardTitle>
-            
-            {/* Sort Dropdown */}
-            <div className="flex items-center space-x-2">
-              <label htmlFor="sort-by" className="text-sm font-medium text-gray-700">
-                Ordenar por:
-              </label>
+        <CardContent className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Month Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
               <select
-                id="sort-by"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {monthOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Year Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ano</label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Todos os Anos</option>
+                {availableYears.map(year => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {statusOptions.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Accommodation Filter (includes deleted ones) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Acomodação</label>
+              <select
+                value={filterAccommodation}
+                onChange={(e) => setFilterAccommodation(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="ALL">Todas as Acomodações</option>
+                {allAccommodations.map(acc => (
+                  <option key={acc.id} value={acc.id}>
+                    {acc.name} {acc._deleted ? '(Deletada)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Sort By */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ordenar por</label>
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="created_at">Data de Criação</option>
                 <option value="check_in">Data de Check-in</option>
               </select>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Reservation List Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center">
+              <Calendar className="w-6 h-6 mr-2" />
+              Lista de Reservas ({filteredAndSortedReservations.length} de {reservations.length})
+            </CardTitle>
+          </div>
         </CardHeader>
         <CardContent>
           <ReservationTable
-            reservations={sortedReservations}
+            reservations={filteredAndSortedReservations}
             onEdit={handleEdit}
             onDelete={handleDelete}
             loading={loading}
