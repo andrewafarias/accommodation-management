@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, addDays, startOfDay, isSameDay, parseISO, getYear } from 'date-fns';
+import { format, addDays, startOfDay, isSameDay, parseISO, getYear, isWeekend, isFriday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 
@@ -71,7 +71,9 @@ export function TimelineCalendar({
   daysToShow = 30,
   onCellClick,
   onReservationClick,
-  dateSelection = null
+  dateSelection = null,
+  customPrices = {},
+  getPackageForDate = () => null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -135,6 +137,32 @@ export function TimelineCalendar({
     const g = parseInt(hexColor.slice(3, 5), 16);
     const b = parseInt(hexColor.slice(5, 7), 16);
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+  };
+
+  // Helper function to get the appropriate price for a date (custom > holiday > weekend > base)
+  const getPriceForDate = (date, unit) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    const customPriceKey = `${unit.id}-${dateStr}`;
+    
+    // Custom price takes highest precedence
+    if (customPrices[customPriceKey] !== undefined) {
+      return { price: customPrices[customPriceKey], type: 'custom' };
+    }
+    
+    const holidayName = isHoliday(date);
+    
+    // Holiday price takes precedence
+    if (holidayName && unit.holiday_price) {
+      return { price: parseFloat(unit.holiday_price), type: 'holiday' };
+    }
+    
+    // Weekend price (Friday, Saturday, Sunday) - common in Brazilian accommodation pricing
+    if ((isWeekend(date) || isFriday(date)) && unit.weekend_price) {
+      return { price: parseFloat(unit.weekend_price), type: 'weekend' };
+    }
+    
+    // Default to base price
+    return { price: parseFloat(unit.base_price), type: 'base' };
   };
 
   // Helper function to get status-based styling
@@ -284,7 +312,7 @@ export function TimelineCalendar({
                       isSameDay(date, new Date()) && 'text-blue-600 font-bold',
                       holidayName && 'text-red-600 font-bold'
                     )}>
-                      {format(date, 'dd/MM')}
+                      {format(date, 'dd/MM/yy')}
                     </div>
                     {holidayName && (
                       <div className="text-[8px] text-red-600 truncate max-w-full px-1">
@@ -327,10 +355,36 @@ export function TimelineCalendar({
                           check_in: format(date, 'yyyy-MM-dd'),
                         })}
                       >
-                        {/* Base Price Display */}
-                        <div className="absolute bottom-1 left-1 text-[10px] text-gray-400 group-hover:text-gray-600 group-hover:font-semibold transition-all">
-                          R$ {parseFloat(unit.base_price).toFixed(0)}
-                        </div>
+                        {/* Package Indicator */}
+                        {(() => {
+                          const pkg = getPackageForDate(unit.id, date);
+                          if (pkg) {
+                            return (
+                              <div 
+                                className="absolute top-0 left-0 right-0 h-1.5"
+                                style={{ backgroundColor: pkg.color }}
+                                title={pkg.name}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                        
+                        {/* Price Display - shows custom/holiday/weekend/base price accordingly */}
+                        {(() => {
+                          const priceInfo = getPriceForDate(date, unit);
+                          return (
+                            <div className={cn(
+                              "absolute bottom-1 left-1 text-[10px] group-hover:font-semibold transition-all",
+                              priceInfo.type === 'custom' && 'text-purple-600 font-bold',
+                              priceInfo.type === 'holiday' && 'text-red-500 font-medium',
+                              priceInfo.type === 'weekend' && 'text-orange-500 font-medium',
+                              priceInfo.type === 'base' && 'text-gray-400 group-hover:text-gray-600'
+                            )}>
+                              R$ {priceInfo.price.toFixed(0)}
+                            </div>
+                          );
+                        })()}
                       </div>
                     );
                   })}

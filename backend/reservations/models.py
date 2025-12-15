@@ -152,8 +152,8 @@ class Reservation(models.Model):
             for reservation in overlapping:
                 conflicts.append(
                     f"Esta reserva está conflitando com a de {reservation.client.full_name}, "
-                    f"entrada dia {reservation.check_in.strftime('%d/%m/%Y %H:%M')} e "
-                    f"saída {reservation.check_out.strftime('%d/%m/%Y %H:%M')}."
+                    f"check-in {reservation.check_in.strftime('%d/%m/%y %H:%M')} e "
+                    f"check-out {reservation.check_out.strftime('%d/%m/%y %H:%M')}."
                 )
             
             raise ValidationError({
