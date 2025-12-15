@@ -423,11 +423,16 @@ export function ReservationModal({
 
       // Check for tight turnaround warning
       if (response.data.warning) {
-        // Show warning as in-site panel instead of browser alert
+        // Show warning as in-site panel - don't close modal yet
         setWarning(response.data.warning);
+        // Still call onSave to refresh data but the modal stays open for user to see warning
+        if (onSave) {
+          await onSave(response.data, true); // Pass true to indicate warning present
+        }
+        return; // Don't close modal - let user see the warning
       }
 
-      // Call the onSave callback with the new/updated reservation
+      // No warning - Call the onSave callback with the new/updated reservation
       if (onSave) {
         await onSave(response.data);
       }

@@ -150,13 +150,15 @@ export function Calendar() {
     handleClearSelection();
   };
 
-  const handleReservationSave = async () => {
+  const handleReservationSave = async (data, hasWarning = false) => {
     // Refresh calendar data after saving
     await fetchCalendarData();
-    // Close modal
-    setModalOpen(false);
-    setSelectedReservation(null);
-    setPrefilledData({});
+    // Only close modal if there's no warning to show
+    if (!hasWarning) {
+      setModalOpen(false);
+      setSelectedReservation(null);
+      setPrefilledData({});
+    }
   };
 
   const handleReservationDelete = async () => {

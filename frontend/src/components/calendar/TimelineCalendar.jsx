@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, addDays, startOfDay, isSameDay, parseISO, getYear, isWeekend } from 'date-fns';
+import { format, addDays, startOfDay, isSameDay, parseISO, getYear, isWeekend, isFriday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 
@@ -156,8 +156,8 @@ export function TimelineCalendar({
       return { price: parseFloat(unit.holiday_price), type: 'holiday' };
     }
     
-    // Weekend price (Friday, Saturday, Sunday)
-    if (isWeekend(date) && unit.weekend_price) {
+    // Weekend price (Friday, Saturday, Sunday) - common in Brazilian accommodation pricing
+    if ((isWeekend(date) || isFriday(date)) && unit.weekend_price) {
       return { price: parseFloat(unit.weekend_price), type: 'weekend' };
     }
     
