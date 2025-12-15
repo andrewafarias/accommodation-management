@@ -3,6 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.db import transaction
 from django.db.models import Q, Value, CharField
 from django.db.models.functions import Replace
 from .models import Client, DocumentAttachment
@@ -102,13 +103,22 @@ class ClientViewSet(viewsets.ModelViewSet):
     def remove_document(self, request, pk=None, document_id=None):
         """
         Remove a document attachment from a client.
+        Uses transaction to ensure both file and database record are deleted together.
         """
         client = self.get_object()
         
         try:
             document = DocumentAttachment.objects.get(id=document_id, client=client)
-            document.file.delete()  # Delete the file from storage
-            document.delete()  # Delete the database record
+            
+            # Use transaction to ensure atomicity
+            with transaction.atomic():
+                # Store file reference before deletion
+                file_field = document.file
+                # Delete the database record first
+                document.delete()
+                # Then delete the file from storage
+                file_field.delete(save=False)
+                
             return Response(status=status.HTTP_204_NO_CONTENT)
         except DocumentAttachment.DoesNotExist:
             return Response(
