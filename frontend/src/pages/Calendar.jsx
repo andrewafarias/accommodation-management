@@ -321,13 +321,14 @@ export function Calendar() {
       // Keep packages that don't overlap with the selection
       if (pkg.unitId !== dateSelection.unitId) return true;
       
-      // Check if package overlaps with selection
+      // Ensure dates are in the same format for comparison
       const pkgStart = pkg.startDate;
       const pkgEnd = pkg.endDate;
       const selStart = dateSelection.startDate;
       const selEnd = dateSelection.endDate;
       
       // No overlap if package ends before selection starts or starts after selection ends
+      // Using string comparison since all dates are in 'yyyy-MM-dd' format
       if (pkgEnd < selStart || pkgStart > selEnd) return true;
       
       // There is overlap, so remove this package
