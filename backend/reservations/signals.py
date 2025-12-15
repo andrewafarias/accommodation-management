@@ -83,7 +83,7 @@ def create_financial_transaction(sender, instance, created, **kwargs):
                 category=Transaction.LODGING,
                 payment_method=Transaction.PIX,  # Default, can be changed later
                 due_date=instance.check_in.date(),
-                description=f"Reserva #{instance.pk} - {instance.accommodation_unit.name} - {instance.client.full_name}",
+                description=f"Reserva nº {instance.pk} dos dias {instance.check_in.strftime('%d/%m/%y')} até {instance.check_out.strftime('%d/%m/%y')} de {instance.client.full_name} em {instance.accommodation_unit.name}",
                 # Auto-mark as paid if reservation is fully paid
                 paid_date=date.today() if instance.is_fully_paid else None
             )

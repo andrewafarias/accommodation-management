@@ -241,3 +241,26 @@ class ReservationSignalTest(TestCase):
         transaction = transactions.first()
         self.assertEqual(transaction.transaction_type, Transaction.INCOME)
         self.assertEqual(transaction.amount, Decimal("1000.00"))
+    
+    def test_transaction_description_format(self):
+        """Test that transaction description follows the required format"""
+        # Create a reservation with known dates
+        check_in = timezone.datetime(2025, 12, 20, 14, 0, 0, tzinfo=timezone.get_current_timezone())
+        check_out = timezone.datetime(2025, 12, 22, 10, 0, 0, tzinfo=timezone.get_current_timezone())
+        
+        reservation = Reservation.objects.create(
+            client=self.client,
+            accommodation_unit=self.unit,
+            check_in=check_in,
+            check_out=check_out,
+            status=Reservation.CONFIRMED,
+            total_price=Decimal("1000.00")
+        )
+        
+        # Get the created transaction
+        transaction = Transaction.objects.filter(reservation=reservation).first()
+        self.assertIsNotNone(transaction)
+        
+        # Expected format: "Reserva nº [id] dos dias xx/xx/xx até yy/yy/yy de [Nome do cliente] em [Nome da unidade]"
+        expected_description = f"Reserva nº {reservation.pk} dos dias 20/12/25 até 22/12/25 de Test Client em Test Unit"
+        self.assertEqual(transaction.description, expected_description)
