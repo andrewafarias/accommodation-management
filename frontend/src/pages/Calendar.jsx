@@ -1,22 +1,28 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
-import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears, parseISO, eachDayOfInterval } from 'date-fns';
+import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears, parseISO, eachDayOfInterval, startOfDay } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import api from '../services/api';
 
 export function Calendar() {
   const [accommodations, setAccommodations] = useState([]);
   const [reservations, setReservations] = useState([]);
-  // Start on current date (will be scrolled to in the calendar)
-  const [startDate, setStartDate] = useState(() => startOfMonth(new Date()));
+  // Start date for the calendar (3 months before today) - fixed, doesn't change
+  const startDate = useMemo(() => startOfMonth(subMonths(new Date(), 3)), []);
+  // Currently visible month/year in the calendar header
+  const [visibleDate, setVisibleDate] = useState(() => new Date());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [prefilledData, setPrefilledData] = useState({});
+  
+  // Reference to the timeline scroll container
+  const timelineScrollRef = useRef(null);
   
   // Price override modal state
   const [priceModalOpen, setPriceModalOpen] = useState(false);
@@ -27,6 +33,7 @@ export function Calendar() {
   const [packageModalOpen, setPackageModalOpen] = useState(false);
   const [packages, setPackages] = useState([]); // { id, name, color, unitId, startDate, endDate }
   const [newPackageData, setNewPackageData] = useState({ name: '', color: '#FF5733' });
+  const [selectedPackageId, setSelectedPackageId] = useState(null);
   
   // Date range selection state
   const [dateSelection, setDateSelection] = useState({
@@ -35,10 +42,21 @@ export function Calendar() {
     endDate: null,
     isSelecting: false
   });
+  
+  // Cell width constant (must match TimelineCalendar)
+  const cellWidth = 120;
 
   useEffect(() => {
     fetchCalendarData();
   }, []);
+  
+  // Scroll to today's date when component mounts and data is loaded
+  useEffect(() => {
+    if (!loading && timelineScrollRef.current) {
+      scrollToToday();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
 
   const fetchCalendarData = async () => {
     try {
@@ -64,17 +82,51 @@ export function Calendar() {
 
   // Navigate to start of previous month (as per requirement)
   const handlePreviousMonth = () => {
-    setStartDate(prevDate => startOfMonth(subMonths(prevDate, 1)));
+    setVisibleDate(prevDate => subMonths(prevDate, 1));
   };
 
   // Navigate to start of next month (as per requirement)
   const handleNextMonth = () => {
-    setStartDate(prevDate => startOfMonth(addMonths(prevDate, 1)));
+    setVisibleDate(prevDate => addMonths(prevDate, 1));
   };
+  
+  // Scroll the timeline by a fixed amount
+  const handleScrollLeft = () => {
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollBy({ left: -cellWidth * 7, behavior: 'smooth' });
+    }
+  };
+  
+  const handleScrollRight = () => {
+    if (timelineScrollRef.current) {
+      timelineScrollRef.current.scrollBy({ left: cellWidth * 7, behavior: 'smooth' });
+    }
+  };
+  
+  // Calculate days from start date to today
+  const getDaysToToday = useCallback(() => {
+    const start = startOfDay(startDate);
+    const today = startOfDay(new Date());
+    return differenceInDays(today, start);
+  }, [startDate]);
+  
+  // Scroll to today's date
+  const scrollToToday = useCallback(() => {
+    if (timelineScrollRef.current) {
+      const daysToToday = getDaysToToday();
+      const scrollPosition = daysToToday * cellWidth;
+      // Center today in the viewport
+      const containerWidth = timelineScrollRef.current.clientWidth;
+      const centeredPosition = scrollPosition - (containerWidth / 2) + (cellWidth / 2);
+      timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
+    }
+  }, [getDaysToToday, cellWidth]);
 
   const handleToday = () => {
-    // Center calendar on current month
-    setStartDate(startOfMonth(new Date()));
+    // Update visible date to today's month
+    setVisibleDate(new Date());
+    // Scroll to today
+    scrollToToday();
   };
   
   // Calculate days to show: from 3 months back to 2 years forward
@@ -189,9 +241,32 @@ export function Calendar() {
     setNewPriceData({ price: '' });
   };
 
-  // Handle creating a package for selected date range
+  // Handle creating or applying a package for selected date range
   const handleCreatePackage = () => {
     if (!dateSelection.startDate || !dateSelection.endDate || !dateSelection.unitId) return;
+    
+    // If a recent package is selected, apply it to the new date range
+    if (selectedPackageId) {
+      const selectedPkg = packages.find(p => p.id === selectedPackageId);
+      if (selectedPkg) {
+        const newPackage = {
+          id: Date.now(),
+          name: selectedPkg.name,
+          color: selectedPkg.color,
+          unitId: dateSelection.unitId,
+          startDate: dateSelection.startDate,
+          endDate: dateSelection.endDate,
+          createdAt: new Date().toISOString()
+        };
+        setPackages(prev => [...prev, newPackage]);
+        setPackageModalOpen(false);
+        setSelectedPackageId(null);
+        setNewPackageData({ name: '', color: '#FF5733' });
+        return;
+      }
+    }
+    
+    // Otherwise, create a new package
     if (!newPackageData.name.trim()) return;
     
     // Create new package - newer packages override older ones in case of conflict
@@ -208,6 +283,25 @@ export function Calendar() {
     setPackages(prev => [...prev, newPackage]);
     setPackageModalOpen(false);
     setNewPackageData({ name: '', color: '#FF5733' });
+    setSelectedPackageId(null);
+  };
+  
+  // Get the 5 most recent unique packages (by name)
+  const getRecentPackages = () => {
+    const uniquePackages = [];
+    const seenNames = new Set();
+    
+    // Sort by createdAt descending, then take unique names
+    const sorted = [...packages].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    for (const pkg of sorted) {
+      if (!seenNames.has(pkg.name) && uniquePackages.length < 5) {
+        seenNames.add(pkg.name);
+        uniquePackages.push(pkg);
+      }
+    }
+    
+    return uniquePackages;
   };
 
   // Get package for a specific date and unit (newer packages take precedence)
@@ -288,7 +382,7 @@ export function Calendar() {
           </div>
           
           <div className="text-sm font-medium text-gray-700 bg-gray-100 px-4 py-2 rounded-lg">
-            Início: {format(startDate, 'dd/MM/yyyy')}
+            {format(visibleDate, 'MMMM yyyy', { locale: ptBR })}
           </div>
         </div>
       </div>
@@ -296,10 +390,34 @@ export function Calendar() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center">
-              <CalendarIcon className="w-6 h-6 mr-2" />
-              Timeline View
-            </CardTitle>
+            <div className="flex items-center">
+              {/* Left scroll button */}
+              <Button
+                onClick={handleScrollLeft}
+                variant="outline"
+                size="sm"
+                className="mr-2"
+                title="Rolar para esquerda"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <CardTitle className="flex items-center">
+                <CalendarIcon className="w-6 h-6 mr-2" />
+                {format(visibleDate, 'MMMM yyyy', { locale: ptBR }).charAt(0).toUpperCase() + format(visibleDate, 'MMMM yyyy', { locale: ptBR }).slice(1)}
+              </CardTitle>
+              
+              {/* Right scroll button */}
+              <Button
+                onClick={handleScrollRight}
+                variant="outline"
+                size="sm"
+                className="ml-2"
+                title="Rolar para direita"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
             
             {/* Selection Actions */}
             <div className="flex items-center space-x-2">
@@ -377,6 +495,8 @@ export function Calendar() {
               dateSelection={dateSelection}
               customPrices={customPrices}
               getPackageForDate={getPackageForDate}
+              scrollRef={timelineScrollRef}
+              onVisibleDateChange={setVisibleDate}
             />
           )}
         </CardContent>
@@ -450,21 +570,71 @@ export function Calendar() {
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div 
             className="absolute inset-0 bg-black bg-opacity-50"
-            onClick={() => setPackageModalOpen(false)}
+            onClick={() => {
+              setPackageModalOpen(false);
+              setSelectedPackageId(null);
+            }}
           />
           <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">Criar Pacote</h2>
               <button
-                onClick={() => setPackageModalOpen(false)}
+                onClick={() => {
+                  setPackageModalOpen(false);
+                  setSelectedPackageId(null);
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Crie um pacote para agrupar as datas selecionadas. Pacotes mais recentes sobrepõem os antigos em caso de conflito.
+              Selecione um pacote recente ou crie um novo para agrupar as datas selecionadas.
             </p>
+            
+            {/* Recent packages list */}
+            {getRecentPackages().length > 0 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Pacotes Recentes
+                </label>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {getRecentPackages().map(pkg => (
+                    <div
+                      key={pkg.id}
+                      onClick={() => {
+                        setSelectedPackageId(pkg.id);
+                        setNewPackageData({ name: '', color: '#FF5733' });
+                      }}
+                      className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${
+                        selectedPackageId === pkg.id 
+                          ? 'border-purple-500 bg-purple-50' 
+                          : 'border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-full mr-3 flex-shrink-0"
+                        style={{ backgroundColor: pkg.color }}
+                      />
+                      <span className="text-sm text-gray-700 flex-1">{pkg.name}</span>
+                      {selectedPackageId === pkg.id && (
+                        <span className="text-xs text-purple-600 font-medium">Selecionado</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Divider if there are recent packages */}
+            {getRecentPackages().length > 0 && (
+              <div className="flex items-center mb-4">
+                <div className="flex-1 border-t border-gray-200"></div>
+                <span className="px-3 text-xs text-gray-500">ou crie um novo</span>
+                <div className="flex-1 border-t border-gray-200"></div>
+              </div>
+            )}
+            
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nome do Pacote
@@ -472,7 +642,10 @@ export function Calendar() {
               <input
                 type="text"
                 value={newPackageData.name}
-                onChange={(e) => setNewPackageData(prev => ({ ...prev, name: e.target.value }))}
+                onChange={(e) => {
+                  setNewPackageData(prev => ({ ...prev, name: e.target.value }));
+                  setSelectedPackageId(null); // Clear selection when typing new name
+                }}
                 placeholder="Ex: Natal 2025, Carnaval, etc."
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
@@ -487,22 +660,27 @@ export function Calendar() {
                   value={newPackageData.color}
                   onChange={(e) => setNewPackageData(prev => ({ ...prev, color: e.target.value }))}
                   className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
+                  disabled={!!selectedPackageId}
                 />
-                <span className="text-sm text-gray-600">{newPackageData.color}</span>
+                <span className="text-sm text-gray-600">{selectedPackageId ? 'Usando cor do pacote selecionado' : newPackageData.color}</span>
               </div>
             </div>
             <div className="flex justify-end space-x-2">
               <Button
                 variant="outline"
-                onClick={() => setPackageModalOpen(false)}
+                onClick={() => {
+                  setPackageModalOpen(false);
+                  setSelectedPackageId(null);
+                }}
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleCreatePackage}
                 className="bg-purple-600 hover:bg-purple-700"
+                disabled={!selectedPackageId && !newPackageData.name.trim()}
               >
-                Criar Pacote
+                {selectedPackageId ? 'Aplicar Pacote' : 'Criar Pacote'}
               </Button>
             </div>
           </div>
