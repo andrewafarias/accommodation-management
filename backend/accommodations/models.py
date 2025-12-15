@@ -71,6 +71,18 @@ class AccommodationUnit(models.Model):
         help_text="Timestamp of when the unit was last cleaned"
     )
     
+    # Custom check-in/out times per unit
+    default_check_in_time = models.TimeField(
+        default='14:00',
+        verbose_name="Default Check-in Time",
+        help_text="Default check-in time for this unit (e.g., 14:00)"
+    )
+    default_check_out_time = models.TimeField(
+        default='12:00',
+        verbose_name="Default Check-out Time",
+        help_text="Default check-out time for this unit (e.g., 12:00)"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -81,4 +93,3 @@ class AccommodationUnit(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_type_display()})"
-

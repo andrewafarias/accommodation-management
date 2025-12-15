@@ -5,7 +5,8 @@ import { TransactionTable } from '../components/financials/TransactionTable';
 import { TransactionModal } from '../components/financials/TransactionModal';
 import { FinancialReport } from '../components/financials/FinancialReport';
 import { DetailedFinancialModal } from '../components/financials/DetailedFinancialModal';
-import { Plus, TrendingUp, TrendingDown, DollarSign, Printer, FileText } from 'lucide-react';
+import { GroupedFinancialModal } from '../components/financials/GroupedFinancialModal';
+import { Plus, TrendingUp, TrendingDown, DollarSign, FileText, BarChart3 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import api from '../services/api';
 
@@ -15,9 +16,11 @@ export function Financials() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailedModalOpen, setIsDetailedModalOpen] = useState(false);
+  const [isGroupedModalOpen, setIsGroupedModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [showAllDates, setShowAllDates] = useState(false);
+  // Default to show all dates (as per requirement: "O padrão do financeiro deve ser ver tudo")
+  const [showAllDates, setShowAllDates] = useState(true);
   
   // Date range state - default to current month
   const [startDate, setStartDate] = useState(() => 
@@ -145,10 +148,6 @@ export function Financials() {
     }).format(amount);
   };
 
-  const handlePrintReport = () => {
-    window.print();
-  };
-
   const filterButtons = [
     { id: 'ALL', label: 'Todas' },
     { id: 'INCOME', label: 'Receitas' },
@@ -191,11 +190,11 @@ export function Financials() {
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)}>
               <FileText className="w-4 h-4 mr-2" />
-              Extrato Detalhado
+              Relatório Detalhado
             </Button>
-            <Button variant="outline" onClick={handlePrintReport}>
-              <Printer className="w-4 h-4 mr-2" />
-              Imprimir Relatório
+            <Button variant="outline" onClick={() => setIsGroupedModalOpen(true)}>
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Relatório Agrupado
             </Button>
             <Button onClick={() => setIsModalOpen(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -370,6 +369,16 @@ export function Financials() {
       <DetailedFinancialModal
         isOpen={isDetailedModalOpen}
         onClose={() => setIsDetailedModalOpen(false)}
+        transactions={transactions}
+        startDate={startDate}
+        endDate={endDate}
+        showAllDates={showAllDates}
+      />
+
+      {/* Grouped Financial Modal */}
+      <GroupedFinancialModal
+        isOpen={isGroupedModalOpen}
+        onClose={() => setIsGroupedModalOpen(false)}
         transactions={transactions}
         startDate={startDate}
         endDate={endDate}

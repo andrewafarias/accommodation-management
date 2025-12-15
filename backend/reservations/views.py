@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
@@ -39,6 +39,41 @@ class ReservationViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(check_in__lte=check_in_end)
         
         return queryset
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to include tight turnaround warning in response.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Build response data with potential warning
+        response_data = serializer.data
+        warning = serializer.context.get('tight_turnaround_warning')
+        if warning:
+            response_data['warning'] = warning
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(response_data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def update(self, request, *args, **kwargs):
+        """
+        Override update to include tight turnaround warning in response.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # Build response data with potential warning
+        response_data = serializer.data
+        warning = serializer.context.get('tight_turnaround_warning')
+        if warning:
+            response_data['warning'] = warning
+        
+        return Response(response_data)
     
     @action(detail=False, methods=['get'])
     def check_availability(self, request):

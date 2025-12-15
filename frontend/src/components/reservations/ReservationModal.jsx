@@ -29,6 +29,7 @@ export function ReservationModal({
     guest_count_children: 0,
     total_price: '',
     price_breakdown: [],
+    amount_paid: 0,
     status: 'PENDING',
   });
   
@@ -43,6 +44,7 @@ export function ReservationModal({
     phone: '',
     email: '',
   });
+  const [newPayment, setNewPayment] = useState('');
   
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
@@ -98,6 +100,8 @@ export function ReservationModal({
           guest_count_children: reservation.guest_count_children || 0,
           total_price: reservation.total_price || '',
           price_breakdown: reservation.price_breakdown || [],
+          amount_paid: reservation.amount_paid || 0,
+          payment_history: reservation.payment_history || [],
           status: reservation.status || 'PENDING',
         });
         setClientSearchTerm(reservation.client?.full_name || '');
@@ -114,11 +118,14 @@ export function ReservationModal({
           guest_count_children: 0,
           total_price: '',
           price_breakdown: [],
+          amount_paid: 0,
+          payment_history: [],
           status: 'PENDING',
         });
         setClientSearchTerm('');
       }
       setError(null);
+      setNewPayment('');
     } else if (!isOpen) {
       // Reset when modal closes
       initializedRef.current = false;
@@ -127,6 +134,22 @@ export function ReservationModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // If accommodation unit is changed, apply default check-in/out times
+    if (name === 'accommodation_unit' && value) {
+      const selectedUnit = units.find(u => u.id === parseInt(value));
+      if (selectedUnit) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          // Only apply defaults if times haven't been modified by user
+          check_in_time: selectedUnit.default_check_in_time?.substring(0, 5) || prev.check_in_time,
+          check_out_time: selectedUnit.default_check_out_time?.substring(0, 5) || prev.check_out_time,
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -164,7 +187,7 @@ export function ReservationModal({
   const addBreakdownItem = () => {
     setFormData(prev => ({
       ...prev,
-      price_breakdown: [...prev.price_breakdown, { name: '', value: '' }]
+      price_breakdown: [...prev.price_breakdown, { name: '', value: '', quantity: 1 }]
     }));
   };
 
@@ -184,11 +207,50 @@ export function ReservationModal({
     }));
   };
 
+  // Calculate total considering quantity * unit value for each item
   const calculateBreakdownTotal = () => {
     return formData.price_breakdown.reduce((sum, item) => {
       const value = parseFloat(item.value) || 0;
-      return sum + value;
+      const quantity = parseFloat(item.quantity) || 1;
+      return sum + (value * quantity);
     }, 0);
+  };
+
+  // Insert breakdown total into total price field
+  const handleInsertBreakdownTotal = () => {
+    const total = calculateBreakdownTotal();
+    setFormData(prev => ({
+      ...prev,
+      total_price: total.toFixed(2)
+    }));
+  };
+
+  // Add payment to pool
+  const handleAddPayment = () => {
+    const paymentAmount = parseFloat(newPayment);
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      return;
+    }
+    
+    const newPaymentEntry = {
+      date: new Date().toISOString(),
+      amount: paymentAmount,
+      method: 'PIX' // Default payment method
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      amount_paid: (parseFloat(prev.amount_paid) || 0) + paymentAmount,
+      payment_history: [...(prev.payment_history || []), newPaymentEntry]
+    }));
+    setNewPayment('');
+  };
+
+  // Calculate remaining amount
+  const calculateRemainingAmount = () => {
+    const total = parseFloat(formData.total_price) || 0;
+    const paid = parseFloat(formData.amount_paid) || 0;
+    return Math.max(0, total - paid);
   };
 
   const handleCreateClient = async () => {
@@ -290,6 +352,8 @@ export function ReservationModal({
         guest_count_adults: parseInt(formData.guest_count_adults, 10),
         guest_count_children: parseInt(formData.guest_count_children, 10),
         status: formData.status,
+        amount_paid: parseFloat(formData.amount_paid) || 0,
+        payment_history: formData.payment_history || [],
       };
       
       // Add total_price if provided (convert to number)
@@ -299,12 +363,13 @@ export function ReservationModal({
 
       // Add price_breakdown if items exist
       if (formData.price_breakdown && formData.price_breakdown.length > 0) {
-        // Filter out empty items and convert values to numbers
+        // Filter out empty items and convert values to numbers, include quantity
         payload.price_breakdown = formData.price_breakdown
           .filter(item => item.name && item.value)
           .map(item => ({
             name: item.name,
-            value: parseFloat(item.value)
+            value: parseFloat(item.value),
+            quantity: parseFloat(item.quantity) || 1
           }));
       }
 
@@ -315,6 +380,12 @@ export function ReservationModal({
       } else {
         // Create new reservation
         response = await api.post('reservations/', payload);
+      }
+
+      // Check for tight turnaround warning
+      if (response.data.warning) {
+        // Show warning but don't block the save - reservation was created
+        window.alert(response.data.warning);
       }
 
       // Call the onSave callback with the new/updated reservation
@@ -634,41 +705,74 @@ export function ReservationModal({
               <p className="text-xs text-gray-500 italic">Nenhum item adicionado</p>
             ) : (
               <div className="space-y-2">
-                {formData.price_breakdown.map((item, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={item.name}
-                      onChange={(e) => updateBreakdownItem(index, 'name', e.target.value)}
-                      placeholder="Nome (ex: Diária)"
-                      className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <input
-                      type="number"
-                      value={item.value}
-                      onChange={(e) => updateBreakdownItem(index, 'value', e.target.value)}
-                      placeholder="Valor"
-                      min="0"
-                      step="0.01"
-                      className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeBreakdownItem(index)}
-                      className="text-red-600 hover:text-red-800 text-xs"
-                      title="Remover"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
+                {/* Header for breakdown fields */}
+                <div className="flex gap-2 items-center text-xs text-gray-600 font-medium">
+                  <span className="flex-1">Nome</span>
+                  <span className="w-20 text-center">Qtd</span>
+                  <span className="w-28 text-center">Valor Unit.</span>
+                  <span className="w-24 text-center">Total</span>
+                  <span className="w-4"></span>
+                </div>
+                {formData.price_breakdown.map((item, index) => {
+                  const itemTotal = (parseFloat(item.value) || 0) * (parseFloat(item.quantity) || 1);
+                  return (
+                    <div key={index} className="flex gap-2 items-center">
+                      <input
+                        type="text"
+                        value={item.name}
+                        onChange={(e) => updateBreakdownItem(index, 'name', e.target.value)}
+                        placeholder="Nome (ex: Diária)"
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        value={item.quantity || 1}
+                        onChange={(e) => updateBreakdownItem(index, 'quantity', e.target.value)}
+                        placeholder="Qtd"
+                        min="1"
+                        step="1"
+                        className="w-20 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-center"
+                      />
+                      <input
+                        type="number"
+                        value={item.value}
+                        onChange={(e) => updateBreakdownItem(index, 'value', e.target.value)}
+                        placeholder="Valor"
+                        min="0"
+                        step="0.01"
+                        className="w-28 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      />
+                      <span className="w-24 text-sm text-gray-700 text-right">
+                        R$ {itemTotal.toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeBreakdownItem(index)}
+                        className="text-red-600 hover:text-red-800 text-xs w-4"
+                        title="Remover"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
                 
                 {formData.price_breakdown.length > 0 && (
                   <div className="flex justify-between items-center pt-2 border-t border-gray-300 mt-2">
                     <span className="text-sm font-medium text-gray-700">Subtotal:</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      R$ {calculateBreakdownTotal().toFixed(2)}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">
+                        R$ {calculateBreakdownTotal().toFixed(2)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleInsertBreakdownTotal}
+                        className="text-xs bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition-colors"
+                        title="Inserir no preço total"
+                      >
+                        Usar como Total
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -692,6 +796,69 @@ export function ReservationModal({
               placeholder="0.00"
             />
             <p className="text-xs text-gray-500 mt-1">Deixe em branco para calcular automaticamente</p>
+          </div>
+
+          {/* Payment Pool Section */}
+          <div className="border border-gray-200 rounded-md p-3 bg-blue-50">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pagamentos
+            </label>
+            
+            {/* Payment Status Summary */}
+            <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Total</div>
+                <div className="font-bold">R$ {parseFloat(formData.total_price || 0).toFixed(2)}</div>
+              </div>
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Pago</div>
+                <div className="font-bold text-green-600">R$ {parseFloat(formData.amount_paid || 0).toFixed(2)}</div>
+              </div>
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Restante</div>
+                <div className="font-bold text-red-600">R$ {calculateRemainingAmount().toFixed(2)}</div>
+              </div>
+            </div>
+            
+            {/* Add Payment */}
+            <div className="flex gap-2 items-center mb-3">
+              <input
+                type="number"
+                value={newPayment}
+                onChange={(e) => setNewPayment(e.target.value)}
+                placeholder="Valor do pagamento"
+                min="0"
+                step="0.01"
+                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddPayment}
+                disabled={!newPayment || parseFloat(newPayment) <= 0}
+                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Adicionar Pagamento
+              </button>
+            </div>
+            
+            {/* Payment History */}
+            {formData.payment_history && formData.payment_history.length > 0 && (
+              <div className="mt-2">
+                <div className="text-xs font-medium text-gray-600 mb-1">Histórico de Pagamentos:</div>
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {formData.payment_history.map((payment, index) => (
+                    <div key={index} className="text-xs bg-white rounded px-2 py-1 flex justify-between">
+                      <span className="text-gray-500">
+                        {new Date(payment.date).toLocaleDateString('pt-BR')} - {payment.method || 'PIX'}
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        R$ {parseFloat(payment.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status */}

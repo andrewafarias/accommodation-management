@@ -50,8 +50,8 @@ class ReservationSignalTest(TestCase):
         self.assertEqual(transaction.category, Transaction.LODGING)
         self.assertEqual(transaction.reservation, reservation)
     
-    def test_pending_reservation_does_not_create_transaction(self):
-        """Test that pending reservations don't create transactions"""
+    def test_pending_reservation_with_price_creates_transaction(self):
+        """Test that pending reservations with price DO create transactions (new behavior)"""
         reservation = Reservation.objects.create(
             client=self.client,
             accommodation_unit=self.unit,
@@ -61,9 +61,10 @@ class ReservationSignalTest(TestCase):
             total_price=Decimal("1000.00")
         )
         
-        # Check that no transaction was created
+        # Check that transaction was created immediately
         transactions = Transaction.objects.filter(reservation=reservation)
-        self.assertEqual(transactions.count(), 0)
+        self.assertEqual(transactions.count(), 1)
+        self.assertEqual(transactions.first().amount, Decimal("1000.00"))
     
     def test_confirmed_reservation_without_price_does_not_create_transaction(self):
         """Test that confirmed reservations without price don't create transactions"""
@@ -214,9 +215,9 @@ class ReservationSignalTest(TestCase):
         transactions = Transaction.objects.filter(reservation=reservation)
         self.assertEqual(transactions.count(), 1)
     
-    def test_pending_to_confirmed_creates_transaction(self):
-        """Test that changing status from PENDING to CONFIRMED creates a transaction"""
-        # Create a pending reservation
+    def test_pending_to_confirmed_does_not_duplicate_transaction(self):
+        """Test that changing status from PENDING to CONFIRMED doesn't duplicate transaction"""
+        # Create a pending reservation - transaction is created immediately now
         reservation = Reservation.objects.create(
             client=self.client,
             accommodation_unit=self.unit,
@@ -226,14 +227,14 @@ class ReservationSignalTest(TestCase):
             total_price=Decimal("1000.00")
         )
         
-        # Verify no transaction was created
-        self.assertEqual(Transaction.objects.filter(reservation=reservation).count(), 0)
+        # Verify transaction was created immediately
+        self.assertEqual(Transaction.objects.filter(reservation=reservation).count(), 1)
         
         # Confirm the reservation
         reservation.status = Reservation.CONFIRMED
         reservation.save()
         
-        # Check that transaction was created
+        # Check that no duplicate transaction was created
         transactions = Transaction.objects.filter(reservation=reservation)
         self.assertEqual(transactions.count(), 1)
         
