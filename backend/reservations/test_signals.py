@@ -261,6 +261,6 @@ class ReservationSignalTest(TestCase):
         transaction = Transaction.objects.filter(reservation=reservation).first()
         self.assertIsNotNone(transaction)
         
-        # Expected format: "Reserva nº [id] dos dias xx/xx/xx até yy/yy/yy de [Nome do cliente] em [Nome da unidade]"
-        expected_description = f"Reserva nº {reservation.pk} dos dias 20/12/25 até 22/12/25 de Test Client em Test Unit"
+        # Expected format: "Res. nº [id] de [Nome do cliente], xx/xx/xx até yy/yy/yy em [Nome da unidade]"
+        expected_description = f"Res. nº {reservation.pk} de Test Client, 20/12/25 até 22/12/25 em Test Unit"
         self.assertEqual(transaction.description, expected_description)
