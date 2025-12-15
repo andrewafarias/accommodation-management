@@ -814,7 +814,7 @@ export function ReservationModal({
 
           {/* Total Nights Display */}
           {calculateTotalNights > 0 && (
-            <div className="text-sm text-gray-500 text-left">
+            <div className="text-sm text-gray-500">
               Total de noites: <strong>{calculateTotalNights}</strong>
             </div>
           )}
