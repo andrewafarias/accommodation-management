@@ -988,6 +988,14 @@ export function ReservationModal({
                 Preço sugerido: <span 
                   className="underline cursor-pointer hover:text-blue-600"
                   onClick={() => setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }));
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                 >
                   R$ {calculateSuggestedPrice.toFixed(2)}
                 </span>
