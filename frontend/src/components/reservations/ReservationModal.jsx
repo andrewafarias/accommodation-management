@@ -989,13 +989,17 @@ export function ReservationModal({
                   className="underline cursor-pointer hover:text-blue-600"
                   onClick={() => setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }))}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }));
+                    } else if (e.key === ' ') {
                       e.preventDefault();
                       setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }));
                     }
                   }}
                   role="button"
                   tabIndex={0}
+                  aria-label="Usar preço sugerido no campo total"
                 >
                   R$ {calculateSuggestedPrice.toFixed(2)}
                 </span>
