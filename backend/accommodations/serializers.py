@@ -20,6 +20,8 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'status',
             'auto_dirty_days',
             'last_cleaned_at',
+            'default_check_in_time',
+            'default_check_out_time',
             'created_at',
             'updated_at',
         ]

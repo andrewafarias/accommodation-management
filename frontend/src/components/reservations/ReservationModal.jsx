@@ -134,6 +134,22 @@ export function ReservationModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // If accommodation unit is changed, apply default check-in/out times
+    if (name === 'accommodation_unit' && value) {
+      const selectedUnit = units.find(u => u.id === parseInt(value));
+      if (selectedUnit) {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value,
+          // Only apply defaults if times haven't been modified by user
+          check_in_time: selectedUnit.default_check_in_time?.substring(0, 5) || prev.check_in_time,
+          check_out_time: selectedUnit.default_check_out_time?.substring(0, 5) || prev.check_out_time,
+        }));
+        return;
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value

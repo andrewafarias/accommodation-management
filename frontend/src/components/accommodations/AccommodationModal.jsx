@@ -22,6 +22,8 @@ export function AccommodationModal({
     base_price: '',
     color_hex: '#4A90E2',
     auto_dirty_days: 3,
+    default_check_in_time: '14:00',
+    default_check_out_time: '12:00',
   });
   
   const [loading, setLoading] = useState(false);
@@ -47,6 +49,8 @@ export function AccommodationModal({
           base_price: accommodation.base_price || '',
           color_hex: accommodation.color_hex || '#4A90E2',
           auto_dirty_days: accommodation.auto_dirty_days || 3,
+          default_check_in_time: accommodation.default_check_in_time || '14:00',
+          default_check_out_time: accommodation.default_check_out_time || '12:00',
         });
       } else {
         // Create mode
@@ -57,6 +61,8 @@ export function AccommodationModal({
           base_price: '',
           color_hex: '#4A90E2',
           auto_dirty_days: 3,
+          default_check_in_time: '14:00',
+          default_check_out_time: '12:00',
         });
       }
       setError(null);
@@ -85,6 +91,8 @@ export function AccommodationModal({
         base_price: formData.base_price,
         color_hex: formData.color_hex,
         auto_dirty_days: Number(formData.auto_dirty_days),
+        default_check_in_time: formData.default_check_in_time,
+        default_check_out_time: formData.default_check_out_time,
       };
 
       let response;
@@ -239,6 +247,38 @@ export function AccommodationModal({
             <p className="text-xs text-gray-500 mt-1">
               Número de dias antes da unidade ficar suja automaticamente
             </p>
+          </div>
+
+          {/* Default Check-in/out Times */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="default_check_in_time" className="block text-sm font-medium text-gray-700 mb-1">
+                Horário Check-in Padrão *
+              </label>
+              <input
+                type="time"
+                id="default_check_in_time"
+                name="default_check_in_time"
+                value={formData.default_check_in_time}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="default_check_out_time" className="block text-sm font-medium text-gray-700 mb-1">
+                Horário Check-out Padrão *
+              </label>
+              <input
+                type="time"
+                id="default_check_out_time"
+                name="default_check_out_time"
+                value={formData.default_check_out_time}
+                onChange={handleChange}
+                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Color */}
