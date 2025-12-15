@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Search, Edit, Trash2, Paperclip, User } from 'lucide-react';
+import { Search, Edit, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { ImageModal } from '../ui/ImageModal';
 
 /**
  * ClientList Component
@@ -12,14 +11,10 @@ import { ImageModal } from '../ui/ImageModal';
  * - Display all client information
  * - Visual badge tags
  * - Edit and Delete actions
- * - Clickable profile pictures
  * - Multiple document attachments support
  */
 export function ClientList({ clients = [], onEdit, onDelete, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
-  const [imageModalOpen, setImageModalOpen] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [selectedImageAlt, setSelectedImageAlt] = useState('');
 
   // Format phone from international format (+5511999998888) to display format (11) 99999-8888
   const formatPhoneDisplay = (phone) => {
@@ -53,12 +48,6 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
       (client.email && client.email.toLowerCase().includes(term))
     );
   }, [clients, searchTerm]);
-
-  const handleImageClick = (imageUrl, clientName) => {
-    setSelectedImage(imageUrl);
-    setSelectedImageAlt(clientName);
-    setImageModalOpen(true);
-  };
 
   if (loading) {
     return (
@@ -118,22 +107,8 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      {client.profile_picture ? (
-                        <img
-                          src={client.profile_picture}
-                          alt={client.full_name}
-                          className="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-200 cursor-pointer hover:border-blue-500 transition-colors"
-                          onClick={() => handleImageClick(client.profile_picture, client.full_name)}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                          <User className="w-6 h-6 text-gray-500" />
-                        </div>
-                      )}
-                      <div className="text-sm font-medium text-gray-900">
-                        {client.full_name}
-                      </div>
+                    <div className="text-sm font-medium text-gray-900">
+                      {client.full_name}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -175,18 +150,6 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                           {client.document_attachments.length} doc{client.document_attachments.length > 1 ? 's' : ''}
                         </span>
                       )}
-                      {/* Legacy single document support */}
-                      {client.document_file && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.open(client.document_file, '_blank')}
-                          className="text-green-600 hover:text-green-900"
-                          title="View attached document"
-                        >
-                          <Paperclip className="w-4 h-4" />
-                        </Button>
-                      )}
                       <Button
                         variant="ghost"
                         size="sm"
@@ -218,14 +181,6 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
           Showing {filteredClients.length} of {clients.length} client{clients.length !== 1 ? 's' : ''}
         </div>
       )}
-
-      {/* Image Modal */}
-      <ImageModal
-        isOpen={imageModalOpen}
-        onClose={() => setImageModalOpen(false)}
-        imageUrl={selectedImage}
-        altText={selectedImageAlt}
-      />
     </div>
   );
 }
