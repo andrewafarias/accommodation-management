@@ -16,6 +16,8 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'type',
             'max_capacity',
             'base_price',
+            'weekend_price',
+            'holiday_price',
             'color_hex',
             'status',
             'auto_dirty_days',

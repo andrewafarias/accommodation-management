@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '../ui/Button';
-import { CheckCircle, Trash2, Check, Clock, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle, Trash2, Check, Clock, ChevronDown, ChevronRight, Eye } from 'lucide-react';
 
-export function TransactionTable({ transactions, onMarkAsPaid, onDelete }) {
+export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTransactionClick }) {
   const [expandedRows, setExpandedRows] = useState(new Set());
 
   const toggleRow = (transactionId) => {
@@ -168,6 +168,17 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm" onClick={(e) => e.stopPropagation()}>
                     <div className="flex gap-2">
+                      {onTransactionClick && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => onTransactionClick(transaction)}
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Detalhes
+                        </Button>
+                      )}
                       {!transaction.is_paid && (
                         <Button
                           variant="ghost"

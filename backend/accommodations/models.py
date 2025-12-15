@@ -47,6 +47,22 @@ class AccommodationUnit(models.Model):
         verbose_name="Base Price (BRL)",
         help_text="Base daily rate in Brazilian Reais"
     )
+    weekend_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Weekend Price (BRL)",
+        help_text="Daily rate for weekends (Fri, Sat, Sun) in Brazilian Reais"
+    )
+    holiday_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Holiday Price (BRL)",
+        help_text="Daily rate for holidays in Brazilian Reais"
+    )
     color_hex = models.CharField(
         max_length=7,
         default='#4A90E2',

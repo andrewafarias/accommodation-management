@@ -20,6 +20,8 @@ export function AccommodationModal({
     type: 'CHALET',
     max_capacity: 1,
     base_price: '',
+    weekend_price: '',
+    holiday_price: '',
     color_hex: '#4A90E2',
     auto_dirty_days: 3,
     default_check_in_time: '14:00',
@@ -47,6 +49,8 @@ export function AccommodationModal({
           type: accommodation.type || 'CHALET',
           max_capacity: accommodation.max_capacity || 1,
           base_price: accommodation.base_price || '',
+          weekend_price: accommodation.weekend_price || '',
+          holiday_price: accommodation.holiday_price || '',
           color_hex: accommodation.color_hex || '#4A90E2',
           auto_dirty_days: accommodation.auto_dirty_days || 3,
           default_check_in_time: accommodation.default_check_in_time || '14:00',
@@ -59,6 +63,8 @@ export function AccommodationModal({
           type: 'CHALET',
           max_capacity: 1,
           base_price: '',
+          weekend_price: '',
+          holiday_price: '',
           color_hex: '#4A90E2',
           auto_dirty_days: 3,
           default_check_in_time: '14:00',
@@ -89,6 +95,8 @@ export function AccommodationModal({
         type: formData.type,
         max_capacity: Number(formData.max_capacity),
         base_price: formData.base_price,
+        weekend_price: formData.weekend_price || null,
+        holiday_price: formData.holiday_price || null,
         color_hex: formData.color_hex,
         auto_dirty_days: Number(formData.auto_dirty_days),
         default_check_in_time: formData.default_check_in_time,
@@ -227,6 +235,44 @@ export function AccommodationModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0.00"
             />
+          </div>
+
+          {/* Weekend and Holiday Prices */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="weekend_price" className="block text-sm font-medium text-gray-700 mb-1">
+                Preço Final de Semana (R$)
+              </label>
+              <input
+                type="number"
+                id="weekend_price"
+                name="weekend_price"
+                value={formData.weekend_price}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">Sex, Sáb, Dom</p>
+            </div>
+            <div>
+              <label htmlFor="holiday_price" className="block text-sm font-medium text-gray-700 mb-1">
+                Preço Feriado (R$)
+              </label>
+              <input
+                type="number"
+                id="holiday_price"
+                name="holiday_price"
+                value={formData.holiday_price}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0.00"
+              />
+              <p className="text-xs text-gray-500 mt-1">Feriados nacionais</p>
+            </div>
           </div>
 
           {/* Auto Dirty Days */}
