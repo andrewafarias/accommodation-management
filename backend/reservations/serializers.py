@@ -66,36 +66,77 @@ class ReservationSerializer(serializers.ModelSerializer):
         representation['accommodation_unit'] = representation.pop('accommodation_unit_details')
         return representation
     
-    def check_tight_turnaround(self, accommodation_unit, check_in):
+    def check_tight_turnaround(self, accommodation_unit, check_in, check_out=None):
         """
-        Check if there's a checkout within 2 hours before the check-in.
+        Check if there's a checkout within 2 hours before the check-in,
+        or if there's a check-in within 2 hours after the check-out.
         Returns a warning message if tight turnaround is detected.
         """
         from datetime import timedelta
+        from django.utils import timezone
         
-        # Find the most recent checkout for the same unit before this check-in
-        previous_reservation = Reservation.objects.filter(
-            accommodation_unit=accommodation_unit,
-            check_out__lte=check_in,
-            check_out__gte=check_in - timedelta(hours=2)
-        ).exclude(
-            status=Reservation.CANCELLED
-        ).exclude(
-            pk=self.instance.pk if self.instance else None
-        ).order_by('-check_out').first()
+        warnings = []
         
-        if previous_reservation:
-            time_diff = check_in - previous_reservation.check_out
-            minutes = int(time_diff.total_seconds() / 60)
-            hours = minutes // 60
-            remaining_minutes = minutes % 60
+        # Ensure check_in is timezone aware
+        if check_in and timezone.is_naive(check_in):
+            check_in = timezone.make_aware(check_in)
+        
+        # Check for previous reservation with check-out close to this check-in
+        if check_in and accommodation_unit:
+            two_hours_before = check_in - timedelta(hours=2)
+            previous_reservation = Reservation.objects.filter(
+                accommodation_unit=accommodation_unit,
+                check_out__gt=two_hours_before,
+                check_out__lte=check_in
+            ).exclude(
+                status=Reservation.CANCELLED
+            ).exclude(
+                pk=self.instance.pk if self.instance else None
+            ).order_by('-check_out').first()
             
-            return (
-                f"AVISO: Pouco tempo entre reservas! "
-                f"A reserva anterior de {previous_reservation.client.full_name} "
-                f"tem check-out em {previous_reservation.check_out.strftime('%d/%m/%Y %H:%M')}, "
-                f"apenas {hours}h{remaining_minutes}min antes do check-in desta reserva."
-            )
+            if previous_reservation:
+                time_diff = check_in - previous_reservation.check_out
+                total_minutes = int(time_diff.total_seconds() / 60)
+                hours = total_minutes // 60
+                remaining_minutes = total_minutes % 60
+                
+                warnings.append(
+                    f"A reserva anterior de {previous_reservation.client.full_name} "
+                    f"tem check-out em {previous_reservation.check_out.strftime('%d/%m/%Y %H:%M')}, "
+                    f"apenas {hours}h{remaining_minutes:02d}min antes do check-in desta reserva."
+                )
+        
+        # Check for next reservation with check-in close to this check-out
+        if check_out and accommodation_unit:
+            # Ensure check_out is timezone aware
+            if timezone.is_naive(check_out):
+                check_out = timezone.make_aware(check_out)
+                
+            two_hours_after = check_out + timedelta(hours=2)
+            next_reservation = Reservation.objects.filter(
+                accommodation_unit=accommodation_unit,
+                check_in__gte=check_out,
+                check_in__lt=two_hours_after
+            ).exclude(
+                status=Reservation.CANCELLED
+            ).exclude(
+                pk=self.instance.pk if self.instance else None
+            ).order_by('check_in').first()
+            
+            if next_reservation:
+                time_diff = next_reservation.check_in - check_out
+                total_minutes = int(time_diff.total_seconds() / 60)
+                hours = total_minutes // 60
+                remaining_minutes = total_minutes % 60
+                
+                warnings.append(
+                    f"A próxima reserva de {next_reservation.client.full_name} "
+                    f"tem check-in em {next_reservation.check_in.strftime('%d/%m/%Y %H:%M')}, "
+                    f"apenas {hours}h{remaining_minutes:02d}min depois do check-out desta reserva."
+                )
+        
+        if warnings:
+            return "AVISO: Pouco tempo entre reservas! " + " ".join(warnings)
         
         return None
     
@@ -124,7 +165,8 @@ class ReservationSerializer(serializers.ModelSerializer):
         # Check for tight turnaround (warning, not error)
         warning = self.check_tight_turnaround(
             attrs.get('accommodation_unit', getattr(self.instance, 'accommodation_unit', None)),
-            attrs.get('check_in', getattr(self.instance, 'check_in', None))
+            attrs.get('check_in', getattr(self.instance, 'check_in', None)),
+            attrs.get('check_out', getattr(self.instance, 'check_out', None))
         )
         if warning:
             # Store warning to be returned in response (won't block the save)

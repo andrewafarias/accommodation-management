@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { format, addDays, startOfDay, isSameDay, parseISO, getYear, isWeekend, isFriday } from 'date-fns';
+import { useMemo, useCallback } from 'react';
+import { format, addDays, startOfDay, isSameDay, parseISO, getYear, isFriday, isSaturday } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '../../lib/utils';
 
@@ -73,7 +73,9 @@ export function TimelineCalendar({
   onReservationClick,
   dateSelection = null,
   customPrices = {},
-  getPackageForDate = () => null
+  getPackageForDate = () => null,
+  scrollRef = null,
+  onVisibleDateChange = null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -156,8 +158,8 @@ export function TimelineCalendar({
       return { price: parseFloat(unit.holiday_price), type: 'holiday' };
     }
     
-    // Weekend price (Friday, Saturday, Sunday) - common in Brazilian accommodation pricing
-    if ((isWeekend(date) || isFriday(date)) && unit.weekend_price) {
+    // Weekend price (Friday and Saturday only - Sunday is NOT considered weekend per requirement)
+    if ((isFriday(date) || isSaturday(date)) && unit.weekend_price) {
       return { price: parseFloat(unit.weekend_price), type: 'weekend' };
     }
     
@@ -232,6 +234,18 @@ export function TimelineCalendar({
     });
     return grouped;
   }, [units, reservations]);
+  
+  // Handle scroll to update visible date
+  const handleScroll = useCallback((e) => {
+    if (onVisibleDateChange && dates.length > 0) {
+      const scrollLeft = e.target.scrollLeft;
+      const visibleDateIndex = Math.floor(scrollLeft / cellWidth);
+      const centeredIndex = Math.min(visibleDateIndex + Math.floor(e.target.clientWidth / cellWidth / 2), dates.length - 1);
+      if (centeredIndex >= 0 && centeredIndex < dates.length) {
+        onVisibleDateChange(dates[centeredIndex]);
+      }
+    }
+  }, [onVisibleDateChange, dates, cellWidth]);
 
   return (
     <div className="border rounded-lg bg-white overflow-hidden">
@@ -284,7 +298,11 @@ export function TimelineCalendar({
         </div>
 
         {/* Scrollable Timeline Area */}
-        <div className="flex-1 overflow-x-auto">
+        <div 
+          className="flex-1 overflow-x-auto"
+          ref={scrollRef}
+          onScroll={handleScroll}
+        >
           <div style={{ minWidth: `${dates.length * cellWidth}px` }}>
             {/* Date Header */}
             <div className="h-12 border-b bg-gray-100 flex">
@@ -331,13 +349,13 @@ export function TimelineCalendar({
                 <div className="absolute inset-0 flex">
                   {dates.map((date, index) => {
                     const holidayName = isHoliday(date);
-                    // Apply light unit color to cells
-                    const cellBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.15);
+                    // Unit color is only shown on hover now
+                    const hoverBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.25);
                     return (
                       <div
                         key={index}
                         className={cn(
-                          'border-r hover:bg-blue-50 cursor-pointer transition-colors relative group',
+                          'border-r cursor-pointer transition-colors relative group',
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-blue-400',
                           holidayName && 'ring-1 ring-inset ring-red-300',
                           isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-green-500 bg-green-100',
@@ -348,7 +366,18 @@ export function TimelineCalendar({
                           width: `${cellWidth}px`,
                           backgroundColor: isDateInSelection(date, unit.id) 
                             ? 'rgba(34, 197, 94, 0.2)'
-                            : (holidayName ? `rgba(254, 202, 202, 0.3)` : cellBgColor)
+                            : (holidayName ? `rgba(254, 202, 202, 0.3)` : 'transparent'),
+                          '--hover-bg': hoverBgColor
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isDateInSelection(date, unit.id)) {
+                            e.currentTarget.style.backgroundColor = hoverBgColor;
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isDateInSelection(date, unit.id)) {
+                            e.currentTarget.style.backgroundColor = holidayName ? 'rgba(254, 202, 202, 0.3)' : 'transparent';
+                          }
                         }}
                         onClick={() => onCellClick && onCellClick({
                           unit_id: unit.id,
