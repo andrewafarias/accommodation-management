@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
+import { differenceInDays, parseISO } from 'date-fns';
 
 /**
  * ReservationModal Component
@@ -263,6 +264,34 @@ export function ReservationModal({
     return Math.max(0, total - paid);
   };
 
+  // Calculate total nights from check-in to check-out dates
+  const calculateTotalNights = useMemo(() => {
+    if (!formData.check_in_date || !formData.check_out_date) return 0;
+    const checkIn = parseISO(formData.check_in_date);
+    const checkOut = parseISO(formData.check_out_date);
+    const nights = differenceInDays(checkOut, checkIn);
+    return nights > 0 ? nights : 0;
+  }, [formData.check_in_date, formData.check_out_date]);
+
+  // Remove payment from pool with status reset logic
+  const handleRemovePayment = (index) => {
+    const paymentToRemove = formData.payment_history[index];
+    if (!paymentToRemove) return;
+    
+    const newAmountPaid = Math.max(0, (parseFloat(formData.amount_paid) || 0) - parseFloat(paymentToRemove.amount));
+    const newPaymentHistory = formData.payment_history.filter((_, i) => i !== index);
+    
+    // If amount_paid becomes 0 and status was auto-confirmed, revert to PENDING
+    const shouldRevertToPending = newAmountPaid === 0 && formData.status === 'CONFIRMED';
+    
+    setFormData(prev => ({
+      ...prev,
+      amount_paid: newAmountPaid,
+      payment_history: newPaymentHistory,
+      status: shouldRevertToPending ? 'PENDING' : prev.status
+    }));
+  };
+
   const handleCreateClient = async () => {
     try {
       setLoading(true);
@@ -394,11 +423,16 @@ export function ReservationModal({
 
       // Check for tight turnaround warning
       if (response.data.warning) {
-        // Show warning as in-site panel instead of browser alert
+        // Show warning as in-site panel - don't close modal yet
         setWarning(response.data.warning);
+        // Still call onSave to refresh data but the modal stays open for user to see warning
+        if (onSave) {
+          await onSave(response.data, true); // Pass true to indicate warning present
+        }
+        return; // Don't close modal - let user see the warning
       }
 
-      // Call the onSave callback with the new/updated reservation
+      // No warning - Call the onSave callback with the new/updated reservation
       if (onSave) {
         await onSave(response.data);
       }
@@ -657,6 +691,15 @@ export function ReservationModal({
             </div>
           </div>
 
+          {/* Total Nights Display */}
+          {calculateTotalNights > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-center">
+              <span className="text-sm text-blue-700 font-medium">
+                Total de noites: <strong>{calculateTotalNights}</strong>
+              </span>
+            </div>
+          )}
+
           {/* Accommodation Unit */}
           <div>
             <label htmlFor="accommodation_unit" className="block text-sm font-medium text-gray-700 mb-1">
@@ -721,7 +764,7 @@ export function ReservationModal({
               <button
                 type="button"
                 onClick={addBreakdownItem}
-                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
               >
                 + Adicionar Item
               </button>
@@ -881,13 +924,23 @@ export function ReservationModal({
                 <div className="text-xs font-medium text-gray-600 mb-1">Histórico de Pagamentos:</div>
                 <div className="space-y-1 max-h-24 overflow-y-auto">
                   {formData.payment_history.map((payment, index) => (
-                    <div key={index} className="text-xs bg-white rounded px-2 py-1 flex justify-between">
+                    <div key={index} className="text-xs bg-white rounded px-2 py-1 flex justify-between items-center">
                       <span className="text-gray-500">
                         {new Date(payment.date).toLocaleDateString('pt-BR')} - {payment.method || 'Pagamento'}
                       </span>
-                      <span className="font-semibold text-green-600">
-                        R$ {parseFloat(payment.amount).toFixed(2)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-green-600">
+                          R$ {parseFloat(payment.amount).toFixed(2)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePayment(index)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Remover pagamento"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

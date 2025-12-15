@@ -111,11 +111,14 @@ export function ReservationList() {
   };
 
   // Handle saving reservation
-  const handleSave = async () => {
+  const handleSave = async (data, hasWarning = false) => {
     // Refresh the list after saving
     await fetchData();
-    setIsModalOpen(false);
-    setEditingReservation(null);
+    // Only close modal if there's no warning to show
+    if (!hasWarning) {
+      setIsModalOpen(false);
+      setEditingReservation(null);
+    }
   };
 
   // Handle delete from modal
