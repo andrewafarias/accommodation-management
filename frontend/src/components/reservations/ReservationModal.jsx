@@ -2,7 +2,59 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
+
+// Brazilian National Holidays (fixed dates and Easter-based)
+const getBrazilianHolidays = (year) => {
+  const holidays = [
+    // Fixed holidays
+    { date: `${year}-01-01`, name: 'Ano Novo' },
+    { date: `${year}-04-21`, name: 'Tiradentes' },
+    { date: `${year}-05-01`, name: 'Dia do Trabalho' },
+    { date: `${year}-09-07`, name: 'Independência do Brasil' },
+    { date: `${year}-10-12`, name: 'Nossa Senhora Aparecida' },
+    { date: `${year}-11-02`, name: 'Finados' },
+    { date: `${year}-11-15`, name: 'Proclamação da República' },
+    { date: `${year}-12-25`, name: 'Natal' },
+  ];
+  
+  // Calculate Easter-based holidays
+  const easter = calculateEaster(year);
+  const easterDate = new Date(year, easter.month - 1, easter.day);
+  
+  // Carnival (47 days before Easter)
+  const carnival = addDays(easterDate, -47);
+  holidays.push({ date: format(carnival, 'yyyy-MM-dd'), name: 'Carnaval' });
+  
+  // Good Friday (2 days before Easter)
+  const goodFriday = addDays(easterDate, -2);
+  holidays.push({ date: format(goodFriday, 'yyyy-MM-dd'), name: 'Sexta-feira Santa' });
+  
+  // Corpus Christi (60 days after Easter)
+  const corpusChristi = addDays(easterDate, 60);
+  holidays.push({ date: format(corpusChristi, 'yyyy-MM-dd'), name: 'Corpus Christi' });
+  
+  return holidays;
+};
+
+// Calculate Easter using Computus algorithm
+const calculateEaster = (year) => {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return { month, day };
+};
 
 /**
  * ReservationModal Component
@@ -52,6 +104,7 @@ export function ReservationModal({
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
   const prefilledDataRef = useRef(prefilledData);
+  const modalContentRef = useRef(null);
 
   // Status options in Portuguese
   const statusOptions = [
@@ -61,6 +114,66 @@ export function ReservationModal({
     { value: 'CHECKED_OUT', label: 'Check-out Feito' },
     { value: 'CANCELLED', label: 'Cancelado' },
   ];
+
+  // Helper function to check if a date is a Brazilian holiday
+  const isHoliday = useMemo(() => {
+    const holidayMap = {};
+    
+    // Get unique years from check-in and check-out dates
+    const years = new Set();
+    if (formData.check_in_date) years.add(new Date(formData.check_in_date).getFullYear());
+    if (formData.check_out_date) years.add(new Date(formData.check_out_date).getFullYear());
+    
+    // Build holiday map for all relevant years
+    years.forEach(year => {
+      getBrazilianHolidays(year).forEach(holiday => {
+        holidayMap[holiday.date] = holiday.name;
+      });
+    });
+    
+    return (dateStr) => holidayMap[dateStr] || null;
+  }, [formData.check_in_date, formData.check_out_date]);
+
+  // Calculate suggested price based on dates and unit pricing
+  const calculateSuggestedPrice = useMemo(() => {
+    if (!formData.check_in_date || !formData.check_out_date || !formData.accommodation_unit) {
+      return 0;
+    }
+    
+    const selectedUnit = units.find(u => u.id === parseInt(formData.accommodation_unit));
+    if (!selectedUnit) return 0;
+    
+    let total = 0;
+    const checkIn = parseISO(formData.check_in_date);
+    const checkOut = parseISO(formData.check_out_date);
+    const nights = differenceInDays(checkOut, checkIn);
+    
+    // Calculate price for each night
+    for (let i = 0; i < nights; i++) {
+      const currentDate = addDays(checkIn, i);
+      const dateStr = format(currentDate, 'yyyy-MM-dd');
+      const holidayName = isHoliday(dateStr);
+      
+      let priceForNight = 0;
+      
+      // Holiday price takes precedence
+      if (holidayName && selectedUnit.holiday_price) {
+        priceForNight = parseFloat(selectedUnit.holiday_price);
+      }
+      // Weekend price (Friday, Saturday, Sunday)
+      else if ((isWeekend(currentDate) || isFriday(currentDate)) && selectedUnit.weekend_price) {
+        priceForNight = parseFloat(selectedUnit.weekend_price);
+      }
+      // Default to base price
+      else {
+        priceForNight = parseFloat(selectedUnit.base_price || 0);
+      }
+      
+      total += priceForNight;
+    }
+    
+    return total;
+  }, [formData.check_in_date, formData.check_out_date, formData.accommodation_unit, units, isHoliday]);
 
   // Load clients on mount
   useEffect(() => {
@@ -480,6 +593,11 @@ export function ReservationModal({
       }
       
       setError(errorMessage);
+      
+      // Scroll to top when there's an error (especially for conflict errors)
+      if (modalContentRef.current) {
+        modalContentRef.current.scrollTop = 0;
+      }
     } finally {
       setLoading(false);
     }
@@ -496,7 +614,10 @@ export function ReservationModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div 
+        ref={modalContentRef}
+        className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -693,10 +814,8 @@ export function ReservationModal({
 
           {/* Total Nights Display */}
           {calculateTotalNights > 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-center">
-              <span className="text-sm text-blue-700 font-medium">
-                Total de noites: <strong>{calculateTotalNights}</strong>
-              </span>
+            <div className="text-sm text-gray-500 text-left">
+              Total de noites: <strong>{calculateTotalNights}</strong>
             </div>
           )}
 
@@ -764,7 +883,7 @@ export function ReservationModal({
               <button
                 type="button"
                 onClick={addBreakdownItem}
-                className="px-3 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium transition-colors"
+                className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
               >
                 + Adicionar Item
               </button>
@@ -865,6 +984,11 @@ export function ReservationModal({
               placeholder="0.00"
             />
             <p className="text-xs text-gray-500 mt-1">Deixe em branco para calcular automaticamente</p>
+            {calculateSuggestedPrice > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                Preço sugerido: R$ {calculateSuggestedPrice.toFixed(2)}
+              </p>
+            )}
           </div>
 
           {/* Payment Pool Section */}
