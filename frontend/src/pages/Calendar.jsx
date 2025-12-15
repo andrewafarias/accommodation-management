@@ -404,7 +404,10 @@ export function Calendar() {
               
               <CardTitle className="flex items-center">
                 <CalendarIcon className="w-6 h-6 mr-2" />
-                {format(visibleDate, 'MMMM yyyy', { locale: ptBR }).charAt(0).toUpperCase() + format(visibleDate, 'MMMM yyyy', { locale: ptBR }).slice(1)}
+                {(() => {
+                  const formatted = format(visibleDate, 'MMMM yyyy', { locale: ptBR });
+                  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+                })()}
               </CardTitle>
               
               {/* Right scroll button */}
