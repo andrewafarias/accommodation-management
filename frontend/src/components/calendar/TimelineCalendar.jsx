@@ -75,7 +75,8 @@ export function TimelineCalendar({
   customPrices = {},
   getPackageForDate = () => null,
   scrollRef = null,
-  onVisibleDateChange = null
+  onVisibleDateChange = null,
+  onNavigate = null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -461,23 +462,51 @@ export function TimelineCalendar({
       </div>
 
       {/* Legend */}
-      <div className="px-4 py-3 border-t bg-gray-50 flex flex-wrap gap-4 text-xs">
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-green-500 border-2 border-green-600 rounded"></div>
-          <span className="text-gray-700">Confirmado</span>
+      <div className="px-4 py-3 border-t bg-gray-50 flex items-center justify-between text-xs">
+        {/* Status Legend - Left Side */}
+        <div className="flex flex-wrap gap-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-green-500 border-2 border-green-600 rounded"></div>
+            <span className="text-gray-700">Confirmado</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-yellow-400 border-2 border-yellow-500 rounded"></div>
+            <span className="text-gray-700">Pendente</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-blue-500 border-2 border-blue-600 rounded"></div>
+            <span className="text-gray-700">Check-in Feito</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-4 h-4 bg-gray-400 border-2 border-gray-500 rounded"></div>
+            <span className="text-gray-700">Check-out Feito</span>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-yellow-400 border-2 border-yellow-500 rounded"></div>
-          <span className="text-gray-700">Pendente</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-blue-500 border-2 border-blue-600 rounded"></div>
-          <span className="text-gray-700">Check-in Feito</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-4 h-4 bg-gray-400 border-2 border-gray-500 rounded"></div>
-          <span className="text-gray-700">Check-out Feito</span>
-        </div>
+        
+        {/* Navigation Controls - Right Side */}
+        {onNavigate && (
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => onNavigate('left')}
+              className="p-1.5 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+              title="Rolar para esquerda"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+            <span className="text-gray-600 font-medium">Navegar</span>
+            <button
+              onClick={() => onNavigate('right')}
+              className="p-1.5 rounded border border-gray-300 hover:bg-gray-100 transition-colors"
+              title="Rolar para direita"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
