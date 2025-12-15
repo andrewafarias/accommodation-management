@@ -6,6 +6,7 @@ import { TransactionModal } from '../components/financials/TransactionModal';
 import { FinancialReport } from '../components/financials/FinancialReport';
 import { DetailedFinancialModal } from '../components/financials/DetailedFinancialModal';
 import { GroupedFinancialModal } from '../components/financials/GroupedFinancialModal';
+import { TransactionDetailsModal } from '../components/financials/TransactionDetailsModal';
 import { Plus, TrendingUp, TrendingDown, DollarSign, FileText, BarChart3 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import api from '../services/api';
@@ -17,6 +18,8 @@ export function Financials() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDetailedModalOpen, setIsDetailedModalOpen] = useState(false);
   const [isGroupedModalOpen, setIsGroupedModalOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
   // Default to show all dates (as per requirement: "O padrão do financeiro deve ser ver tudo")
@@ -88,13 +91,70 @@ export function Financials() {
   const handleMarkAsPaid = async (transactionId) => {
     try {
       const today = format(new Date(), 'yyyy-MM-dd');
+      
+      // Find the transaction to check if it's linked to a reservation
+      const transaction = transactions.find(t => t.id === transactionId);
+      
+      // Mark the transaction as paid
       await api.patch(`financials/${transactionId}/`, {
         paid_date: today,
       });
+      
+      // If transaction is linked to a reservation, fill the payment pool (Item 12)
+      if (transaction && transaction.reservation) {
+        try {
+          // Fetch the reservation to get current data
+          const resResponse = await api.get(`reservations/${transaction.reservation}/`);
+          const reservation = resResponse.data;
+          
+          // Only update if not already fully paid
+          const currentPaid = parseFloat(reservation.amount_paid) || 0;
+          const totalPrice = parseFloat(reservation.total_price) || 0;
+          const transactionAmount = parseFloat(transaction.amount) || 0;
+          
+          if (currentPaid < totalPrice) {
+            // Add payment to fill the pool up to total_price
+            const newAmountPaid = Math.min(totalPrice, currentPaid + transactionAmount);
+            const paymentEntry = {
+              date: new Date().toISOString(),
+              amount: newAmountPaid - currentPaid,
+              method: 'Pagamento (Financeiro)'
+            };
+            
+            await api.patch(`reservations/${transaction.reservation}/`, {
+              amount_paid: newAmountPaid,
+              payment_history: [...(reservation.payment_history || []), paymentEntry],
+              status: newAmountPaid >= totalPrice ? 'CONFIRMED' : reservation.status
+            });
+          }
+        } catch (resError) {
+          console.error('Error updating reservation payment pool:', resError);
+        }
+      }
+      
       await fetchTransactions();
     } catch (error) {
       console.error('Error marking transaction as paid:', error);
     }
+  };
+
+  const handleUpdateTransaction = async (transactionId, formData) => {
+    try {
+      // Use the response data directly from the API call
+      const response = await api.patch(`financials/${transactionId}/`, formData);
+      // Update selected transaction with the response data
+      setSelectedTransaction(response.data);
+      // Refresh transactions list
+      await fetchTransactions();
+    } catch (error) {
+      console.error('Error updating transaction:', error);
+      throw error;
+    }
+  };
+
+  const handleTransactionClick = (transaction) => {
+    setSelectedTransaction(transaction);
+    setIsDetailsModalOpen(true);
   };
 
   const handleDeleteTransaction = async (transactionId) => {
@@ -354,6 +414,7 @@ export function Financials() {
             transactions={filteredTransactions}
             onMarkAsPaid={handleMarkAsPaid}
             onDelete={handleDeleteTransaction}
+            onTransactionClick={handleTransactionClick}
           />
         </CardContent>
       </Card>
@@ -363,6 +424,18 @@ export function Financials() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSubmit={handleAddTransaction}
+      />
+
+      {/* Transaction Details Modal */}
+      <TransactionDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedTransaction(null);
+        }}
+        transaction={selectedTransaction}
+        onUpdate={handleUpdateTransaction}
+        onMarkAsPaid={handleMarkAsPaid}
       />
 
       {/* Detailed Financial Modal */}

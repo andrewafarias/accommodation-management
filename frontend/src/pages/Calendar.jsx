@@ -4,19 +4,27 @@ import { Button } from '../components/ui/Button';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
-import { format, subDays, startOfMonth, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears } from 'date-fns';
 import api from '../services/api';
 
 export function Calendar() {
   const [accommodations, setAccommodations] = useState([]);
   const [reservations, setReservations] = useState([]);
-  // Start 2 days before today as per requirement
-  const [startDate, setStartDate] = useState(() => subDays(new Date(), 2));
+  // Start 3 months before today (as per requirement: 3 months back, 2 years forward)
+  const [startDate, setStartDate] = useState(() => startOfMonth(subMonths(new Date(), 3)));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [prefilledData, setPrefilledData] = useState({});
+  
+  // Date range selection state
+  const [dateSelection, setDateSelection] = useState({
+    unitId: null,
+    startDate: null,
+    endDate: null,
+    isSelecting: false
+  });
 
   useEffect(() => {
     fetchCalendarData();
@@ -55,14 +63,68 @@ export function Calendar() {
   };
 
   const handleToday = () => {
-    // Start 2 days before today as per requirement
-    setStartDate(subDays(new Date(), 2));
+    // Start 3 months before today (as per requirement: 3 months back, 2 years forward)
+    setStartDate(startOfMonth(subMonths(new Date(), 3)));
+  };
+  
+  // Calculate days to show: from 3 months back to 2 years forward
+  const calculateDaysToShow = () => {
+    const threeMonthsAgo = startOfMonth(subMonths(new Date(), 3));
+    const twoYearsLater = addYears(new Date(), 2);
+    return differenceInDays(twoYearsLater, threeMonthsAgo);
   };
 
+  // Handle cell click for date range selection
   const handleCellClick = (data) => {
-    setSelectedReservation(null);
-    setPrefilledData(data);
-    setModalOpen(true);
+    const clickedDate = data.check_in;
+    const unitId = data.unit_id;
+    
+    if (!dateSelection.isSelecting || dateSelection.unitId !== unitId) {
+      // First click - start selection
+      setDateSelection({
+        unitId: unitId,
+        startDate: clickedDate,
+        endDate: null,
+        isSelecting: true
+      });
+    } else {
+      // Second click - complete selection
+      const start = dateSelection.startDate;
+      const end = clickedDate;
+      
+      // Ensure start is before end
+      const [finalStart, finalEnd] = start <= end ? [start, end] : [end, start];
+      
+      setDateSelection({
+        unitId: unitId,
+        startDate: finalStart,
+        endDate: finalEnd,
+        isSelecting: false
+      });
+    }
+  };
+  
+  // Create reservation from selected date range
+  const handleCreateReservationFromSelection = () => {
+    if (dateSelection.startDate && dateSelection.endDate && dateSelection.unitId) {
+      setSelectedReservation(null);
+      setPrefilledData({
+        unit_id: dateSelection.unitId,
+        check_in: dateSelection.startDate,
+        check_out: dateSelection.endDate
+      });
+      setModalOpen(true);
+    }
+  };
+  
+  // Clear date selection
+  const handleClearSelection = () => {
+    setDateSelection({
+      unitId: null,
+      startDate: null,
+      endDate: null,
+      isSelecting: false
+    });
   };
 
   const handleReservationClick = (reservation) => {
@@ -75,6 +137,7 @@ export function Calendar() {
     setModalOpen(false);
     setSelectedReservation(null);
     setPrefilledData({});
+    handleClearSelection();
   };
 
   const handleReservationSave = async () => {
@@ -160,10 +223,45 @@ export function Calendar() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <CalendarIcon className="w-6 h-6 mr-2" />
-            Timeline View
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center">
+              <CalendarIcon className="w-6 h-6 mr-2" />
+              Timeline View
+            </CardTitle>
+            
+            {/* Selection Actions */}
+            <div className="flex items-center space-x-2">
+              {dateSelection.startDate && dateSelection.endDate ? (
+                <>
+                  <span className="text-sm text-gray-600">
+                    Selecionado: {format(new Date(dateSelection.startDate), 'dd/MM/yyyy')} - {format(new Date(dateSelection.endDate), 'dd/MM/yyyy')}
+                  </span>
+                  <Button
+                    onClick={handleCreateReservationFromSelection}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    Criar Reserva
+                  </Button>
+                  <Button
+                    onClick={handleClearSelection}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Limpar
+                  </Button>
+                </>
+              ) : dateSelection.isSelecting ? (
+                <span className="text-sm text-blue-600 font-medium">
+                  Selecione a data final...
+                </span>
+              ) : (
+                <span className="text-sm text-gray-500">
+                  Clique em uma data para selecionar
+                </span>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
           {accommodations.length === 0 ? (
@@ -183,9 +281,10 @@ export function Calendar() {
               units={accommodations}
               reservations={reservations}
               startDate={startDate}
-              daysToShow={30}
+              daysToShow={calculateDaysToShow()}
               onCellClick={handleCellClick}
               onReservationClick={handleReservationClick}
+              dateSelection={dateSelection}
             />
           )}
         </CardContent>

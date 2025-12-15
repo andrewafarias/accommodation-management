@@ -36,6 +36,7 @@ export function ReservationModal({
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [warning, setWarning] = useState(null);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({
@@ -45,6 +46,7 @@ export function ReservationModal({
     email: '',
   });
   const [newPayment, setNewPayment] = useState('');
+  const [newPaymentDate, setNewPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
   
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
@@ -125,6 +127,7 @@ export function ReservationModal({
         setClientSearchTerm('');
       }
       setError(null);
+      setWarning(null);
       setNewPayment('');
     } else if (!isOpen) {
       // Reset when modal closes
@@ -233,17 +236,24 @@ export function ReservationModal({
     }
     
     const newPaymentEntry = {
-      date: new Date().toISOString(),
+      date: new Date(newPaymentDate + 'T00:00:00').toISOString(),
       amount: paymentAmount,
-      method: 'PIX' // Default payment method
+      method: 'Pagamento' // Generic payment type
     };
+    
+    const newAmountPaid = (parseFloat(formData.amount_paid) || 0) + paymentAmount;
+    
+    // Auto-confirm when adding payment to pool (requirement: auto-set to CONFIRMED)
+    const shouldAutoConfirm = formData.status === 'PENDING' && newAmountPaid > 0;
     
     setFormData(prev => ({
       ...prev,
-      amount_paid: (parseFloat(prev.amount_paid) || 0) + paymentAmount,
-      payment_history: [...(prev.payment_history || []), newPaymentEntry]
+      amount_paid: newAmountPaid,
+      payment_history: [...(prev.payment_history || []), newPaymentEntry],
+      status: shouldAutoConfirm ? 'CONFIRMED' : prev.status
     }));
     setNewPayment('');
+    setNewPaymentDate(new Date().toISOString().split('T')[0]);
   };
 
   // Calculate remaining amount
@@ -384,8 +394,8 @@ export function ReservationModal({
 
       // Check for tight turnaround warning
       if (response.data.warning) {
-        // Show warning but don't block the save - reservation was created
-        window.alert(response.data.warning);
+        // Show warning as in-site panel instead of browser alert
+        setWarning(response.data.warning);
       }
 
       // Call the onSave callback with the new/updated reservation
@@ -452,7 +462,7 @@ export function ReservationModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -471,6 +481,22 @@ export function ReservationModal({
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
               {error}
+            </div>
+          )}
+          
+          {warning && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 flex items-start justify-between">
+              <div className="flex-1">
+                <div className="font-medium mb-1">⚠️ Aviso</div>
+                {warning}
+              </div>
+              <button
+                type="button"
+                onClick={() => setWarning(null)}
+                className="ml-2 text-yellow-600 hover:text-yellow-800"
+              >
+                ✕
+              </button>
             </div>
           )}
 
@@ -821,21 +847,29 @@ export function ReservationModal({
             </div>
             
             {/* Add Payment */}
-            <div className="flex gap-2 items-center mb-3">
-              <input
-                type="number"
-                value={newPayment}
-                onChange={(e) => setNewPayment(e.target.value)}
-                placeholder="Valor do pagamento"
-                min="0"
-                step="0.01"
-                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+            <div className="space-y-2 mb-3">
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  value={newPayment}
+                  onChange={(e) => setNewPayment(e.target.value)}
+                  placeholder="Valor do pagamento"
+                  min="0"
+                  step="0.01"
+                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+                <input
+                  type="date"
+                  value={newPaymentDate}
+                  onChange={(e) => setNewPaymentDate(e.target.value)}
+                  className="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
               <button
                 type="button"
                 onClick={handleAddPayment}
                 disabled={!newPayment || parseFloat(newPayment) <= 0}
-                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 + Adicionar Pagamento
               </button>
@@ -849,7 +883,7 @@ export function ReservationModal({
                   {formData.payment_history.map((payment, index) => (
                     <div key={index} className="text-xs bg-white rounded px-2 py-1 flex justify-between">
                       <span className="text-gray-500">
-                        {new Date(payment.date).toLocaleDateString('pt-BR')} - {payment.method || 'PIX'}
+                        {new Date(payment.date).toLocaleDateString('pt-BR')} - {payment.method || 'Pagamento'}
                       </span>
                       <span className="font-semibold text-green-600">
                         R$ {parseFloat(payment.amount).toFixed(2)}

@@ -70,7 +70,8 @@ export function TimelineCalendar({
   startDate = new Date(), 
   daysToShow = 30,
   onCellClick,
-  onReservationClick 
+  onReservationClick,
+  dateSelection = null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -94,6 +95,33 @@ export function TimelineCalendar({
   const isHoliday = (date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
     return holidays[dateStr] || null;
+  };
+
+  // Check if a date is in the selection range
+  const isDateInSelection = (date, unitId) => {
+    if (!dateSelection || dateSelection.unitId !== unitId) return false;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    if (dateSelection.startDate && dateSelection.endDate) {
+      // Full selection - check if date is in range
+      return dateStr >= dateSelection.startDate && dateStr <= dateSelection.endDate;
+    } else if (dateSelection.startDate && dateSelection.isSelecting) {
+      // Selection in progress - highlight start date
+      return dateStr === dateSelection.startDate;
+    }
+    return false;
+  };
+  
+  // Check if this is the start or end of selection
+  const isSelectionEdge = (date, unitId) => {
+    if (!dateSelection || dateSelection.unitId !== unitId) return null;
+    
+    const dateStr = format(date, 'yyyy-MM-dd');
+    
+    if (dateStr === dateSelection.startDate) return 'start';
+    if (dateStr === dateSelection.endDate) return 'end';
+    return null;
   };
 
   // Calculate cell width for responsive design
@@ -283,11 +311,16 @@ export function TimelineCalendar({
                         className={cn(
                           'border-r hover:bg-blue-50 cursor-pointer transition-colors relative group',
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-blue-400',
-                          holidayName && 'ring-1 ring-inset ring-red-300'
+                          holidayName && 'ring-1 ring-inset ring-red-300',
+                          isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-green-500 bg-green-100',
+                          isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-green-600',
+                          isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-green-600'
                         )}
                         style={{ 
                           width: `${cellWidth}px`,
-                          backgroundColor: holidayName ? `rgba(254, 202, 202, 0.3)` : cellBgColor
+                          backgroundColor: isDateInSelection(date, unit.id) 
+                            ? 'rgba(34, 197, 94, 0.2)'
+                            : (holidayName ? `rgba(254, 202, 202, 0.3)` : cellBgColor)
                         }}
                         onClick={() => onCellClick && onCellClick({
                           unit_id: unit.id,

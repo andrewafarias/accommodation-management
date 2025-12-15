@@ -19,7 +19,47 @@ export function DetailedFinancialModal({
   if (!isOpen) return null;
 
   const handlePrint = () => {
-    window.print();
+    // Create a temporary print window with detailed report content
+    const printContent = document.getElementById('detailed-report-content');
+    if (!printContent) return;
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Relatório Detalhado</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+            th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; text-align: left; }
+            th { background-color: #f5f5f5; font-weight: bold; }
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            .text-green { color: #15803d; }
+            .text-red { color: #dc2626; }
+            .text-blue { color: #1d4ed8; }
+            .font-bold { font-weight: bold; }
+            .text-lg { font-size: 1.125rem; }
+            .header { text-align: center; margin-bottom: 24px; }
+            .section-title { font-size: 1.25rem; font-weight: bold; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid; }
+            .income-title { color: #15803d; border-color: #15803d; }
+            .expense-title { color: #dc2626; border-color: #dc2626; }
+            .status-paid { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
+            .status-pending { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
+            .summary { border-top: 2px solid #333; padding-top: 16px; margin-top: 24px; }
+            .summary-row { display: flex; justify-content: space-between; padding: 8px 0; }
+            .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          ${printContent.innerHTML}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
   };
 
   const formatCurrency = (amount) => {
@@ -126,10 +166,20 @@ export function DetailedFinancialModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-8">
+        <div id="detailed-report-content" className="p-6 space-y-8">
+          {/* Print Header */}
+          <div className="header hidden print:block">
+            <h1 className="text-2xl font-bold">Relatório Financeiro Detalhado</h1>
+            <p className="text-gray-600">
+              {showAllDates 
+                ? 'Período: Todas as Transações' 
+                : `Período: ${formatDate(startDate)} a ${formatDate(endDate)}`}
+            </p>
+          </div>
+
           {/* Income Section */}
           <div>
-            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center">
+            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center section-title income-title">
               <span className="flex-1">Receitas (Entradas)</span>
               <span className="text-sm font-normal text-gray-600">
                 {incomeTransactions.length} transação(ões)
