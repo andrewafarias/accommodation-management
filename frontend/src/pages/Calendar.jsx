@@ -103,6 +103,15 @@ export function Calendar() {
     }
   };
   
+  // Handle navigation from bottom-right buttons
+  const handleNavigate = (direction) => {
+    if (direction === 'left') {
+      handleScrollLeft();
+    } else {
+      handleScrollRight();
+    }
+  };
+  
   // Calculate days from start date to today
   const getDaysToToday = useCallback(() => {
     const start = startOfDay(startDate);
@@ -121,6 +130,20 @@ export function Calendar() {
       timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
     }
   }, [getDaysToToday, cellWidth]);
+  
+  // Scroll to a specific date
+  const scrollToDate = useCallback((dateStr) => {
+    if (timelineScrollRef.current) {
+      const targetDate = startOfDay(parseISO(dateStr));
+      const start = startOfDay(startDate);
+      const daysToTarget = differenceInDays(targetDate, start);
+      const scrollPosition = daysToTarget * cellWidth;
+      // Center the target date in the viewport
+      const containerWidth = timelineScrollRef.current.clientWidth;
+      const centeredPosition = scrollPosition - (containerWidth / 2) + (cellWidth / 2);
+      timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
+    }
+  }, [startDate, cellWidth]);
 
   const handleToday = () => {
     // Update visible date to today's month
@@ -205,11 +228,14 @@ export function Calendar() {
   const handleReservationSave = async (data, hasWarning = false) => {
     // Refresh calendar data after saving
     await fetchCalendarData();
-    // Only close modal if there's no warning to show
-    if (!hasWarning) {
-      setModalOpen(false);
-      setSelectedReservation(null);
-      setPrefilledData({});
+    // Close modal (warnings are now shown as browser alerts)
+    setModalOpen(false);
+    setSelectedReservation(null);
+    setPrefilledData({});
+    
+    // Scroll to the reservation date
+    if (data && data.check_in) {
+      scrollToDate(data.check_in);
     }
   };
 
@@ -284,6 +310,32 @@ export function Calendar() {
     setPackageModalOpen(false);
     setNewPackageData({ name: '', color: '#FF5733' });
     setSelectedPackageId(null);
+  };
+  
+  // Handle clearing packages from selected date range
+  const handleClearPackages = () => {
+    if (!dateSelection.startDate || !dateSelection.endDate || !dateSelection.unitId) return;
+    
+    // Remove all packages that overlap with the selected date range
+    setPackages(prev => prev.filter(pkg => {
+      // Keep packages that don't overlap with the selection
+      if (pkg.unitId !== dateSelection.unitId) return true;
+      
+      // Ensure dates are in the same format for comparison
+      const pkgStart = pkg.startDate;
+      const pkgEnd = pkg.endDate;
+      const selStart = dateSelection.startDate;
+      const selEnd = dateSelection.endDate;
+      
+      // No overlap if package ends before selection starts or starts after selection ends
+      // Using string comparison since all dates are in 'yyyy-MM-dd' format
+      if (pkgEnd < selStart || pkgStart > selEnd) return true;
+      
+      // There is overlap, so remove this package
+      return false;
+    }));
+    
+    setPackageModalOpen(false);
   };
   
   // Get the 5 most recent unique packages (by name)
@@ -390,37 +442,13 @@ export function Calendar() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              {/* Left scroll button */}
-              <Button
-                onClick={handleScrollLeft}
-                variant="outline"
-                size="sm"
-                className="mr-2"
-                title="Rolar para esquerda"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              
-              <CardTitle className="flex items-center">
-                <CalendarIcon className="w-6 h-6 mr-2" />
-                {(() => {
-                  const formatted = format(visibleDate, 'MMMM yyyy', { locale: ptBR });
-                  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
-                })()}
-              </CardTitle>
-              
-              {/* Right scroll button */}
-              <Button
-                onClick={handleScrollRight}
-                variant="outline"
-                size="sm"
-                className="ml-2"
-                title="Rolar para direita"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
+            <CardTitle className="flex items-center">
+              <CalendarIcon className="w-6 h-6 mr-2" />
+              {(() => {
+                const formatted = format(visibleDate, 'MMMM yyyy', { locale: ptBR });
+                return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+              })()}
+            </CardTitle>
             
             {/* Selection Actions */}
             <div className="flex items-center space-x-2">
@@ -500,6 +528,7 @@ export function Calendar() {
               getPackageForDate={getPackageForDate}
               scrollRef={timelineScrollRef}
               onVisibleDateChange={setVisibleDate}
+              onNavigate={handleNavigate}
             />
           )}
         </CardContent>
@@ -668,23 +697,32 @@ export function Calendar() {
                 <span className="text-sm text-gray-600">{selectedPackageId ? 'Usando cor do pacote selecionado' : newPackageData.color}</span>
               </div>
             </div>
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-between space-x-2">
               <Button
+                onClick={handleClearPackages}
                 variant="outline"
-                onClick={() => {
-                  setPackageModalOpen(false);
-                  setSelectedPackageId(null);
-                }}
+                className="border-red-500 text-red-600 hover:bg-red-50"
               >
-                Cancelar
+                Limpar Pacotes
               </Button>
-              <Button
-                onClick={handleCreatePackage}
-                className="bg-purple-600 hover:bg-purple-700"
-                disabled={!selectedPackageId && !newPackageData.name.trim()}
-              >
-                {selectedPackageId ? 'Aplicar Pacote' : 'Criar Pacote'}
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setPackageModalOpen(false);
+                    setSelectedPackageId(null);
+                  }}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  onClick={handleCreatePackage}
+                  className="bg-purple-600 hover:bg-purple-700"
+                  disabled={!selectedPackageId && !newPackageData.name.trim()}
+                >
+                  {selectedPackageId ? 'Aplicar Pacote' : 'Criar Pacote'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

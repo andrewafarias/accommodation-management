@@ -89,7 +89,6 @@ export function ReservationModal({
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [warning, setWarning] = useState(null);
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientData, setNewClientData] = useState({
@@ -241,7 +240,6 @@ export function ReservationModal({
         setClientSearchTerm('');
       }
       setError(null);
-      setWarning(null);
       setNewPayment('');
     } else if (!isOpen) {
       // Reset when modal closes
@@ -536,16 +534,11 @@ export function ReservationModal({
 
       // Check for tight turnaround warning
       if (response.data.warning) {
-        // Show warning as in-site panel - don't close modal yet
-        setWarning(response.data.warning);
-        // Still call onSave to refresh data but the modal stays open for user to see warning
-        if (onSave) {
-          await onSave(response.data, true); // Pass true to indicate warning present
-        }
-        return; // Don't close modal - let user see the warning
+        // Show warning as browser alert
+        alert(response.data.warning);
       }
 
-      // No warning - Call the onSave callback with the new/updated reservation
+      // Call the onSave callback with the new/updated reservation
       if (onSave) {
         await onSave(response.data);
       }
@@ -636,22 +629,6 @@ export function ReservationModal({
           {error && (
             <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-800">
               {error}
-            </div>
-          )}
-          
-          {warning && (
-            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800 flex items-start justify-between">
-              <div className="flex-1">
-                <div className="font-medium mb-1">⚠️ Aviso</div>
-                {warning}
-              </div>
-              <button
-                type="button"
-                onClick={() => setWarning(null)}
-                className="ml-2 text-yellow-600 hover:text-yellow-800"
-              >
-                ✕
-              </button>
             </div>
           )}
 
