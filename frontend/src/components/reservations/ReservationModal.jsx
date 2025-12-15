@@ -29,6 +29,7 @@ export function ReservationModal({
     guest_count_children: 0,
     total_price: '',
     price_breakdown: [],
+    amount_paid: 0,
     status: 'PENDING',
   });
   
@@ -43,6 +44,7 @@ export function ReservationModal({
     phone: '',
     email: '',
   });
+  const [newPayment, setNewPayment] = useState('');
   
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
@@ -98,6 +100,8 @@ export function ReservationModal({
           guest_count_children: reservation.guest_count_children || 0,
           total_price: reservation.total_price || '',
           price_breakdown: reservation.price_breakdown || [],
+          amount_paid: reservation.amount_paid || 0,
+          payment_history: reservation.payment_history || [],
           status: reservation.status || 'PENDING',
         });
         setClientSearchTerm(reservation.client?.full_name || '');
@@ -114,11 +118,14 @@ export function ReservationModal({
           guest_count_children: 0,
           total_price: '',
           price_breakdown: [],
+          amount_paid: 0,
+          payment_history: [],
           status: 'PENDING',
         });
         setClientSearchTerm('');
       }
       setError(null);
+      setNewPayment('');
     } else if (!isOpen) {
       // Reset when modal closes
       initializedRef.current = false;
@@ -200,6 +207,34 @@ export function ReservationModal({
       ...prev,
       total_price: total.toFixed(2)
     }));
+  };
+
+  // Add payment to pool
+  const handleAddPayment = () => {
+    const paymentAmount = parseFloat(newPayment);
+    if (isNaN(paymentAmount) || paymentAmount <= 0) {
+      return;
+    }
+    
+    const newPaymentEntry = {
+      date: new Date().toISOString(),
+      amount: paymentAmount,
+      method: 'PIX' // Default payment method
+    };
+    
+    setFormData(prev => ({
+      ...prev,
+      amount_paid: (parseFloat(prev.amount_paid) || 0) + paymentAmount,
+      payment_history: [...(prev.payment_history || []), newPaymentEntry]
+    }));
+    setNewPayment('');
+  };
+
+  // Calculate remaining amount
+  const calculateRemainingAmount = () => {
+    const total = parseFloat(formData.total_price) || 0;
+    const paid = parseFloat(formData.amount_paid) || 0;
+    return Math.max(0, total - paid);
   };
 
   const handleCreateClient = async () => {
@@ -301,6 +336,8 @@ export function ReservationModal({
         guest_count_adults: parseInt(formData.guest_count_adults, 10),
         guest_count_children: parseInt(formData.guest_count_children, 10),
         status: formData.status,
+        amount_paid: parseFloat(formData.amount_paid) || 0,
+        payment_history: formData.payment_history || [],
       };
       
       // Add total_price if provided (convert to number)
@@ -737,6 +774,69 @@ export function ReservationModal({
               placeholder="0.00"
             />
             <p className="text-xs text-gray-500 mt-1">Deixe em branco para calcular automaticamente</p>
+          </div>
+
+          {/* Payment Pool Section */}
+          <div className="border border-gray-200 rounded-md p-3 bg-blue-50">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pagamentos
+            </label>
+            
+            {/* Payment Status Summary */}
+            <div className="grid grid-cols-3 gap-2 mb-3 text-sm">
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Total</div>
+                <div className="font-bold">R$ {parseFloat(formData.total_price || 0).toFixed(2)}</div>
+              </div>
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Pago</div>
+                <div className="font-bold text-green-600">R$ {parseFloat(formData.amount_paid || 0).toFixed(2)}</div>
+              </div>
+              <div className="bg-white rounded p-2 text-center">
+                <div className="text-gray-500 text-xs">Restante</div>
+                <div className="font-bold text-red-600">R$ {calculateRemainingAmount().toFixed(2)}</div>
+              </div>
+            </div>
+            
+            {/* Add Payment */}
+            <div className="flex gap-2 items-center mb-3">
+              <input
+                type="number"
+                value={newPayment}
+                onChange={(e) => setNewPayment(e.target.value)}
+                placeholder="Valor do pagamento"
+                min="0"
+                step="0.01"
+                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddPayment}
+                disabled={!newPayment || parseFloat(newPayment) <= 0}
+                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                + Adicionar Pagamento
+              </button>
+            </div>
+            
+            {/* Payment History */}
+            {formData.payment_history && formData.payment_history.length > 0 && (
+              <div className="mt-2">
+                <div className="text-xs font-medium text-gray-600 mb-1">Histórico de Pagamentos:</div>
+                <div className="space-y-1 max-h-24 overflow-y-auto">
+                  {formData.payment_history.map((payment, index) => (
+                    <div key={index} className="text-xs bg-white rounded px-2 py-1 flex justify-between">
+                      <span className="text-gray-500">
+                        {new Date(payment.date).toLocaleDateString('pt-BR')} - {payment.method || 'PIX'}
+                      </span>
+                      <span className="font-semibold text-green-600">
+                        R$ {parseFloat(payment.amount).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status */}

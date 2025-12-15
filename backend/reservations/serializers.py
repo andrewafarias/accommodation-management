@@ -27,6 +27,10 @@ class ReservationSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
+    # Computed read-only fields
+    amount_remaining = serializers.ReadOnlyField()
+    is_fully_paid = serializers.ReadOnlyField()
+    
     class Meta:
         model = Reservation
         fields = [
@@ -41,12 +45,16 @@ class ReservationSerializer(serializers.ModelSerializer):
             'guest_count_children',
             'total_price',
             'price_breakdown',
+            'amount_paid',
+            'amount_remaining',
+            'is_fully_paid',
+            'payment_history',
             'status',
             'notes',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'accommodation_unit_details', 'client_details', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'accommodation_unit_details', 'client_details', 'amount_remaining', 'is_fully_paid', 'created_at', 'updated_at']
     
     def to_representation(self, instance):
         """

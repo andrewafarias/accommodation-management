@@ -63,7 +63,22 @@ class Reservation(models.Model):
         default=list,
         blank=True,
         verbose_name="Price Breakdown",
-        help_text="List of price items: [{'name': 'Diária', 'value': 100.00}, ...]"
+        help_text="List of price items: [{'name': 'Diária', 'value': 100.00, 'quantity': 1}, ...]"
+    )
+    
+    # Payment pool - track paid vs required amounts
+    amount_paid = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="Amount Paid (BRL)",
+        help_text="Total amount already paid by the client"
+    )
+    payment_history = models.JSONField(
+        default=list,
+        blank=True,
+        verbose_name="Payment History",
+        help_text="List of payment entries: [{'date': '...', 'amount': ..., 'method': '...'}, ...]"
     )
     
     # Reservation status
@@ -87,6 +102,20 @@ class Reservation(models.Model):
     
     def __str__(self):
         return f"{self.accommodation_unit.name} - {self.client.full_name} ({self.check_in.strftime('%d/%m/%Y')} to {self.check_out.strftime('%d/%m/%Y')})"
+    
+    @property
+    def amount_remaining(self):
+        """Calculate remaining amount to be paid."""
+        if self.total_price is None:
+            return 0
+        return max(0, self.total_price - self.amount_paid)
+    
+    @property
+    def is_fully_paid(self):
+        """Check if reservation is fully paid."""
+        if self.total_price is None or self.total_price == 0:
+            return False
+        return self.amount_paid >= self.total_price
     
     def clean(self):
         """
