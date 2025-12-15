@@ -66,6 +66,39 @@ class ReservationSerializer(serializers.ModelSerializer):
         representation['accommodation_unit'] = representation.pop('accommodation_unit_details')
         return representation
     
+    def check_tight_turnaround(self, accommodation_unit, check_in):
+        """
+        Check if there's a checkout within 2 hours before the check-in.
+        Returns a warning message if tight turnaround is detected.
+        """
+        from datetime import timedelta
+        
+        # Find the most recent checkout for the same unit before this check-in
+        previous_reservation = Reservation.objects.filter(
+            accommodation_unit=accommodation_unit,
+            check_out__lte=check_in,
+            check_out__gte=check_in - timedelta(hours=2)
+        ).exclude(
+            status=Reservation.CANCELLED
+        ).exclude(
+            pk=self.instance.pk if self.instance else None
+        ).order_by('-check_out').first()
+        
+        if previous_reservation:
+            time_diff = check_in - previous_reservation.check_out
+            minutes = int(time_diff.total_seconds() / 60)
+            hours = minutes // 60
+            remaining_minutes = minutes % 60
+            
+            return (
+                f"AVISO: Pouco tempo entre reservas! "
+                f"A reserva anterior de {previous_reservation.client.full_name} "
+                f"tem check-out em {previous_reservation.check_out.strftime('%d/%m/%Y %H:%M')}, "
+                f"apenas {hours}h{remaining_minutes}min antes do check-in desta reserva."
+            )
+        
+        return None
+    
     def validate(self, attrs):
         """
         Call the model's clean() method to enforce overlap validation.
@@ -87,5 +120,14 @@ class ReservationSerializer(serializers.ModelSerializer):
         except DjangoValidationError as e:
             # Convert Django ValidationError to DRF ValidationError
             raise serializers.ValidationError(e.message_dict)
+        
+        # Check for tight turnaround (warning, not error)
+        warning = self.check_tight_turnaround(
+            attrs.get('accommodation_unit', getattr(self.instance, 'accommodation_unit', None)),
+            attrs.get('check_in', getattr(self.instance, 'check_in', None))
+        )
+        if warning:
+            # Store warning to be returned in response (won't block the save)
+            self.context['tight_turnaround_warning'] = warning
         
         return attrs

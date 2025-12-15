@@ -382,6 +382,12 @@ export function ReservationModal({
         response = await api.post('reservations/', payload);
       }
 
+      // Check for tight turnaround warning
+      if (response.data.warning) {
+        // Show warning but don't block the save - reservation was created
+        window.alert(response.data.warning);
+      }
+
       // Call the onSave callback with the new/updated reservation
       if (onSave) {
         await onSave(response.data);
