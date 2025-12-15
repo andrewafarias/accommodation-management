@@ -1,22 +1,8 @@
-import { useState } from 'react';
 import { format } from 'date-fns';
 import { Button } from '../ui/Button';
-import { CheckCircle, Trash2, Check, Clock, ChevronDown, ChevronRight, Eye } from 'lucide-react';
+import { CheckCircle, Trash2, Check, Clock, Eye } from 'lucide-react';
 
 export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTransactionClick }) {
-  const [expandedRows, setExpandedRows] = useState(new Set());
-
-  const toggleRow = (transactionId) => {
-    setExpandedRows(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(transactionId)) {
-        newSet.delete(transactionId);
-      } else {
-        newSet.add(transactionId);
-      }
-      return newSet;
-    });
-  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -100,147 +86,99 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTrans
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {transactions.map((transaction) => {
-            const isExpanded = expandedRows.has(transaction.id);
             return (
-              <>
-                <tr 
-                  key={transaction.id} 
-                  className="hover:bg-gray-50 cursor-pointer"
-                  onClick={() => toggleRow(transaction.id)}
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <div className="flex items-center gap-2">
-                      {isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-gray-400" />
-                      )}
-                      {formatDate(transaction.due_date)}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <span
-                      className={
-                        transaction.transaction_type === 'INCOME'
-                          ? 'text-green-600'
-                          : 'text-red-600'
-                      }
-                    >
-                      {transaction.transaction_type === 'INCOME' ? 'Receita' : 'Despesa'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getCategoryLabel(transaction.category)}
-                  </td>
-                  <td 
-                    className="px-6 py-4 text-sm text-gray-900 max-w-xs"
-                    title={transaction.description || ''}
+              <tr 
+                key={transaction.id} 
+                className="hover:bg-gray-50"
+              >
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <div className="flex items-center gap-2">
+                    {formatDate(transaction.due_date)}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <span
+                    className={
+                      transaction.transaction_type === 'INCOME'
+                        ? 'text-green-600'
+                        : 'text-red-600'
+                    }
                   >
-                    {truncateText(transaction.description, 50)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <span
-                      className={
-                        transaction.transaction_type === 'INCOME'
-                          ? 'text-green-600 font-semibold'
-                          : 'text-red-600 font-semibold'
-                      }
-                    >
-                      {transaction.transaction_type === 'INCOME' ? '+ ' : '- '}
-                      {formatCurrency(transaction.amount)}
+                    {transaction.transaction_type === 'INCOME' ? 'Receita' : 'Despesa'}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getCategoryLabel(transaction.category)}
+                </td>
+                <td 
+                  className="px-6 py-4 text-sm text-gray-900 max-w-xs"
+                  title={transaction.description || ''}
+                >
+                  {truncateText(transaction.description, 50)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                  <span
+                    className={
+                      transaction.transaction_type === 'INCOME'
+                        ? 'text-green-600 font-semibold'
+                        : 'text-red-600 font-semibold'
+                    }
+                  >
+                    {transaction.transaction_type === 'INCOME' ? '+ ' : '- '}
+                    {formatCurrency(transaction.amount)}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  {getPaymentMethodLabel(transaction.payment_method)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  {transaction.is_paid ? (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      <Check className="w-3 h-3" />
+                      Pago ({formatDate(transaction.paid_date)})
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getPaymentMethodLabel(transaction.payment_method)}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {transaction.is_paid ? (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        <Check className="w-3 h-3" />
-                        Pago ({formatDate(transaction.paid_date)})
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                        <Clock className="w-3 h-3" />
-                        Pendente
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex gap-2">
-                      {onTransactionClick && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onTransactionClick(transaction)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Detalhes
-                        </Button>
-                      )}
-                      {!transaction.is_paid && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => onMarkAsPaid(transaction.id)}
-                          className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Marcar como Pago
-                        </Button>
-                      )}
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                      <Clock className="w-3 h-3" />
+                      Pendente
+                    </span>
+                  )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <div className="flex gap-2">
+                    {onTransactionClick && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(transaction.id)}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => onTransactionClick(transaction)}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Eye className="w-4 h-4 mr-1" />
+                        Detalhes
                       </Button>
-                    </div>
-                  </td>
-                </tr>
-                {/* Expanded Details Row */}
-                {isExpanded && (
-                  <tr key={`${transaction.id}-details`} className="bg-gray-50">
-                    <td colSpan="8" className="px-6 py-4">
-                      <div className="space-y-3 text-sm">
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <span className="font-semibold text-gray-700">Descrição Completa:</span>
-                            <p className="text-gray-600 mt-1">{transaction.description || 'Sem descrição'}</p>
-                          </div>
-                          <div>
-                            <span className="font-semibold text-gray-700">Notas:</span>
-                            <p className="text-gray-600 mt-1">{transaction.notes || 'Sem notas'}</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-4 gap-4">
-                          <div>
-                            <span className="font-semibold text-gray-700">ID:</span>
-                            <p className="text-gray-600">#{transaction.id}</p>
-                          </div>
-                          <div>
-                            <span className="font-semibold text-gray-700">Criado em:</span>
-                            <p className="text-gray-600">{formatDate(transaction.created_at)}</p>
-                          </div>
-                          <div>
-                            <span className="font-semibold text-gray-700">Atualizado em:</span>
-                            <p className="text-gray-600">{formatDate(transaction.updated_at)}</p>
-                          </div>
-                          <div>
-                            <span className="font-semibold text-gray-700">Reserva Vinculada:</span>
-                            <p className="text-gray-600">
-                              {transaction.reservation ? `#${transaction.reservation}` : 'Nenhuma'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                )}
-              </>
+                    )}
+                    {!transaction.is_paid && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onMarkAsPaid(transaction.id)}
+                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      >
+                        <CheckCircle className="w-4 h-4 mr-1" />
+                        Marcar como Pago
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onDelete(transaction.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </td>
+              </tr>
             );
           })}
         </tbody>
