@@ -23,13 +23,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     address: '',
     notes: '',
     tags: [],
-    profile_picture: null,
-    document_file: null,
   });
   const [tagInput, setTagInput] = useState('');
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
-  const [previewImage, setPreviewImage] = useState(null);
   const [documentsToUpload, setDocumentsToUpload] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
 
@@ -45,10 +42,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         address: client.address || '',
         notes: client.notes || '',
         tags: client.tags || [],
-        profile_picture: null,
-        document_file: null,
       });
-      setPreviewImage(client.profile_picture || null);
       setExistingDocuments(client.document_attachments || []);
     } else {
       setFormData({
@@ -59,10 +53,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         address: '',
         notes: '',
         tags: [],
-        profile_picture: null,
-        document_file: null,
       });
-      setPreviewImage(null);
       setExistingDocuments([]);
     }
     setDocumentsToUpload([]);
@@ -130,24 +121,6 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     // Clear error for this field
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
-
-  // Handle file changes
-  const handleFileChange = (e) => {
-    const { name, files } = e.target;
-    
-    if (files && files[0]) {
-      setFormData(prev => ({ ...prev, [name]: files[0] }));
-      
-      // Create preview for profile picture
-      if (name === 'profile_picture') {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewImage(reader.result);
-        };
-        reader.readAsDataURL(files[0]);
-      }
     }
   };
 
@@ -257,14 +230,6 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       if (formData.address) submitData.append('address', formData.address);
       if (formData.notes) submitData.append('notes', formData.notes);
       submitData.append('tags', JSON.stringify(formData.tags));
-      
-      // Append files if they exist
-      if (formData.profile_picture) {
-        submitData.append('profile_picture', formData.profile_picture);
-      }
-      if (formData.document_file) {
-        submitData.append('document_file', formData.document_file);
-      }
       
       // Save the client first and get the saved client data
       const savedClient = await onSave(submitData);
@@ -482,64 +447,6 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Profile Picture */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Profile Picture
-              </label>
-              <div className="space-y-2">
-                {previewImage && (
-                  <div className="flex items-center space-x-3">
-                    <img
-                      src={previewImage}
-                      alt="Profile preview"
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-300"
-                    />
-                  </div>
-                )}
-                <input
-                  type="file"
-                  name="profile_picture"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="block w-full text-sm text-gray-500
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-md file:border-0
-                    file:text-sm file:font-medium
-                    file:bg-blue-50 file:text-blue-700
-                    hover:file:bg-blue-100"
-                />
-              </div>
-            </div>
-
-            {/* Document File (Legacy - keeping for backward compatibility) */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Document Attachment (Legacy)
-              </label>
-              <input
-                type="file"
-                name="document_file"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-md file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-blue-50 file:text-blue-700
-                  hover:file:bg-blue-100"
-              />
-              {formData.document_file && (
-                <p className="mt-1 text-sm text-gray-600">
-                  Selected: {formData.document_file.name}
-                </p>
-              )}
-              {!formData.document_file && client?.document_file && (
-                <p className="mt-1 text-sm text-gray-600">
-                  Current file attached
-                </p>
-              )}
             </div>
 
             {/* Multiple Document Attachments */}
