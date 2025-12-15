@@ -1,6 +1,16 @@
 from rest_framework import serializers
-from .models import Client
+from .models import Client, DocumentAttachment
 import json
+
+
+class DocumentAttachmentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for DocumentAttachment model.
+    """
+    class Meta:
+        model = DocumentAttachment
+        fields = ['id', 'file', 'filename', 'uploaded_at']
+        read_only_fields = ['id', 'uploaded_at']
 
 
 class ClientSerializer(serializers.ModelSerializer):
@@ -8,7 +18,9 @@ class ClientSerializer(serializers.ModelSerializer):
     Serializer for Client model.
     Includes all fields for both read and write operations.
     Handles tags field when submitted as JSON string from FormData.
+    Includes related document_attachments.
     """
+    document_attachments = DocumentAttachmentSerializer(many=True, read_only=True)
     
     def validate_tags(self, value):
         """Handle tags field when it comes as a JSON string from FormData."""
@@ -32,6 +44,7 @@ class ClientSerializer(serializers.ModelSerializer):
             'tags',
             'profile_picture',
             'document_file',
+            'document_attachments',
             'created_at',
             'updated_at',
         ]

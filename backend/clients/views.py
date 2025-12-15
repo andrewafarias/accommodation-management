@@ -1,10 +1,12 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter, SearchFilter
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db.models import Q, Value, CharField
 from django.db.models.functions import Replace
-from .models import Client
-from .serializers import ClientSerializer
+from .models import Client, DocumentAttachment
+from .serializers import ClientSerializer, DocumentAttachmentSerializer
 
 
 class UnformattedPhoneSearchFilter(SearchFilter):
@@ -71,3 +73,45 @@ class ClientViewSet(viewsets.ModelViewSet):
     search_fields = ['full_name', 'cpf', 'email']
     ordering_fields = ['full_name', 'created_at']
     ordering = ['full_name']
+    
+    @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def add_document(self, request, pk=None):
+        """
+        Add a document attachment to a client.
+        Expects: file (required)
+        """
+        client = self.get_object()
+        file = request.FILES.get('file')
+        
+        if not file:
+            return Response(
+                {'error': 'No file provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        document = DocumentAttachment.objects.create(
+            client=client,
+            file=file,
+            filename=file.name
+        )
+        
+        serializer = DocumentAttachmentSerializer(document)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['delete'], url_path='remove_document/(?P<document_id>[^/.]+)')
+    def remove_document(self, request, pk=None, document_id=None):
+        """
+        Remove a document attachment from a client.
+        """
+        client = self.get_object()
+        
+        try:
+            document = DocumentAttachment.objects.get(id=document_id, client=client)
+            document.file.delete()  # Delete the file from storage
+            document.delete()  # Delete the database record
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except DocumentAttachment.DoesNotExist:
+            return Response(
+                {'error': 'Document not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )

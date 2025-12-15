@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Edit, Trash2, Paperclip, User } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { ImageModal } from '../ui/ImageModal';
 
 /**
  * ClientList Component
@@ -11,9 +12,14 @@ import { Button } from '../ui/Button';
  * - Display all client information
  * - Visual badge tags
  * - Edit and Delete actions
+ * - Clickable profile pictures
+ * - Multiple document attachments support
  */
 export function ClientList({ clients = [], onEdit, onDelete, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedImageAlt, setSelectedImageAlt] = useState('');
 
   // Format phone from international format (+5511999998888) to display format (11) 99999-8888
   const formatPhoneDisplay = (phone) => {
@@ -47,6 +53,12 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
       (client.email && client.email.toLowerCase().includes(term))
     );
   }, [clients, searchTerm]);
+
+  const handleImageClick = (imageUrl, clientName) => {
+    setSelectedImage(imageUrl);
+    setSelectedImageAlt(clientName);
+    setImageModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -111,7 +123,8 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                         <img
                           src={client.profile_picture}
                           alt={client.full_name}
-                          className="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-200"
+                          className="w-10 h-10 rounded-full object-cover mr-3 border-2 border-gray-200 cursor-pointer hover:border-blue-500 transition-colors"
+                          onClick={() => handleImageClick(client.profile_picture, client.full_name)}
                         />
                       ) : (
                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
@@ -156,6 +169,13 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
+                      {/* Show count of document attachments */}
+                      {client.document_attachments && client.document_attachments.length > 0 && (
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                          {client.document_attachments.length} doc{client.document_attachments.length > 1 ? 's' : ''}
+                        </span>
+                      )}
+                      {/* Legacy single document support */}
                       {client.document_file && (
                         <Button
                           variant="ghost"
@@ -198,6 +218,14 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
           Showing {filteredClients.length} of {clients.length} client{clients.length !== 1 ? 's' : ''}
         </div>
       )}
+
+      {/* Image Modal */}
+      <ImageModal
+        isOpen={imageModalOpen}
+        onClose={() => setImageModalOpen(false)}
+        imageUrl={selectedImage}
+        altText={selectedImageAlt}
+      />
     </div>
   );
 }
