@@ -792,7 +792,7 @@ export function ReservationModal({
           {/* Total Nights Display */}
           {calculateTotalNights > 0 && (
             <div className="text-sm text-gray-500">
-              Total de noites: <strong>{calculateTotalNights}</strong>
+              Total de noites: {calculateTotalNights}
             </div>
           )}
 
@@ -960,10 +960,26 @@ export function ReservationModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="0.00"
             />
-            <p className="text-xs text-gray-500 mt-1">Deixe em branco para calcular automaticamente</p>
             {calculateSuggestedPrice > 0 && (
               <p className="text-xs text-gray-500 mt-1">
-                Preço sugerido: R$ {calculateSuggestedPrice.toFixed(2)}
+                Preço sugerido: <span 
+                  className="underline cursor-pointer hover:text-blue-600"
+                  onClick={() => setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }));
+                    } else if (e.key === ' ') {
+                      e.preventDefault();
+                      setFormData(prev => ({ ...prev, total_price: calculateSuggestedPrice.toFixed(2) }));
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Usar preço sugerido no campo total"
+                >
+                  R$ {calculateSuggestedPrice.toFixed(2)}
+                </span>
               </p>
             )}
           </div>
