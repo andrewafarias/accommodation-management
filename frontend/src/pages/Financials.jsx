@@ -140,13 +140,12 @@ export function Financials() {
 
   const handleUpdateTransaction = async (transactionId, formData) => {
     try {
-      await api.patch(`financials/${transactionId}/`, formData);
+      // Use the response data directly from the API call
+      const response = await api.patch(`financials/${transactionId}/`, formData);
+      // Update selected transaction with the response data
+      setSelectedTransaction(response.data);
+      // Refresh transactions list
       await fetchTransactions();
-      // Update selected transaction with new data
-      const updatedTransaction = transactions.find(t => t.id === transactionId);
-      if (updatedTransaction) {
-        setSelectedTransaction({ ...updatedTransaction, ...formData });
-      }
     } catch (error) {
       console.error('Error updating transaction:', error);
       throw error;

@@ -34,7 +34,7 @@ export function DetailedFinancialModal({
             th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; text-align: left; }
             th { background-color: #f5f5f5; font-weight: bold; }
             .text-right { text-align: right; }
-            .text-center { text-center: center; }
+            .text-center { text-align: center; }
             .text-green { color: #15803d; }
             .text-red { color: #dc2626; }
             .text-blue { color: #1d4ed8; }
