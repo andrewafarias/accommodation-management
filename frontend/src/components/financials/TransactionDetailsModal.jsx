@@ -88,7 +88,7 @@ export function TransactionDetailsModal({
     try {
       await onUpdate(transaction.id, formData);
       setIsEditing(false);
-    } catch (err) {
+    } catch {
       setError('Erro ao atualizar transação. Tente novamente.');
     } finally {
       setLoading(false);
