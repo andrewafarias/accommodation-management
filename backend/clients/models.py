@@ -51,3 +51,33 @@ class Client(models.Model):
     def __str__(self):
         return f"{self.full_name} (CPF: {self.cpf})"
 
+
+class DocumentAttachment(models.Model):
+    """
+    Model for storing multiple document attachments for a client.
+    """
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.CASCADE,
+        related_name='document_attachments',
+        verbose_name="Client"
+    )
+    file = models.FileField(
+        upload_to='clients/docs/',
+        verbose_name="Document File"
+    )
+    filename = models.CharField(
+        max_length=255,
+        verbose_name="Filename",
+        help_text="Original filename of the uploaded document"
+    )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Document Attachment"
+        verbose_name_plural = "Document Attachments"
+        ordering = ['-uploaded_at']
+    
+    def __str__(self):
+        return f"{self.filename} - {self.client.full_name}"
+

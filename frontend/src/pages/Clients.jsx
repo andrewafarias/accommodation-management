@@ -53,15 +53,18 @@ export function Clients() {
         },
       };
       
+      let response;
       if (editingClient) {
         // Update existing client
-        await api.put(`clients/${editingClient.id}/`, clientData, config);
+        response = await api.put(`clients/${editingClient.id}/`, clientData, config);
       } else {
         // Create new client
-        await api.post('clients/', clientData, config);
+        response = await api.post('clients/', clientData, config);
       }
       // Refresh the list
       await fetchClients();
+      // Return the saved client data
+      return response.data;
     } catch (error) {
       console.error('Error saving client:', error);
       throw error;

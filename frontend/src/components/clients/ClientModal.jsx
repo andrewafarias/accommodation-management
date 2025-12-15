@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
+import api from '../../services/api';
 
 /**
  * ClientModal Component
@@ -11,6 +12,7 @@ import { Button } from '../ui/Button';
  * - Form validation
  * - Tag management
  * - Address and notes fields
+ * - Multiple document attachments
  */
 export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = [] }) {
   const [formData, setFormData] = useState({
@@ -28,6 +30,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [documentsToUpload, setDocumentsToUpload] = useState([]);
+  const [existingDocuments, setExistingDocuments] = useState([]);
 
   // Initialize form with client data when editing
   useEffect(() => {
@@ -45,6 +49,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         document_file: null,
       });
       setPreviewImage(client.profile_picture || null);
+      setExistingDocuments(client.document_attachments || []);
     } else {
       setFormData({
         full_name: '',
@@ -58,7 +63,9 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         document_file: null,
       });
       setPreviewImage(null);
+      setExistingDocuments([]);
     }
+    setDocumentsToUpload([]);
     setErrors({});
   }, [client, isOpen]);
 
@@ -141,6 +148,36 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         };
         reader.readAsDataURL(files[0]);
       }
+    }
+  };
+
+  // Handle multiple document files selection
+  const handleDocumentFilesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      setDocumentsToUpload(prev => [...prev, ...files]);
+    }
+  };
+
+  // Remove document from upload queue
+  const handleRemoveDocumentToUpload = (index) => {
+    setDocumentsToUpload(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Remove existing document attachment
+  const handleRemoveExistingDocument = async (documentId) => {
+    if (!client) return;
+    
+    if (!window.confirm('Tem certeza que deseja remover este documento?')) {
+      return;
+    }
+    
+    try {
+      await api.delete(`clients/${client.id}/remove_document/${documentId}/`);
+      setExistingDocuments(prev => prev.filter(doc => doc.id !== documentId));
+    } catch (error) {
+      console.error('Error removing document:', error);
+      alert('Falha ao remover documento. Tente novamente.');
     }
   };
 
@@ -229,7 +266,35 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         submitData.append('document_file', formData.document_file);
       }
       
-      await onSave(submitData);
+      // Save the client first and get the saved client data
+      const savedClient = await onSave(submitData);
+      
+      // Upload new document attachments if any
+      if (documentsToUpload.length > 0) {
+        const clientId = savedClient?.id || client?.id;
+        if (clientId) {
+          for (const file of documentsToUpload) {
+            const docData = new FormData();
+            docData.append('file', file);
+            
+            try {
+              await api.post(
+                `clients/${clientId}/add_document/`,
+                docData,
+                {
+                  headers: {
+                    'Content-Type': 'multipart/form-data',
+                  },
+                }
+              );
+            } catch (docError) {
+              console.error('Error uploading document:', docError);
+              // Continue with other documents even if one fails
+            }
+          }
+        }
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error saving client:', error);
@@ -449,10 +514,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
               </div>
             </div>
 
-            {/* Document File */}
+            {/* Document File (Legacy - keeping for backward compatibility) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Document Attachment
+                Document Attachment (Legacy)
               </label>
               <input
                 type="file"
@@ -474,6 +539,87 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 <p className="mt-1 text-sm text-gray-600">
                   Current file attached
                 </p>
+              )}
+            </div>
+
+            {/* Multiple Document Attachments */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Document Attachments
+              </label>
+              
+              {/* File input for adding multiple documents */}
+              <input
+                type="file"
+                multiple
+                onChange={handleDocumentFilesChange}
+                className="block w-full text-sm text-gray-500
+                  file:mr-4 file:py-2 file:px-4
+                  file:rounded-md file:border-0
+                  file:text-sm file:font-medium
+                  file:bg-green-50 file:text-green-700
+                  hover:file:bg-green-100"
+              />
+              
+              {/* List of existing documents */}
+              {existingDocuments.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs text-gray-500 font-medium">Existing Documents:</p>
+                  {existingDocuments.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200"
+                    >
+                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                        <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                        <a
+                          href={doc.file}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                        >
+                          {doc.filename}
+                        </a>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveExistingDocument(doc.id)}
+                        className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
+                        title="Remove document"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* List of documents to upload */}
+              {documentsToUpload.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs text-gray-500 font-medium">To be uploaded:</p>
+                  {documentsToUpload.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200"
+                    >
+                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                        <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <span className="text-sm text-gray-700 truncate">
+                          {file.name}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDocumentToUpload(index)}
+                        className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
+                        title="Remove from upload queue"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
 
