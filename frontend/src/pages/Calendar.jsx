@@ -293,7 +293,7 @@ export function Calendar() {
         setPackages(prev => [...prev, newPackage]);
         setPackageModalOpen(false);
         setSelectedPackageId(null);
-        setNewPackageData({ name: '', color: '#FF5733' });
+        setNewPackageData({ name: '', color: '#4A90E2' });
         return;
       }
     }
