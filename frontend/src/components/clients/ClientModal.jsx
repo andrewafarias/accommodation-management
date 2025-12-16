@@ -293,7 +293,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       onClose();
     } catch (error) {
       console.error('Error saving client:', error);
-      setErrors({ submit: 'Failed to save client. Please try again.' });
+      setErrors({ submit: 'Falha ao salvar cliente. Por favor, tente novamente.' });
     } finally {
       setSaving(false);
     }
@@ -315,7 +315,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <h2 className="text-2xl font-bold text-gray-900">
-              {client ? 'Edit Client' : 'New Client'}
+              {client ? 'Editar Cliente' : 'Novo Cliente'}
             </h2>
             <button
               onClick={onClose}
@@ -330,7 +330,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
             {/* Profile Picture */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Profile Picture
+                Foto de Perfil
               </label>
               <div className="flex items-start space-x-4">
                 {/* Preview */}
@@ -338,14 +338,14 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   <div className="relative">
                     <img
                       src={profilePicturePreview}
-                      alt="Profile preview"
+                      alt="Pré-visualização do perfil"
                       className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
                     />
                     <button
                       type="button"
                       onClick={handleRemoveProfilePicture}
                       className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                      title="Remove profile picture"
+                      title="Remover foto de perfil"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -370,7 +370,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                       hover:file:bg-primary-100"
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Recomended: Square image, at least 200x200px
+                    Recomendado: Imagem quadrada, no mínimo 200x200px
                   </p>
                 </div>
               </div>
@@ -379,7 +379,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name <span className="text-red-500">*</span>
+                Nome Completo <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -389,7 +389,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.full_name ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter full name"
+                placeholder="Digite o nome completo"
               />
               {errors.full_name && (
                 <p className="mt-1 text-sm text-red-500">{errors.full_name}</p>
@@ -463,7 +463,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
             {/* Address */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Address
+                Endereço
               </label>
               <textarea
                 name="address"
@@ -471,14 +471,14 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 onChange={handleChange}
                 rows={2}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                placeholder="Enter address"
+                placeholder="Digite o endereço"
               />
             </div>
 
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tags
+                Etiquetas
               </label>
               <div className="space-y-2">
                 {/* Tag Input */}
@@ -493,7 +493,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                       }
                     }}
                     className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                    placeholder="Add a tag (e.g., VIP, Frequent Guest)"
+                    placeholder="Adicionar etiqueta (ex: VIP, Hóspede Frequente)"
                   />
                   <Button
                     type="button"
@@ -501,7 +501,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                     variant="outline"
                     size="default"
                   >
-                    Add
+                    Adicionar
                   </Button>
                 </div>
 
@@ -531,7 +531,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
             {/* Multiple Document Attachments */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Document Attachments
+                Anexos de Documentos
               </label>
               
               {/* File input for adding multiple documents */}
@@ -550,7 +550,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
               {/* List of existing documents */}
               {existingDocuments.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-xs text-gray-500 font-medium">Existing Documents:</p>
+                  <p className="text-xs text-gray-500 font-medium">Documentos Existentes:</p>
                   {existingDocuments.map((doc) => (
                     <div
                       key={doc.id}
@@ -571,7 +571,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                         type="button"
                         onClick={() => handleRemoveExistingDocument(doc.id)}
                         className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
-                        title="Remove document"
+                        title="Remover documento"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -583,7 +583,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
               {/* List of documents to upload */}
               {documentsToUpload.length > 0 && (
                 <div className="mt-3 space-y-2">
-                  <p className="text-xs text-gray-500 font-medium">To be uploaded:</p>
+                  <p className="text-xs text-gray-500 font-medium">A serem enviados:</p>
                   {documentsToUpload.map((file, index) => (
                     <div
                       key={index}
@@ -599,7 +599,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                         type="button"
                         onClick={() => handleRemoveDocumentToUpload(index)}
                         className="ml-2 text-red-600 hover:text-red-800 flex-shrink-0"
-                        title="Remove from upload queue"
+                        title="Remover da fila de envio"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -620,7 +620,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 onChange={handleChange}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Additional notes about the client"
+                placeholder="Observações adicionais sobre o cliente"
               />
             </div>
 
@@ -639,13 +639,13 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 onClick={onClose}
                 disabled={saving}
               >
-                Cancel
+                Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={saving}
               >
-                {saving ? 'Saving...' : (client ? 'Update Client' : 'Create Client')}
+                {saving ? 'Salvando...' : (client ? 'Atualizar Cliente' : 'Criar Cliente')}
               </Button>
             </div>
           </form>
