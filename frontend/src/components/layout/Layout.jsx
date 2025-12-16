@@ -9,12 +9,12 @@ import {
 } from 'lucide-react';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Painel', href: '/', icon: LayoutDashboard },
   { name: 'Unidades', href: '/accommodations', icon: Building2 },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
+  { name: 'Calendário', href: '/calendar', icon: Calendar },
   { name: 'Reservas', href: '/reservations', icon: Home },
-  { name: 'Clients', href: '/clients', icon: Users },
-  { name: 'Financials', href: '/financials', icon: DollarSign },
+  { name: 'Clientes', href: '/clients', icon: Users },
+  { name: 'Financeiro', href: '/financials', icon: DollarSign },
 ];
 
 export function Layout({ children }) {

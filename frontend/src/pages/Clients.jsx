@@ -73,7 +73,7 @@ export function Clients() {
 
   // Handle delete
   const handleDelete = async (client) => {
-    if (!window.confirm(`Are you sure you want to delete ${client.full_name}?`)) {
+    if (!window.confirm(`Tem certeza que deseja excluir ${client.full_name}?`)) {
       return;
     }
 
@@ -83,7 +83,7 @@ export function Clients() {
       await fetchClients();
     } catch (error) {
       console.error('Error deleting client:', error);
-      alert('Failed to delete client. Please try again.');
+      alert('Falha ao excluir cliente. Por favor, tente novamente.');
     }
   };
 
@@ -94,10 +94,10 @@ export function Clients() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
         <Button onClick={handleNewClient}>
           <Plus className="w-5 h-5 mr-2" />
-          New Client
+          Novo Cliente
         </Button>
       </div>
 
@@ -106,7 +106,7 @@ export function Clients() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Users className="w-6 h-6 mr-2" />
-            Client Management
+            Gerenciamento de Clientes
           </CardTitle>
         </CardHeader>
         <CardContent>
