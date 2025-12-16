@@ -21,14 +21,12 @@ class ReservationAPITest(TestCase):
         # Create accommodation units
         self.unit1 = AccommodationUnit.objects.create(
             name="Test Chalet 1",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00,
             color_hex="#FF5733"
         )
         self.unit2 = AccommodationUnit.objects.create(
             name="Test Suite 2",
-            type=AccommodationUnit.SUITE,
             max_capacity=2,
             base_price=150.00,
             color_hex="#3366FF"

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Trash2, FileText } from 'lucide-react';
+import { X, Trash2, FileText, Upload } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
 
@@ -29,6 +29,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
   const [saving, setSaving] = useState(false);
   const [documentsToUpload, setDocumentsToUpload] = useState([]);
   const [existingDocuments, setExistingDocuments] = useState([]);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState(null);
 
   // Initialize form with client data when editing
   useEffect(() => {
@@ -44,6 +46,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         tags: client.tags || [],
       });
       setExistingDocuments(client.document_attachments || []);
+      setProfilePicturePreview(client.profile_picture || null);
     } else {
       setFormData({
         full_name: '',
@@ -55,8 +58,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
         tags: [],
       });
       setExistingDocuments([]);
+      setProfilePicturePreview(null);
     }
     setDocumentsToUpload([]);
+    setProfilePicture(null);
     setErrors({});
   }, [client, isOpen]);
 
@@ -174,6 +179,26 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
     }));
   };
 
+  // Handle profile picture selection
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setProfilePicture(file);
+      // Create preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfilePicturePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove profile picture
+  const handleRemoveProfilePicture = () => {
+    setProfilePicture(null);
+    setProfilePicturePreview(null);
+  };
+
   // Validate form
   const validate = () => {
     const newErrors = {};
@@ -230,6 +255,11 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       if (formData.address) submitData.append('address', formData.address);
       if (formData.notes) submitData.append('notes', formData.notes);
       submitData.append('tags', JSON.stringify(formData.tags));
+      
+      // Append profile picture if selected
+      if (profilePicture) {
+        submitData.append('profile_picture', profilePicture);
+      }
       
       // Save the client first and get the saved client data
       const savedClient = await onSave(submitData);
@@ -297,6 +327,55 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* Profile Picture */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Profile Picture
+              </label>
+              <div className="flex items-start space-x-4">
+                {/* Preview */}
+                {profilePicturePreview ? (
+                  <div className="relative">
+                    <img
+                      src={profilePicturePreview}
+                      alt="Profile preview"
+                      className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveProfilePicture}
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                      title="Remove profile picture"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-gray-300">
+                    <Upload className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
+                
+                {/* Upload button */}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfilePictureChange}
+                    className="block w-full text-sm text-gray-500
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-md file:border-0
+                      file:text-sm file:font-medium
+                      file:bg-blue-50 file:text-blue-700
+                      hover:file:bg-blue-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Recomended: Square image, at least 200x200px
+                  </p>
+                </div>
+              </div>
+            </div>
+
             {/* Full Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">

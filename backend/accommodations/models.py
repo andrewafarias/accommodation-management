@@ -6,19 +6,6 @@ class AccommodationUnit(models.Model):
     AccommodationUnit model for managing physical rental spaces.
     """
     
-    # Unit type choices
-    CHALET = 'CHALET'
-    SUITE = 'SUITE'
-    ROOM = 'ROOM'
-    APARTMENT = 'APARTMENT'
-    
-    UNIT_TYPE_CHOICES = [
-        (CHALET, 'Chalet'),
-        (SUITE, 'Suite'),
-        (ROOM, 'Room'),
-        (APARTMENT, 'Apartment'),
-    ]
-    
     # Status choices
     CLEAN = 'CLEAN'
     DIRTY = 'DIRTY'
@@ -31,12 +18,6 @@ class AccommodationUnit(models.Model):
     ]
     
     name = models.CharField(max_length=100, unique=True, verbose_name="Name")
-    type = models.CharField(
-        max_length=20,
-        choices=UNIT_TYPE_CHOICES,
-        default=CHALET,
-        verbose_name="Type"
-    )
     max_capacity = models.PositiveIntegerField(
         verbose_name="Max Capacity",
         help_text="Maximum number of guests"
@@ -108,4 +89,4 @@ class AccommodationUnit(models.Model):
         ordering = ['name']
     
     def __str__(self):
-        return f"{self.name} ({self.get_type_display()})"
+        return self.name

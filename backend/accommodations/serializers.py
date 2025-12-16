@@ -13,7 +13,6 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
-            'type',
             'max_capacity',
             'base_price',
             'weekend_price',

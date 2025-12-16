@@ -80,16 +80,6 @@ export function Calendar() {
     }
   };
 
-  // Navigate to start of previous month (as per requirement)
-  const handlePreviousMonth = () => {
-    setVisibleDate(prevDate => subMonths(prevDate, 1));
-  };
-
-  // Navigate to start of next month (as per requirement)
-  const handleNextMonth = () => {
-    setVisibleDate(prevDate => addMonths(prevDate, 1));
-  };
-  
   // Scroll the timeline by a fixed amount
   const handleScrollLeft = () => {
     if (timelineScrollRef.current) {
@@ -144,6 +134,24 @@ export function Calendar() {
       timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
     }
   }, [startDate, cellWidth]);
+
+  // Navigate to start of previous month (as per requirement)
+  const handlePreviousMonth = () => {
+    const newDate = startOfMonth(subMonths(visibleDate, 1));
+    setVisibleDate(newDate);
+    // Use scrollToDate to scroll to the new month's first day
+    const dateStr = format(newDate, 'yyyy-MM-dd');
+    setTimeout(() => scrollToDate(dateStr), 50);
+  };
+
+  // Navigate to start of next month (as per requirement)
+  const handleNextMonth = () => {
+    const newDate = startOfMonth(addMonths(visibleDate, 1));
+    setVisibleDate(newDate);
+    // Use scrollToDate to scroll to the new month's first day
+    const dateStr = format(newDate, 'yyyy-MM-dd');
+    setTimeout(() => scrollToDate(dateStr), 50);
+  };
 
   const handleToday = () => {
     // Update visible date to today's month
@@ -233,9 +241,9 @@ export function Calendar() {
     setSelectedReservation(null);
     setPrefilledData({});
     
-    // Scroll to the reservation date
+    // Scroll to the reservation date after modal closes and DOM updates
     if (data && data.check_in) {
-      scrollToDate(data.check_in);
+      setTimeout(() => scrollToDate(data.check_in), 100);
     }
   };
 

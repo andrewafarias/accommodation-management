@@ -314,8 +314,7 @@ export function TimelineCalendar({
                     key={index}
                     className={cn(
                       'border-r flex flex-col items-center justify-center text-xs',
-                      isSameDay(date, new Date()) && 'bg-blue-50 border-blue-300',
-                      holidayName && 'bg-red-100 border-red-300'
+                      isSameDay(date, new Date()) && 'bg-blue-50 border-blue-300'
                     )}
                     style={{ width: `${cellWidth}px` }}
                     title={holidayName || undefined}
@@ -349,7 +348,6 @@ export function TimelineCalendar({
                 {/* Grid Cells */}
                 <div className="absolute inset-0 flex">
                   {dates.map((date, index) => {
-                    const holidayName = isHoliday(date);
                     // Unit color is only shown on hover now
                     const hoverBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.25);
                     return (
@@ -358,7 +356,6 @@ export function TimelineCalendar({
                         className={cn(
                           'border-r cursor-pointer transition-colors relative group',
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-blue-400',
-                          holidayName && 'ring-1 ring-inset ring-red-300',
                           isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-green-500 bg-green-100',
                           isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-green-600',
                           isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-green-600'
@@ -367,7 +364,7 @@ export function TimelineCalendar({
                           width: `${cellWidth}px`,
                           backgroundColor: isDateInSelection(date, unit.id) 
                             ? 'rgba(34, 197, 94, 0.2)'
-                            : (holidayName ? `rgba(254, 202, 202, 0.3)` : 'transparent'),
+                            : 'transparent',
                           '--hover-bg': hoverBgColor
                         }}
                         onMouseEnter={(e) => {
@@ -377,7 +374,7 @@ export function TimelineCalendar({
                         }}
                         onMouseLeave={(e) => {
                           if (!isDateInSelection(date, unit.id)) {
-                            e.currentTarget.style.backgroundColor = holidayName ? 'rgba(254, 202, 202, 0.3)' : 'transparent';
+                            e.currentTarget.style.backgroundColor = 'transparent';
                           }
                         }}
                         onClick={() => onCellClick && onCellClick({
@@ -407,7 +404,7 @@ export function TimelineCalendar({
                             <div className={cn(
                               "absolute bottom-1 left-1 text-[10px] group-hover:font-semibold transition-all",
                               priceInfo.type === 'custom' && 'text-purple-600 font-bold',
-                              priceInfo.type === 'holiday' && 'text-red-500 font-medium',
+                              priceInfo.type === 'holiday' && 'text-orange-500 font-medium',
                               priceInfo.type === 'weekend' && 'text-orange-500 font-medium',
                               priceInfo.type === 'base' && 'text-gray-400 group-hover:text-gray-600'
                             )}>

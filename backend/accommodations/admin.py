@@ -4,8 +4,8 @@ from .models import AccommodationUnit
 
 @admin.register(AccommodationUnit)
 class AccommodationUnitAdmin(admin.ModelAdmin):
-    list_display = ('name', 'type', 'max_capacity', 'base_price', 'status', 'created_at')
-    list_filter = ('type', 'status')
+    list_display = ('name', 'max_capacity', 'base_price', 'status', 'created_at')
+    list_filter = ('status',)
     search_fields = ('name',)
     readonly_fields = ('created_at', 'updated_at')
 
