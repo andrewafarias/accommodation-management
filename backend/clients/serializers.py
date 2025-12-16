@@ -42,6 +42,7 @@ class ClientSerializer(serializers.ModelSerializer):
             'address',
             'notes',
             'tags',
+            'profile_picture',
             'document_attachments',
             'created_at',
             'updated_at',

@@ -27,6 +27,12 @@ class Client(models.Model):
         verbose_name="Tags",
         help_text="List of tags like 'VIP', 'Frequent Guest', etc."
     )
+    profile_picture = models.ImageField(
+        upload_to='clients/photos/',
+        blank=True,
+        null=True,
+        verbose_name="Profile Picture"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
