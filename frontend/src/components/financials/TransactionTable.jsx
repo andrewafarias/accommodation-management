@@ -133,12 +133,12 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTrans
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {transaction.is_paid ? (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-accent-100 text-accent-800">
                       <Check className="w-3 h-3" />
                       Pago ({formatDate(transaction.paid_date)})
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
                       <Clock className="w-3 h-3" />
                       Pendente
                     </span>
@@ -151,7 +151,7 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTrans
                         variant="ghost"
                         size="sm"
                         onClick={() => onTransactionClick(transaction)}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="text-primary-600 hover:text-primary-700 hover:bg-primary-50"
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         Detalhes
@@ -162,7 +162,7 @@ export function TransactionTable({ transactions, onMarkAsPaid, onDelete, onTrans
                         variant="ghost"
                         size="sm"
                         onClick={() => onMarkAsPaid(transaction.id)}
-                        className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                        className="text-accent-600 hover:text-accent-700 hover:bg-accent-50"
                       >
                         <CheckCircle className="w-4 h-4 mr-1" />
                         Marcar como Pago

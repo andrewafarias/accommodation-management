@@ -182,22 +182,22 @@ export function Dashboard() {
       title: 'Check-ins Today',
       value: stats.checkInsToday,
       icon: Users,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-primary-600',
+      bgColor: 'bg-primary-100',
     },
     {
       title: 'Pending Payments',
       value: stats.pendingPayments,
       icon: DollarSign,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-secondary-600',
+      bgColor: 'bg-secondary-100',
     },
     {
       title: 'Total Revenue',
       value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: TrendingUp,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-primary-600',
+      bgColor: 'bg-primary-100',
     },
   ];
 
@@ -245,14 +245,14 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center text-orange-700">
+              <CardTitle className="flex items-center text-secondary-700">
                 <Sparkles className="w-5 h-5 mr-2" />
                 Limpeza Pendente
               </CardTitle>
               <div className="relative">
                 <button
                   onClick={() => setShowAddDirtyDropdown(!showAddDirtyDropdown)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors"
                   title="Reportar unidade suja"
                 >
                   <Plus className="w-4 h-4" />
@@ -297,7 +297,7 @@ export function Dashboard() {
                     </div>
                     <button
                       onClick={() => handleMarkAsClean(unit.id)}
-                      className="ml-2 p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                      className="ml-2 p-1.5 text-accent-600 hover:bg-accent-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                       title="Marcar como limpa"
                     >
                       <Check className="w-4 h-4" />
@@ -312,7 +312,7 @@ export function Dashboard() {
         {/* Upcoming Arrivals Widget */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center text-blue-700">
+            <CardTitle className="flex items-center text-primary-700">
               <CalendarCheck className="w-5 h-5 mr-2" />
               Próximas Chegadas (7 dias)
             </CardTitle>

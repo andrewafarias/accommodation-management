@@ -273,7 +273,7 @@ export function Financials() {
                 id="showAllDates"
                 checked={showAllDates}
                 onChange={(e) => setShowAllDates(e.target.checked)}
-                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
               />
               <label htmlFor="showAllDates" className="text-sm font-medium text-gray-700">
                 Ignorar Datas / Ver Tudo
@@ -288,7 +288,7 @@ export function Financials() {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 disabled={showAllDates}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
             <div className="flex-1">
@@ -300,7 +300,7 @@ export function Financials() {
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 disabled={showAllDates}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
           </div>
@@ -354,14 +354,14 @@ export function Financials() {
                 </p>
                 <p
                   className={`mt-2 text-2xl font-bold ${
-                    netProfit >= 0 ? 'text-blue-600' : 'text-red-600'
+                    netProfit >= 0 ? 'text-accent-600' : 'text-red-600'
                   }`}
                 >
                   {formatCurrency(netProfit)}
                 </p>
               </div>
-              <div className="p-3 rounded-full bg-blue-100">
-                <DollarSign className="w-6 h-6 text-blue-600" />
+              <div className="p-3 rounded-full bg-primary-100">
+                <DollarSign className="w-6 h-6 text-primary-600" />
               </div>
             </div>
           </CardContent>
@@ -383,7 +383,7 @@ export function Financials() {
                   id="categoryFilter"
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 >
                   {categoryOptions.map((option) => (
                     <option key={option.value} value={option.value}>

@@ -468,7 +468,7 @@ export function Calendar() {
                   <Button
                     onClick={handleCreateReservationFromSelection}
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-accent-600 hover:bg-accent-700"
                   >
                     Criar Reserva
                   </Button>
@@ -476,7 +476,7 @@ export function Calendar() {
                     onClick={() => setPriceModalOpen(true)}
                     size="sm"
                     variant="outline"
-                    className="border-orange-500 text-orange-600 hover:bg-orange-50"
+                    className="border-secondary-500 text-secondary-600 hover:bg-secondary-50"
                   >
                     <DollarSign className="w-4 h-4 mr-1" />
                     Definir Preços
@@ -485,7 +485,7 @@ export function Calendar() {
                     onClick={() => setPackageModalOpen(true)}
                     size="sm"
                     variant="outline"
-                    className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                    className="border-primary-500 text-primary-600 hover:bg-primary-50"
                   >
                     <Package className="w-4 h-4 mr-1" />
                     Criar Pacote
@@ -499,7 +499,7 @@ export function Calendar() {
                   </Button>
                 </>
               ) : dateSelection.isSelecting ? (
-                <span className="text-sm text-blue-600 font-medium">
+                <span className="text-sm text-primary-600 font-medium">
                   Selecione a data final...
                 </span>
               ) : (
@@ -584,7 +584,7 @@ export function Calendar() {
                 min="0"
                 step="0.01"
                 placeholder="Ex: 350.00"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-secondary-500"
               />
             </div>
             <div className="flex justify-end space-x-2">
@@ -596,7 +596,7 @@ export function Calendar() {
               </Button>
               <Button
                 onClick={handleSetPrices}
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-secondary-600 hover:bg-secondary-700"
               >
                 Aplicar Preço
               </Button>
@@ -648,7 +648,7 @@ export function Calendar() {
                       }}
                       className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${
                         selectedPackageId === pkg.id 
-                          ? 'border-purple-500 bg-purple-50' 
+                          ? 'border-primary-500 bg-primary-50' 
                           : 'border-gray-200 hover:bg-gray-50'
                       }`}
                     >
@@ -658,7 +658,7 @@ export function Calendar() {
                       />
                       <span className="text-sm text-gray-700 flex-1">{pkg.name}</span>
                       {selectedPackageId === pkg.id && (
-                        <span className="text-xs text-purple-600 font-medium">Selecionado</span>
+                        <span className="text-xs text-primary-600 font-medium">Selecionado</span>
                       )}
                     </div>
                   ))}
@@ -687,7 +687,7 @@ export function Calendar() {
                   setSelectedPackageId(null); // Clear selection when typing new name
                 }}
                 placeholder="Ex: Natal 2025, Carnaval, etc."
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
               />
             </div>
             <div className="mb-4">
@@ -725,7 +725,7 @@ export function Calendar() {
                 </Button>
                 <Button
                   onClick={handleCreatePackage}
-                  className="bg-purple-600 hover:bg-purple-700"
+                  className="bg-primary-600 hover:bg-primary-700"
                   disabled={!selectedPackageId && !newPackageData.name.trim()}
                 >
                   {selectedPackageId ? 'Aplicar Pacote' : 'Criar Pacote'}

@@ -171,9 +171,9 @@ export function TimelineCalendar({
   // Helper function to get status-based styling
   const getStatusColor = (status) => {
     const colors = {
-      CONFIRMED: 'bg-green-500 border-green-600',
+      CONFIRMED: 'bg-accent-500 border-accent-600',
       PENDING: 'bg-yellow-400 border-yellow-500',
-      CHECKED_IN: 'bg-blue-500 border-blue-600',
+      CHECKED_IN: 'bg-primary-500 border-primary-600',
       CHECKED_OUT: 'bg-gray-400 border-gray-500',
       CANCELLED: 'bg-red-400 border-red-500',
     };
@@ -314,7 +314,7 @@ export function TimelineCalendar({
                     key={index}
                     className={cn(
                       'border-r flex flex-col items-center justify-center text-xs',
-                      isSameDay(date, new Date()) && 'bg-blue-50 border-blue-300'
+                      isSameDay(date, new Date()) && 'bg-primary-50 border-primary-300'
                     )}
                     style={{ width: `${cellWidth}px` }}
                     title={holidayName || undefined}
@@ -327,7 +327,7 @@ export function TimelineCalendar({
                     </div>
                     <div className={cn(
                       'text-gray-600',
-                      isSameDay(date, new Date()) && 'text-blue-600 font-bold',
+                      isSameDay(date, new Date()) && 'text-primary-600 font-bold',
                       holidayName && 'text-red-600 font-bold'
                     )}>
                       {format(date, 'dd/MM/yy')}
@@ -355,10 +355,10 @@ export function TimelineCalendar({
                         key={index}
                         className={cn(
                           'border-r cursor-pointer transition-colors relative group',
-                          isSameDay(date, new Date()) && 'ring-2 ring-inset ring-blue-400',
-                          isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-green-500 bg-green-100',
-                          isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-green-600',
-                          isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-green-600'
+                          isSameDay(date, new Date()) && 'ring-2 ring-inset ring-primary-400',
+                          isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-accent-500 bg-accent-100',
+                          isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-accent-600',
+                          isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-accent-600'
                         )}
                         style={{ 
                           width: `${cellWidth}px`,
@@ -463,7 +463,7 @@ export function TimelineCalendar({
         {/* Status Legend - Left Side */}
         <div className="flex flex-wrap gap-4">
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-green-500 border-2 border-green-600 rounded"></div>
+            <div className="w-4 h-4 bg-accent-500 border-2 border-accent-600 rounded"></div>
             <span className="text-gray-700">Confirmado</span>
           </div>
           <div className="flex items-center space-x-2">
@@ -471,7 +471,7 @@ export function TimelineCalendar({
             <span className="text-gray-700">Pendente</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-blue-500 border-2 border-blue-600 rounded"></div>
+            <div className="w-4 h-4 bg-primary-500 border-2 border-primary-600 rounded"></div>
             <span className="text-gray-700">Check-in Feito</span>
           </div>
           <div className="flex items-center space-x-2">

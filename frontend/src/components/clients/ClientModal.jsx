@@ -366,8 +366,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                       file:mr-4 file:py-2 file:px-4
                       file:rounded-md file:border-0
                       file:text-sm file:font-medium
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
+                      file:bg-primary-50 file:text-primary-700
+                      hover:file:bg-primary-100"
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Recomended: Square image, at least 200x200px
@@ -386,7 +386,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 name="full_name"
                 value={formData.full_name}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.full_name ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Enter full name"
@@ -407,7 +407,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 value={formData.cpf}
                 onChange={handleChange}
                 maxLength={11}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.cpf ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="Somente números (11 dígitos)"
@@ -429,7 +429,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     errors.phone ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="5511999998888"
@@ -449,7 +449,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                     errors.email ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="email@example.com"
@@ -470,7 +470,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 value={formData.address}
                 onChange={handleChange}
                 rows={2}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                 placeholder="Enter address"
               />
             </div>
@@ -492,7 +492,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                         handleAddTag(e);
                       }
                     }}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                     placeholder="Add a tag (e.g., VIP, Frequent Guest)"
                   />
                   <Button
@@ -511,13 +511,13 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                     {formData.tags.map((tag, index) => (
                       <span
                         key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-secondary-100 text-secondary-800"
                       >
                         {tag}
                         <button
                           type="button"
                           onClick={() => handleRemoveTag(tag)}
-                          className="ml-2 text-blue-600 hover:text-blue-800"
+                          className="ml-2 text-secondary-600 hover:text-secondary-800"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -543,8 +543,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   file:mr-4 file:py-2 file:px-4
                   file:rounded-md file:border-0
                   file:text-sm file:font-medium
-                  file:bg-green-50 file:text-green-700
-                  hover:file:bg-green-100"
+                  file:bg-accent-50 file:text-accent-700
+                  hover:file:bg-accent-100"
               />
               
               {/* List of existing documents */}
@@ -562,7 +562,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                           href={doc.file}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm text-blue-600 hover:text-blue-800 truncate"
+                          className="text-sm text-primary-600 hover:text-primary-800 truncate"
                         >
                           {doc.filename}
                         </a>
@@ -587,10 +587,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                   {documentsToUpload.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-2 bg-green-50 rounded border border-green-200"
+                      className="flex items-center justify-between p-2 bg-accent-50 rounded border border-accent-200"
                     >
                       <div className="flex items-center space-x-2 flex-1 min-w-0">
-                        <FileText className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <FileText className="w-4 h-4 text-accent-600 flex-shrink-0" />
                         <span className="text-sm text-gray-700 truncate">
                           {file.name}
                         </span>
