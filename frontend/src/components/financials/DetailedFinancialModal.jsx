@@ -270,7 +270,7 @@ export function DetailedFinancialModal({
 
           {/* Expenses Section */}
           <div>
-            <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center">
+            <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center section-title expense-title">
               <span className="flex-1">Despesas (Saídas)</span>
               <span className="text-sm font-normal text-gray-600">
                 {expenseTransactions.length} transação(ões)
