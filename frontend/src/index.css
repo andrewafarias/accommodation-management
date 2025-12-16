@@ -20,13 +20,13 @@ body {
 
 /* Soft button gradient - uses Tailwind color palette */
 .btn-gradient {
-  @apply bg-gradient-to-r from-secondary-300 to-primary-300;
+  @apply bg-gradient-to-r from-secondary-400 to-primary-400;
   border: none;
   transition: all 0.3s ease;
 }
 
 .btn-gradient:hover {
-  @apply bg-gradient-to-r from-secondary-400 to-primary-400;
+  @apply bg-gradient-to-r from-secondary-500 to-primary-500;
   transform: translateY(-1px);
   @apply shadow-soft-lg;
 }
