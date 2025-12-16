@@ -53,7 +53,7 @@ export function Calendar() {
   // Scroll to today's date when component mounts and data is loaded
   useEffect(() => {
     if (!loading && timelineScrollRef.current) {
-      scrollToToday();
+      scrollToToday(true); // Use instant scroll on startup
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading]);
@@ -109,29 +109,25 @@ export function Calendar() {
     return differenceInDays(today, start);
   }, [startDate]);
   
-  // Scroll to today's date
-  const scrollToToday = useCallback(() => {
+  // Scroll to today's date (position at far left, instant scroll)
+  const scrollToToday = useCallback((instant = true) => {
     if (timelineScrollRef.current) {
       const daysToToday = getDaysToToday();
       const scrollPosition = daysToToday * cellWidth;
-      // Center today in the viewport
-      const containerWidth = timelineScrollRef.current.clientWidth;
-      const centeredPosition = scrollPosition - (containerWidth / 2) + (cellWidth / 2);
-      timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
+      // Position today at the far left of the viewport
+      timelineScrollRef.current.scrollTo({ left: Math.max(0, scrollPosition), behavior: instant ? 'instant' : 'smooth' });
     }
   }, [getDaysToToday, cellWidth]);
   
-  // Scroll to a specific date
-  const scrollToDate = useCallback((dateStr) => {
+  // Scroll to a specific date (position at far left, instant scroll by default)
+  const scrollToDate = useCallback((dateStr, instant = true) => {
     if (timelineScrollRef.current) {
       const targetDate = startOfDay(parseISO(dateStr));
       const start = startOfDay(startDate);
       const daysToTarget = differenceInDays(targetDate, start);
       const scrollPosition = daysToTarget * cellWidth;
-      // Center the target date in the viewport
-      const containerWidth = timelineScrollRef.current.clientWidth;
-      const centeredPosition = scrollPosition - (containerWidth / 2) + (cellWidth / 2);
-      timelineScrollRef.current.scrollTo({ left: Math.max(0, centeredPosition), behavior: 'smooth' });
+      // Position the target date at the far left of the viewport
+      timelineScrollRef.current.scrollTo({ left: Math.max(0, scrollPosition), behavior: instant ? 'instant' : 'smooth' });
     }
   }, [startDate, cellWidth]);
 
@@ -139,25 +135,25 @@ export function Calendar() {
   const handlePreviousMonth = () => {
     const newDate = startOfMonth(subMonths(visibleDate, 1));
     setVisibleDate(newDate);
-    // Use scrollToDate to scroll to the new month's first day
+    // Scroll instantly to the new month's first day at far left
     const dateStr = format(newDate, 'yyyy-MM-dd');
-    setTimeout(() => scrollToDate(dateStr), 50);
+    scrollToDate(dateStr, true);
   };
 
   // Navigate to start of next month (as per requirement)
   const handleNextMonth = () => {
     const newDate = startOfMonth(addMonths(visibleDate, 1));
     setVisibleDate(newDate);
-    // Use scrollToDate to scroll to the new month's first day
+    // Scroll instantly to the new month's first day at far left
     const dateStr = format(newDate, 'yyyy-MM-dd');
-    setTimeout(() => scrollToDate(dateStr), 50);
+    scrollToDate(dateStr, true);
   };
 
   const handleToday = () => {
     // Update visible date to today's month
     setVisibleDate(new Date());
-    // Scroll to today
-    scrollToToday();
+    // Scroll to today instantly
+    scrollToToday(true);
   };
   
   // Calculate days to show: from 3 months back to 2 years forward
@@ -241,9 +237,10 @@ export function Calendar() {
     setSelectedReservation(null);
     setPrefilledData({});
     
-    // Scroll to the reservation date after modal closes and DOM updates
+    // Scroll instantly to the reservation date after modal closes
     if (data && data.check_in) {
-      setTimeout(() => scrollToDate(data.check_in), 100);
+      // Use setTimeout to ensure the DOM has updated after fetchCalendarData
+      setTimeout(() => scrollToDate(data.check_in, true), 0);
     }
   };
 
