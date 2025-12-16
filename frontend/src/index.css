@@ -5,7 +5,7 @@
 body {
   margin: 0;
   font-family: 'Nunito', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background-color: #fdfbf7;
+  background-color: #fdf5ff;
 }
 
 /* Logo/Brand styling with cursive font */
@@ -15,7 +15,7 @@ body {
 
 /* Soft gradient backgrounds */
 .gradient-soft {
-  background: linear-gradient(135deg, #f3e8ff 0%, #fce7f3 50%, #d1fae5 100%);
+  background: linear-gradient(135deg, #fdf5ff 0%, #fce7f3 50%, #f3e8ff 100%);
 }
 
 /* Soft button gradient - uses Tailwind color palette */

@@ -55,6 +55,15 @@ export default {
           400: '#ede4d3',
           500: '#e2d5c0',
         },
+        // Feminine Background: Soft pinks and lilacs
+        feminine: {
+          50: '#fdf5ff',
+          100: '#fcf0ff',
+          200: '#fae8ff',
+          300: '#f5dbff',
+          400: '#f0d0ff',
+          500: '#e9c0ff',
+        },
       },
       fontFamily: {
         cursive: ['"Dancing Script"', 'cursive'],
