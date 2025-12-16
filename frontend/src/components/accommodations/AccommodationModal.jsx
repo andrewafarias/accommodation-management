@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { ColorPicker } from '../ui/ColorPicker';
 import api from '../../services/api';
 
 /**
@@ -298,29 +299,14 @@ export function AccommodationModal({
 
           {/* Color */}
           <div>
-            <label htmlFor="color_hex" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Cor do Calendário *
             </label>
-            <div className="flex items-center space-x-3">
-              <input
-                type="color"
-                id="color_hex"
-                name="color_hex"
-                value={formData.color_hex}
-                onChange={handleChange}
-                required
-                className="h-10 w-20 border border-gray-300 rounded cursor-pointer"
-              />
-              <input
-                type="text"
-                value={formData.color_hex}
-                onChange={(e) => setFormData(prev => ({ ...prev, color_hex: e.target.value }))}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="#4A90E2"
-                pattern="^#[0-9A-Fa-f]{6}$"
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">Código hexadecimal (ex: #4A90E2)</p>
+            <ColorPicker
+              value={formData.color_hex}
+              onChange={(color) => setFormData(prev => ({ ...prev, color_hex: color }))}
+            />
+            <p className="text-xs text-gray-500 mt-2">Cor selecionada: {formData.color_hex}</p>
           </div>
 
           {/* Actions */}
