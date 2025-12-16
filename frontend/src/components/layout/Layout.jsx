@@ -21,7 +21,7 @@ export function Layout({ children }) {
   const location = useLocation();
 
   return (
-    <div className="flex h-screen bg-cream-100">
+    <div className="flex h-screen bg-feminine-100">
       {/* Sidebar */}
       <div className="w-64 bg-white/90 backdrop-blur-sm shadow-soft-lg no-print border-r border-primary-100">
         <div className="flex flex-col h-full">
@@ -65,7 +65,7 @@ export function Layout({ children }) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gradient-to-br from-cream-50 via-cream-100 to-primary-50/30">
+      <div className="flex-1 overflow-auto bg-gradient-to-br from-feminine-50 via-feminine-100 to-secondary-50/40">
         <div className="p-10">
           {children}
         </div>
