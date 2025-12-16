@@ -26,7 +26,7 @@ export function ImageModal({ isOpen, onClose, imageUrl, altText }) {
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 text-white bg-gradient-to-r from-secondary-400 to-primary-400 hover:from-secondary-500 hover:to-primary-500 rounded-full p-2.5 transition-all duration-200 shadow-soft hover:shadow-soft-lg"
+            className="absolute top-4 right-4 z-10 text-white bg-gradient-to-r from-secondary-500 to-primary-500 hover:from-secondary-600 hover:to-primary-600 rounded-full p-2.5 transition-all duration-200 shadow-soft hover:shadow-soft-lg"
           >
             <X className="w-5 h-5" />
           </button>
