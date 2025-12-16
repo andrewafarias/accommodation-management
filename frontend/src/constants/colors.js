@@ -20,7 +20,7 @@ export const PREDEFINED_COLORS = [
   '#03A9F4', // Light Blue
   '#3F51B5', // Indigo
   '#673AB7', // Deep Purple
-  '#E91E8C', // Hot Pink
+  '#D81B60', // Rose
   '#FF6B9D', // Light Pink
   '#795548', // Brown
   '#607D8B', // Blue Grey

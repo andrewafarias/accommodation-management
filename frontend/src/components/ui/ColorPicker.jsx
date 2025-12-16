@@ -31,7 +31,11 @@ export function ColorPicker({
           title={color}
         >
           {value === color && (
-            <Check className="w-5 h-5 text-white drop-shadow-md mx-auto" strokeWidth={3} />
+            <Check 
+              className="w-5 h-5 text-white mx-auto" 
+              strokeWidth={3}
+              style={{ filter: 'drop-shadow(0 0 2px rgba(0,0,0,0.8))' }}
+            />
           )}
         </button>
       ))}
