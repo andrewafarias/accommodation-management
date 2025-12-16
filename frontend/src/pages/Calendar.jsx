@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { ColorPicker } from '../components/ui/ColorPicker';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
@@ -32,7 +33,7 @@ export function Calendar() {
   // Package modal state
   const [packageModalOpen, setPackageModalOpen] = useState(false);
   const [packages, setPackages] = useState([]); // { id, name, color, unitId, startDate, endDate }
-  const [newPackageData, setNewPackageData] = useState({ name: '', color: '#FF5733' });
+  const [newPackageData, setNewPackageData] = useState({ name: '', color: '#4A90E2' });
   const [selectedPackageId, setSelectedPackageId] = useState(null);
   
   // Date range selection state
@@ -292,7 +293,7 @@ export function Calendar() {
         setPackages(prev => [...prev, newPackage]);
         setPackageModalOpen(false);
         setSelectedPackageId(null);
-        setNewPackageData({ name: '', color: '#FF5733' });
+        setNewPackageData({ name: '', color: '#4A90E2' });
         return;
       }
     }
@@ -313,7 +314,7 @@ export function Calendar() {
     
     setPackages(prev => [...prev, newPackage]);
     setPackageModalOpen(false);
-    setNewPackageData({ name: '', color: '#FF5733' });
+    setNewPackageData({ name: '', color: '#4A90E2' });
     setSelectedPackageId(null);
   };
   
@@ -641,7 +642,7 @@ export function Calendar() {
                       key={pkg.id}
                       onClick={() => {
                         setSelectedPackageId(pkg.id);
-                        setNewPackageData({ name: '', color: '#FF5733' });
+                        setNewPackageData({ name: '', color: '#4A90E2' });
                       }}
                       className={`flex items-center p-2 rounded-md cursor-pointer border transition-colors ${
                         selectedPackageId === pkg.id 
@@ -688,19 +689,19 @@ export function Calendar() {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Cor do Pacote
               </label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="color"
-                  value={newPackageData.color}
-                  onChange={(e) => setNewPackageData(prev => ({ ...prev, color: e.target.value }))}
-                  className="w-12 h-10 border border-gray-300 rounded cursor-pointer"
-                  disabled={!!selectedPackageId}
-                />
-                <span className="text-sm text-gray-600">{selectedPackageId ? 'Usando cor do pacote selecionado' : newPackageData.color}</span>
-              </div>
+              <ColorPicker
+                value={newPackageData.color}
+                onChange={(color) => setNewPackageData(prev => ({ ...prev, color }))}
+                disabled={!!selectedPackageId}
+              />
+              {selectedPackageId ? (
+                <p className="text-xs text-gray-500 mt-2">Usando cor do pacote selecionado</p>
+              ) : (
+                <p className="text-xs text-gray-500 mt-2">Cor selecionada: {newPackageData.color}</p>
+              )}
             </div>
             <div className="flex justify-between space-x-2">
               <Button
