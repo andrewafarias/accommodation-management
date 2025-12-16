@@ -50,8 +50,8 @@ export function ReservationTable({ reservations = [], onEdit, onDelete, loading 
   const getStatusBadge = (status) => {
     const statusMap = {
       PENDING: { label: 'Pendente', className: 'bg-yellow-100 text-yellow-800' },
-      CONFIRMED: { label: 'Confirmado', className: 'bg-blue-100 text-blue-800' },
-      CHECKED_IN: { label: 'Check-in Feito', className: 'bg-green-100 text-green-800' },
+      CONFIRMED: { label: 'Confirmado', className: 'bg-accent-100 text-accent-800' },
+      CHECKED_IN: { label: 'Check-in Feito', className: 'bg-primary-100 text-primary-800' },
       CHECKED_OUT: { label: 'Check-out Feito', className: 'bg-gray-100 text-gray-800' },
       CANCELLED: { label: 'Cancelado', className: 'bg-red-100 text-red-800' },
     };
@@ -83,7 +83,7 @@ export function ReservationTable({ reservations = [], onEdit, onDelete, loading 
           placeholder="Search by client name or unit name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
       </div>
 
@@ -167,7 +167,7 @@ export function ReservationTable({ reservations = [], onEdit, onDelete, loading 
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(reservation)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-primary-600 hover:text-primary-900"
                       >
                         <Edit className="w-4 h-4 mr-1" />
                         Editar

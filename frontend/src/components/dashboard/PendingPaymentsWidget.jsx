@@ -27,10 +27,10 @@ export function PendingPaymentsWidget({ transactions }) {
     
     const daysUntilDue = differenceInDays(parseISO(dueDate), new Date());
     if (daysUntilDue <= 3) {
-      return 'bg-yellow-50 border-yellow-300';
+      return 'bg-secondary-50 border-secondary-300';
     }
     
-    return 'bg-blue-50 border-blue-300';
+    return 'bg-primary-50 border-primary-300';
   };
 
   const getTextColor = (dueDate) => {
@@ -42,10 +42,10 @@ export function PendingPaymentsWidget({ transactions }) {
     
     const daysUntilDue = differenceInDays(parseISO(dueDate), new Date());
     if (daysUntilDue <= 3) {
-      return 'text-yellow-700';
+      return 'text-secondary-700';
     }
     
-    return 'text-blue-700';
+    return 'text-primary-700';
   };
 
   const totalPending = pendingPayments.reduce(
@@ -56,7 +56,7 @@ export function PendingPaymentsWidget({ transactions }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center text-yellow-700">
+        <CardTitle className="flex items-center text-secondary-700">
           <AlertCircle className="w-5 h-5 mr-2" />
           Pagamentos Pendentes
         </CardTitle>
@@ -122,7 +122,7 @@ export function PendingPaymentsWidget({ transactions }) {
             <div className="pt-3 border-t border-gray-300">
               <div className="flex justify-between items-center">
                 <span className="text-sm font-medium text-gray-700">Total Pendente:</span>
-                <span className="text-lg font-bold text-yellow-700">
+                <span className="text-lg font-bold text-secondary-700">
                   R$ {totalPending.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,

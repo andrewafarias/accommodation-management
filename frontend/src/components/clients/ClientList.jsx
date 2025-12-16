@@ -68,7 +68,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
           placeholder="Search by name, CPF, phone, or email..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
         />
       </div>
 
@@ -115,7 +115,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                       <img
                         src={client.profile_picture}
                         alt={client.full_name}
-                        className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all"
+                        className="w-10 h-10 rounded-full object-cover cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all"
                         onClick={() => setExpandedImage(client.profile_picture)}
                       />
                     ) : (
@@ -150,7 +150,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                         client.tags.map((tag, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-100 text-secondary-800"
                           >
                             {tag}
                           </span>
@@ -172,7 +172,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(client)}
-                        className="text-blue-600 hover:text-blue-900"
+                        className="text-primary-600 hover:text-primary-900"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
