@@ -16,27 +16,27 @@ export function ImageModal({ isOpen, onClose, imageUrl, altText }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-75 transition-opacity"
+        className="fixed inset-0 bg-primary-900/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-4xl w-full">
+      <div className="flex min-h-full items-center justify-center p-6">
+        <div className="relative bg-white/95 backdrop-blur-sm rounded-3xl shadow-soft-xl max-w-4xl w-full border border-primary-100">
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-10 text-white bg-black bg-opacity-50 hover:bg-opacity-75 rounded-full p-2 transition-colors"
+            className="absolute top-4 right-4 z-10 text-white bg-gradient-to-r from-secondary-400 to-primary-400 hover:from-secondary-500 hover:to-primary-500 rounded-full p-2.5 transition-all duration-200 shadow-soft hover:shadow-soft-lg"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
 
           {/* Image */}
-          <div className="p-4">
+          <div className="p-6">
             <img
               src={imageUrl}
               alt={altText || 'Full size image'}
-              className="w-full h-auto max-h-[80vh] object-contain rounded"
+              className="w-full h-auto max-h-[80vh] object-contain rounded-2xl"
             />
           </div>
         </div>
