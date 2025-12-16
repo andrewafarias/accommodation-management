@@ -4,8 +4,8 @@ from .models import Transaction
 
 class TransactionSerializer(serializers.ModelSerializer):
     """
-    Serializer for Transaction model.
-    Includes all fields for both read and write operations.
+    Serializador para modelo Transaction.
+    Inclui todos os campos para operações de leitura e escrita.
     """
     is_paid = serializers.ReadOnlyField()
     

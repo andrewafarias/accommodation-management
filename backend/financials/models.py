@@ -3,20 +3,20 @@ from django.db import models
 
 class Transaction(models.Model):
     """
-    Transaction model for managing financial records.
-    Supports both income (Account Receivable) and expenses (Account Payable).
+    Modelo de Transação para gerenciar registros financeiros.
+    Suporta tanto receitas (Contas a Receber) quanto despesas (Contas a Pagar).
     """
     
-    # Transaction type choices
+    # Opções de tipo de transação
     INCOME = 'INCOME'
     EXPENSE = 'EXPENSE'
     
     TRANSACTION_TYPE_CHOICES = [
-        (INCOME, 'Income (Account Receivable)'),
-        (EXPENSE, 'Expense (Account Payable)'),
+        (INCOME, 'Receita (Contas a Receber)'),
+        (EXPENSE, 'Despesa (Contas a Pagar)'),
     ]
     
-    # Payment method choices
+    # Opções de método de pagamento
     PIX = 'PIX'
     CREDIT_CARD = 'CREDIT_CARD'
     DEBIT_CARD = 'DEBIT_CARD'
@@ -25,13 +25,13 @@ class Transaction(models.Model):
     
     PAYMENT_METHOD_CHOICES = [
         (PIX, 'Pix'),
-        (CREDIT_CARD, 'Credit Card'),
-        (DEBIT_CARD, 'Debit Card'),
-        (CASH, 'Cash'),
-        (BANK_TRANSFER, 'Bank Transfer'),
+        (CREDIT_CARD, 'Cartão de Crédito'),
+        (DEBIT_CARD, 'Cartão de Débito'),
+        (CASH, 'Dinheiro'),
+        (BANK_TRANSFER, 'Transferência Bancária'),
     ]
     
-    # Category choices
+    # Opções de categoria
     LODGING = 'LODGING'
     MAINTENANCE = 'MAINTENANCE'
     UTILITIES = 'UTILITIES'
@@ -40,76 +40,76 @@ class Transaction(models.Model):
     OTHER = 'OTHER'
     
     CATEGORY_CHOICES = [
-        (LODGING, 'Lodging'),
-        (MAINTENANCE, 'Maintenance'),
-        (UTILITIES, 'Utilities'),
-        (SUPPLIES, 'Supplies'),
-        (SALARY, 'Salary'),
-        (OTHER, 'Other'),
+        (LODGING, 'Hospedagem'),
+        (MAINTENANCE, 'Manutenção'),
+        (UTILITIES, 'Utilidades'),
+        (SUPPLIES, 'Suprimentos'),
+        (SALARY, 'Salário'),
+        (OTHER, 'Outro'),
     ]
     
-    # Foreign Key (nullable - some expenses not linked to reservations)
+    # Chave Estrangeira (anulável - algumas despesas não vinculadas a reservas)
     reservation = models.ForeignKey(
         'reservations.Reservation',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='transactions',
-        verbose_name="Reservation"
+        verbose_name="Reserva"
     )
     
-    # Transaction details
+    # Detalhes da transação
     amount = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="Amount (BRL)",
-        help_text="Amount in Brazilian Reais"
+        verbose_name="Valor (BRL)",
+        help_text="Valor em Reais"
     )
     transaction_type = models.CharField(
         max_length=20,
         choices=TRANSACTION_TYPE_CHOICES,
-        verbose_name="Transaction Type"
+        verbose_name="Tipo de Transação"
     )
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
         default=LODGING,
-        verbose_name="Category"
+        verbose_name="Categoria"
     )
     payment_method = models.CharField(
         max_length=20,
         choices=PAYMENT_METHOD_CHOICES,
-        verbose_name="Payment Method"
+        verbose_name="Método de Pagamento"
     )
     
-    # Dates
-    due_date = models.DateField(verbose_name="Due Date")
+    # Datas
+    due_date = models.DateField(verbose_name="Data de Vencimento")
     paid_date = models.DateField(
         null=True,
         blank=True,
-        verbose_name="Paid Date"
+        verbose_name="Data de Pagamento"
     )
     
-    # Additional info
-    description = models.TextField(blank=True, null=True, verbose_name="Description")
-    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    # Informações adicionais
+    description = models.TextField(blank=True, null=True, verbose_name="Descrição")
+    notes = models.TextField(blank=True, null=True, verbose_name="Observações")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        verbose_name = "Transaction"
-        verbose_name_plural = "Transactions"
+        verbose_name = "Transação"
+        verbose_name_plural = "Transações"
         ordering = ['-due_date']
     
     def __str__(self):
-        status = "Paid" if self.is_paid else "Unpaid"
+        status = "Pago" if self.is_paid else "Não Pago"
         return f"{self.get_transaction_type_display()} - R$ {self.amount} ({status})"
     
     @property
     def is_paid(self):
         """
-        Returns True if the transaction has been paid (paid_date is set).
+        Retorna True se a transação foi paga (paid_date está definido).
         """
         return self.paid_date is not None
 

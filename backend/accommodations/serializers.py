@@ -4,8 +4,8 @@ from .models import AccommodationUnit
 
 class AccommodationUnitSerializer(serializers.ModelSerializer):
     """
-    Serializer for AccommodationUnit model.
-    Includes all fields for both read and write operations.
+    Serializador para modelo AccommodationUnit.
+    Inclui todos os campos para operações de leitura e escrita.
     """
     
     class Meta:
