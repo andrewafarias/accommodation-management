@@ -20,8 +20,7 @@ export function AccommodationList({ accommodations = [], onEdit, onDelete, loadi
     
     const term = searchTerm.toLowerCase();
     return accommodations.filter(accommodation => 
-      accommodation.name.toLowerCase().includes(term) ||
-      accommodation.type.toLowerCase().includes(term)
+      accommodation.name.toLowerCase().includes(term)
     );
   }, [accommodations, searchTerm]);
 
@@ -48,7 +47,7 @@ export function AccommodationList({ accommodations = [], onEdit, onDelete, loadi
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
         <input
           type="text"
-          placeholder="Search by name or type..."
+          placeholder="Search by name..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -74,9 +73,6 @@ export function AccommodationList({ accommodations = [], onEdit, onDelete, loadi
                   Name
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Base Price
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -100,11 +96,6 @@ export function AccommodationList({ accommodations = [], onEdit, onDelete, loadi
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {accommodation.name}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {accommodation.type}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">

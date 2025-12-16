@@ -16,7 +16,6 @@ class AccommodationUnitAPITest(TestCase):
         self.client = APIClient()
         self.unit1 = AccommodationUnit.objects.create(
             name="Test Chalet 1",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00,
             color_hex="#FF5733",
@@ -24,7 +23,6 @@ class AccommodationUnitAPITest(TestCase):
         )
         self.unit2 = AccommodationUnit.objects.create(
             name="Test Suite 2",
-            type=AccommodationUnit.SUITE,
             max_capacity=2,
             base_price=150.00,
             color_hex="#3366FF",
@@ -41,7 +39,6 @@ class AccommodationUnitAPITest(TestCase):
         """Test creating a new accommodation unit."""
         data = {
             'name': 'New Chalet',
-            'type': 'CHALET',
             'max_capacity': 6,
             'base_price': 300.00,
             'color_hex': '#00FF00'
@@ -82,18 +79,11 @@ class AccommodationUnitAPITest(TestCase):
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['name'], 'Test Chalet 1')
     
-    def test_filter_by_type(self):
-        """Test filtering accommodations by type."""
-        response = self.client.get('/api/accommodations/?type=SUITE')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['name'], 'Test Suite 2')
     
     def test_auto_dirty_days_default(self):
         """Test that auto_dirty_days has default value of 3."""
         unit = AccommodationUnit.objects.create(
             name="Test Default",
-            type=AccommodationUnit.ROOM,
             max_capacity=2,
             base_price=100.00
         )
@@ -122,7 +112,6 @@ class AccommodationUnitAPITest(TestCase):
         # Create a clean unit with auto_dirty_days=2
         unit = AccommodationUnit.objects.create(
             name="Test Auto Dirty",
-            type=AccommodationUnit.ROOM,
             max_capacity=2,
             base_price=100.00,
             status=AccommodationUnit.CLEAN,
@@ -146,7 +135,6 @@ class AccommodationUnitAPITest(TestCase):
         # Create a clean unit with auto_dirty_days=5
         unit = AccommodationUnit.objects.create(
             name="Test Still Clean",
-            type=AccommodationUnit.ROOM,
             max_capacity=2,
             base_price=100.00,
             status=AccommodationUnit.CLEAN,
@@ -169,7 +157,6 @@ class AccommodationUnitAPITest(TestCase):
         """Test creating an accommodation with custom auto_dirty_days."""
         data = {
             'name': 'Custom Days Chalet',
-            'type': 'CHALET',
             'max_capacity': 4,
             'base_price': 200.00,
             'color_hex': '#FF00FF',

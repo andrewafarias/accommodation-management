@@ -21,7 +21,6 @@ class TransactionAPITest(TestCase):
         # Create accommodation and client for testing
         self.unit = AccommodationUnit.objects.create(
             name="Test Chalet",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00,
             color_hex="#FF5733"

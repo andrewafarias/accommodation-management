@@ -14,7 +14,6 @@ class TransactionModelTest(TestCase):
         """Create test data."""
         self.unit = AccommodationUnit.objects.create(
             name="Test Chalet",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00
         )

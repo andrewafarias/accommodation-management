@@ -17,7 +17,6 @@ export function AccommodationModal({
 }) {
   const [formData, setFormData] = useState({
     name: '',
-    type: 'CHALET',
     max_capacity: 1,
     base_price: '',
     weekend_price: '',
@@ -31,13 +30,7 @@ export function AccommodationModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Type options
-  const typeOptions = [
-    { value: 'CHALET', label: 'Chalé' },
-    { value: 'SUITE', label: 'Suíte' },
-    { value: 'ROOM', label: 'Quarto' },
-    { value: 'APARTMENT', label: 'Apartamento' },
-  ];
+
 
   // Initialize form data when modal opens or accommodation changes
   useEffect(() => {
@@ -46,7 +39,6 @@ export function AccommodationModal({
         // Edit mode
         setFormData({
           name: accommodation.name || '',
-          type: accommodation.type || 'CHALET',
           max_capacity: accommodation.max_capacity || 1,
           base_price: accommodation.base_price || '',
           weekend_price: accommodation.weekend_price || '',
@@ -60,7 +52,6 @@ export function AccommodationModal({
         // Create mode
         setFormData({
           name: '',
-          type: 'CHALET',
           max_capacity: 1,
           base_price: '',
           weekend_price: '',
@@ -92,7 +83,6 @@ export function AccommodationModal({
       // Prepare data for API
       const payload = {
         name: formData.name,
-        type: formData.type,
         max_capacity: Number(formData.max_capacity),
         base_price: formData.base_price,
         weekend_price: formData.weekend_price || null,
@@ -178,27 +168,6 @@ export function AccommodationModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Ex: Chalé 1"
             />
-          </div>
-
-          {/* Type */}
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo *
-            </label>
-            <select
-              id="type"
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {typeOptions.map(option => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Capacity */}

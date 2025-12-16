@@ -18,7 +18,6 @@ class ReservationOverlapValidationTest(TestCase):
         # Create a test accommodation unit
         self.unit = AccommodationUnit.objects.create(
             name="Test Chalet 1",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00,
             color_hex="#FF5733"
@@ -230,7 +229,6 @@ class ReservationOverlapValidationTest(TestCase):
         # Create second unit
         unit2 = AccommodationUnit.objects.create(
             name="Test Chalet 2",
-            type=AccommodationUnit.CHALET,
             max_capacity=4,
             base_price=250.00,
             color_hex="#3366FF"

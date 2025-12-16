@@ -9,7 +9,6 @@ class AccommodationUnitModelTest(TestCase):
         """Test creating an accommodation unit."""
         unit = AccommodationUnit.objects.create(
             name="Chalet Premium",
-            type=AccommodationUnit.CHALET,
             max_capacity=6,
             base_price=350.00,
             color_hex="#FF5733"
@@ -23,7 +22,6 @@ class AccommodationUnitModelTest(TestCase):
         """Test that default status is CLEAN."""
         unit = AccommodationUnit.objects.create(
             name="Suite 101",
-            type=AccommodationUnit.SUITE,
             max_capacity=2,
             base_price=150.00
         )
@@ -34,7 +32,6 @@ class AccommodationUnitModelTest(TestCase):
         """Test all status choices."""
         unit = AccommodationUnit.objects.create(
             name="Room 201",
-            type=AccommodationUnit.ROOM,
             max_capacity=2,
             base_price=100.00
         )

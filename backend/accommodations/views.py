@@ -18,7 +18,7 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
     queryset = AccommodationUnit.objects.all()
     serializer_class = AccommodationUnitSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
-    filterset_fields = ['status', 'type']
+    filterset_fields = ['status']
     ordering_fields = ['name', 'created_at', 'base_price']
     ordering = ['name']
     
