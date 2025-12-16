@@ -22,7 +22,6 @@ class ReservationSignalTest(TestCase):
         
         self.unit = AccommodationUnit.objects.create(
             name="Test Unit",
-            type="CHALET",
             max_capacity=4,
             base_price=Decimal("500.00")
         )
