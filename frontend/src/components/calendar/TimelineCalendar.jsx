@@ -354,6 +354,7 @@ export function TimelineCalendar({
                     return (
                       <div
                         key={index}
+                        data-selected={isSelected || undefined}
                         className={cn(
                           'calendar-cell border-r cursor-pointer transition-colors relative group',
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-primary-400',

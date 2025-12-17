@@ -38,9 +38,9 @@ body {
   border: 1px solid rgba(216, 180, 254, 0.2);
 }
 
-/* Calendar cell hover effect */
-.calendar-cell:not(.ring-accent-500):hover {
-  background-color: var(--hover-bg-color, transparent) !important;
+/* Calendar cell hover effect - only apply to non-selected cells */
+.calendar-cell:not([data-selected]):hover {
+  background-color: var(--hover-bg-color, transparent);
 }
 
 /* Print styles */
