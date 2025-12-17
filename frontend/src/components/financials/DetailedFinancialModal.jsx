@@ -24,35 +24,382 @@ export function DetailedFinancialModal({
     if (!printContent) return;
     
     const printWindow = window.open('', '_blank');
+    const currentDate = format(new Date(), 'dd/MM/yyyy HH:mm');
+    
     printWindow.document.write(`
       <html>
         <head>
-          <title>Relatório Detalhado</title>
+          <title>Relatório Financeiro Detalhado</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            th, td { padding: 8px 12px; border-bottom: 1px solid #ddd; text-align: left; }
-            th { background-color: #f5f5f5; font-weight: bold; }
-            .text-right { text-align: right; }
-            .text-center { text-align: center; }
-            .text-green { color: #15803d; }
-            .text-red { color: #dc2626; }
-            .text-blue { color: #1d4ed8; }
-            .font-bold { font-weight: bold; }
-            .text-lg { font-size: 1.125rem; }
-            .header { text-align: center; margin-bottom: 24px; }
-            .section-title { font-size: 1.25rem; font-weight: bold; margin: 24px 0 12px 0; padding-bottom: 8px; border-bottom: 2px solid; }
-            .income-title { color: #15803d; border-color: #15803d; }
-            .expense-title { color: #dc2626; border-color: #dc2626; }
-            .status-paid { background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
-            .status-pending { background: #fef3c7; color: #d97706; padding: 2px 8px; border-radius: 9999px; font-size: 12px; }
-            .summary { border-top: 2px solid #333; padding-top: 16px; margin-top: 24px; }
-            .summary-row { display: flex; justify-content: space-between; padding: 8px 0; }
-            .footer { text-align: center; margin-top: 24px; font-size: 12px; color: #666; }
+            @page {
+              size: A4;
+              margin: 15mm;
+            }
+            
+            * {
+              box-sizing: border-box;
+            }
+            
+            body { 
+              font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+              margin: 0;
+              padding: 20px;
+              color: #1f2937;
+              line-height: 1.6;
+              background: white;
+            }
+            
+            /* Header Styles */
+            .report-header {
+              text-align: center;
+              margin-bottom: 30px;
+              padding-bottom: 20px;
+              border-bottom: 3px solid #9333ea;
+            }
+            
+            .report-title {
+              font-size: 28px;
+              font-weight: 700;
+              color: #9333ea;
+              margin: 0 0 8px 0;
+              letter-spacing: -0.5px;
+            }
+            
+            .report-subtitle {
+              font-size: 14px;
+              color: #6b7280;
+              margin: 4px 0;
+            }
+            
+            .report-period {
+              font-size: 16px;
+              color: #374151;
+              font-weight: 600;
+              margin: 8px 0 0 0;
+            }
+            
+            .report-meta {
+              display: flex;
+              justify-content: space-between;
+              font-size: 11px;
+              color: #9ca3af;
+              margin-top: 12px;
+              padding-top: 12px;
+              border-top: 1px solid #e5e7eb;
+            }
+            
+            /* Section Styles */
+            .section {
+              margin-bottom: 35px;
+              page-break-inside: avoid;
+            }
+            
+            .section-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              margin-bottom: 16px;
+              padding: 12px 16px;
+              border-radius: 8px;
+              background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            }
+            
+            .section-title {
+              font-size: 20px;
+              font-weight: 700;
+              margin: 0;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            }
+            
+            .section-title.income {
+              color: #15803d;
+            }
+            
+            .section-title.expense {
+              color: #dc2626;
+            }
+            
+            .section-title::before {
+              content: '';
+              display: inline-block;
+              width: 4px;
+              height: 24px;
+              border-radius: 2px;
+            }
+            
+            .section-title.income::before {
+              background: #15803d;
+            }
+            
+            .section-title.expense::before {
+              background: #dc2626;
+            }
+            
+            .section-count {
+              font-size: 13px;
+              color: #6b7280;
+              font-weight: 500;
+              background: white;
+              padding: 4px 12px;
+              border-radius: 12px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            /* Table Styles */
+            table { 
+              width: 100%;
+              border-collapse: separate;
+              border-spacing: 0;
+              margin-bottom: 20px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+              border-radius: 8px;
+              overflow: hidden;
+            }
+            
+            thead {
+              background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+            }
+            
+            th {
+              padding: 12px 16px;
+              text-align: left;
+              font-weight: 700;
+              font-size: 12px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              color: #374151;
+              border-bottom: 2px solid #d1d5db;
+            }
+            
+            th.text-right, td.text-right {
+              text-align: right;
+            }
+            
+            th.text-center, td.text-center {
+              text-align: center;
+            }
+            
+            tbody tr {
+              background: white;
+              border-bottom: 1px solid #f3f4f6;
+            }
+            
+            tbody tr:hover {
+              background: #fafafa;
+            }
+            
+            tbody tr:last-child {
+              border-bottom: none;
+            }
+            
+            td {
+              padding: 14px 16px;
+              font-size: 13px;
+              color: #374151;
+            }
+            
+            td.description {
+              font-weight: 500;
+              color: #111827;
+            }
+            
+            td.amount {
+              font-weight: 700;
+              font-size: 14px;
+            }
+            
+            td.amount.income {
+              color: #15803d;
+            }
+            
+            td.amount.expense {
+              color: #dc2626;
+            }
+            
+            /* Status Badge */
+            .status-badge {
+              display: inline-block;
+              padding: 4px 12px;
+              border-radius: 12px;
+              font-size: 11px;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.3px;
+            }
+            
+            .status-paid {
+              background: #dcfce7;
+              color: #15803d;
+            }
+            
+            .status-pending {
+              background: #fef3c7;
+              color: #d97706;
+            }
+            
+            /* Footer Styles */
+            tfoot {
+              background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+              border-top: 2px solid #d1d5db;
+            }
+            
+            tfoot td {
+              padding: 12px 16px;
+              font-weight: 600;
+              font-size: 14px;
+            }
+            
+            tfoot tr.total-row td {
+              font-weight: 700;
+              font-size: 15px;
+              padding-top: 16px;
+            }
+            
+            tfoot tr.grand-total td {
+              font-size: 16px;
+              padding: 14px 16px;
+              border-top: 2px solid #9ca3af;
+            }
+            
+            /* Summary Box */
+            .summary-box {
+              margin-top: 40px;
+              padding: 24px;
+              background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+              border-radius: 12px;
+              border: 2px solid #e9d5ff;
+              box-shadow: 0 4px 6px rgba(147, 51, 234, 0.1);
+              page-break-inside: avoid;
+            }
+            
+            .summary-title {
+              font-size: 18px;
+              font-weight: 700;
+              color: #7c3aed;
+              margin: 0 0 20px 0;
+              text-align: center;
+              text-transform: uppercase;
+              letter-spacing: 1px;
+            }
+            
+            .summary-grid {
+              display: grid;
+              gap: 16px;
+              max-width: 500px;
+              margin: 0 auto;
+            }
+            
+            .summary-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 12px 16px;
+              background: white;
+              border-radius: 8px;
+              box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            }
+            
+            .summary-label {
+              font-size: 15px;
+              font-weight: 600;
+              color: #4b5563;
+            }
+            
+            .summary-value {
+              font-size: 18px;
+              font-weight: 700;
+            }
+            
+            .summary-value.income {
+              color: #15803d;
+            }
+            
+            .summary-value.expense {
+              color: #dc2626;
+            }
+            
+            .summary-value.net {
+              color: #1d4ed8;
+            }
+            
+            .summary-value.net-negative {
+              color: #dc2626;
+            }
+            
+            .summary-row.net-result {
+              background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+              border: 2px solid #93c5fd;
+              padding: 16px;
+            }
+            
+            .summary-row.net-result .summary-label {
+              font-size: 16px;
+              color: #1e3a8a;
+            }
+            
+            .summary-row.net-result .summary-value {
+              font-size: 22px;
+            }
+            
+            /* Empty State */
+            .empty-state {
+              text-align: center;
+              padding: 40px 20px;
+              color: #9ca3af;
+              font-style: italic;
+            }
+            
+            /* Page Break */
+            .page-break {
+              page-break-after: always;
+            }
+            
+            /* Footer */
+            .report-footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #e5e7eb;
+              text-align: center;
+              font-size: 11px;
+              color: #9ca3af;
+            }
+            
+            /* Print Optimizations */
+            @media print {
+              body {
+                padding: 0;
+              }
+              
+              .section {
+                page-break-inside: avoid;
+              }
+              
+              tbody tr {
+                page-break-inside: avoid;
+              }
+            }
           </style>
         </head>
         <body>
+          <div class="report-header">
+            <h1 class="report-title">Relatório Financeiro Detalhado</h1>
+            <p class="report-subtitle">Sistema de Gestão de Acomodações</p>
+            <p class="report-period">${showAllDates ? 'Período: Todas as Transações' : `Período: ${formatDate(startDate)} a ${formatDate(endDate)}`}</p>
+            <div class="report-meta">
+              <span>Gerado em: ${currentDate}</span>
+              <span>AccommodationManager v1.0</span>
+            </div>
+          </div>
+          
           ${printContent.innerHTML}
+          
+          <div class="report-footer">
+            <p>Este relatório foi gerado automaticamente pelo sistema AccommodationManager.</p>
+            <p>© ${new Date().getFullYear()} - Gestão de Acomodações</p>
+          </div>
         </body>
       </html>
     `);
@@ -167,24 +514,14 @@ export function DetailedFinancialModal({
 
         {/* Content */}
         <div id="detailed-report-content" className="p-6 space-y-8">
-          {/* Print Header */}
-          <div className="header hidden print:block">
-            <h1 className="text-2xl font-bold">Relatório Financeiro Detalhado</h1>
-            <p className="text-gray-600">
-              {showAllDates 
-                ? 'Período: Todas as Transações' 
-                : `Período: ${formatDate(startDate)} a ${formatDate(endDate)}`}
-            </p>
-          </div>
-
           {/* Income Section */}
-          <div>
-            <h3 className="text-lg font-bold text-green-700 mb-4 flex items-center section-title income-title">
-              <span className="flex-1">Receitas (Entradas)</span>
-              <span className="text-sm font-normal text-gray-600">
+          <div className="section">
+            <div className="section-header">
+              <h3 className="section-title income">Receitas (Entradas)</h3>
+              <span className="section-count">
                 {incomeTransactions.length} transação(ões)
               </span>
-            </h3>
+            </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -204,7 +541,7 @@ export function DetailedFinancialModal({
                         <td className="py-3 px-4 text-gray-700">
                           {formatDate(transaction.due_date)}
                         </td>
-                        <td className="py-3 px-4 text-gray-900">
+                        <td className="py-3 px-4 description text-gray-900">
                           {transaction.description}
                         </td>
                         <td className="py-3 px-4 text-gray-700">
@@ -212,23 +549,23 @@ export function DetailedFinancialModal({
                         </td>
                         <td className="py-3 px-4 text-center">
                           {transaction.is_paid ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            <span className="status-badge status-paid">
                               Pago
                             </span>
                           ) : (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            <span className="status-badge status-pending">
                               Pendente
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right font-semibold text-green-700">
+                        <td className="py-3 px-4 text-right amount income font-semibold text-green-700">
                           {formatCurrency(transaction.amount)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-500">
+                      <td colSpan="5" className="empty-state py-8 text-center text-gray-500">
                         Nenhuma receita no período selecionado
                       </td>
                     </tr>
@@ -254,7 +591,7 @@ export function DetailedFinancialModal({
                         </td>
                       </tr>
                     )}
-                    <tr className="border-t border-gray-300">
+                    <tr className="grand-total border-t border-gray-300">
                       <td colSpan="4" className="py-3 px-4 text-right font-bold text-lg">
                         Total Geral:
                       </td>
@@ -269,13 +606,13 @@ export function DetailedFinancialModal({
           </div>
 
           {/* Expenses Section */}
-          <div>
-            <h3 className="text-lg font-bold text-red-700 mb-4 flex items-center section-title expense-title">
-              <span className="flex-1">Despesas (Saídas)</span>
-              <span className="text-sm font-normal text-gray-600">
+          <div className="section">
+            <div className="section-header">
+              <h3 className="section-title expense">Despesas (Saídas)</h3>
+              <span className="section-count">
                 {expenseTransactions.length} transação(ões)
               </span>
-            </h3>
+            </div>
             
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -295,7 +632,7 @@ export function DetailedFinancialModal({
                         <td className="py-3 px-4 text-gray-700">
                           {formatDate(transaction.due_date)}
                         </td>
-                        <td className="py-3 px-4 text-gray-900">
+                        <td className="py-3 px-4 description text-gray-900">
                           {transaction.description}
                         </td>
                         <td className="py-3 px-4 text-gray-700">
@@ -303,23 +640,23 @@ export function DetailedFinancialModal({
                         </td>
                         <td className="py-3 px-4 text-center">
                           {transaction.is_paid ? (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            <span className="status-badge status-paid">
                               Pago
                             </span>
                           ) : (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                            <span className="status-badge status-pending">
                               Pendente
                             </span>
                           )}
                         </td>
-                        <td className="py-3 px-4 text-right font-semibold text-red-700">
+                        <td className="py-3 px-4 text-right amount expense font-semibold text-red-700">
                           {formatCurrency(transaction.amount)}
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="py-8 text-center text-gray-500">
+                      <td colSpan="5" className="empty-state py-8 text-center text-gray-500">
                         Nenhuma despesa no período selecionado
                       </td>
                     </tr>
@@ -345,7 +682,7 @@ export function DetailedFinancialModal({
                         </td>
                       </tr>
                     )}
-                    <tr className="border-t border-gray-300">
+                    <tr className="grand-total border-t border-gray-300">
                       <td colSpan="4" className="py-3 px-4 text-right font-bold text-lg">
                         Total Geral:
                       </td>
@@ -360,23 +697,22 @@ export function DetailedFinancialModal({
           </div>
 
           {/* Summary */}
-          <div className="border-t-2 border-gray-800 pt-6">
-            <div className="flex justify-end">
-              <div className="w-full md:w-1/2 space-y-2">
-                <div className="flex justify-between py-2">
-                  <span className="font-semibold text-base">Total de Receitas (Pagas):</span>
-                  <span className="text-green-700 font-bold text-base">{formatCurrency(totalIncome)}</span>
-                </div>
-                <div className="flex justify-between py-2">
-                  <span className="font-semibold text-base">Total de Despesas (Pagas):</span>
-                  <span className="text-red-700 font-bold text-base">{formatCurrency(totalExpenses)}</span>
-                </div>
-                <div className="flex justify-between py-2 border-t-2 border-gray-800 mt-2 pt-2">
-                  <span className="font-bold text-lg">Resultado Líquido:</span>
-                  <span className={`font-bold text-lg ${(totalIncome - totalExpenses) >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                    {formatCurrency(totalIncome - totalExpenses)}
-                  </span>
-                </div>
+          <div className="summary-box">
+            <h3 className="summary-title">Resumo Financeiro</h3>
+            <div className="summary-grid">
+              <div className="summary-row">
+                <span className="summary-label">Total de Receitas (Pagas):</span>
+                <span className="summary-value income">{formatCurrency(totalIncome)}</span>
+              </div>
+              <div className="summary-row">
+                <span className="summary-label">Total de Despesas (Pagas):</span>
+                <span className="summary-value expense">{formatCurrency(totalExpenses)}</span>
+              </div>
+              <div className="summary-row net-result">
+                <span className="summary-label">Resultado Líquido:</span>
+                <span className={`summary-value ${(totalIncome - totalExpenses) >= 0 ? 'net' : 'net-negative'}`}>
+                  {formatCurrency(totalIncome - totalExpenses)}
+                </span>
               </div>
             </div>
           </div>
