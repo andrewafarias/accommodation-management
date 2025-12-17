@@ -350,32 +350,24 @@ export function TimelineCalendar({
                   {dates.map((date, index) => {
                     // Unit color is only shown on hover now
                     const hoverBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.25);
+                    const isSelected = isDateInSelection(date, unit.id);
                     return (
                       <div
                         key={index}
+                        data-selected={isSelected || undefined}
                         className={cn(
-                          'border-r cursor-pointer transition-colors relative group',
+                          'calendar-cell border-r cursor-pointer transition-colors relative group',
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-primary-400',
-                          isDateInSelection(date, unit.id) && 'ring-2 ring-inset ring-accent-500 bg-accent-100',
+                          isSelected && 'ring-2 ring-inset ring-accent-500 bg-accent-100',
                           isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-accent-600',
                           isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-accent-600'
                         )}
                         style={{ 
                           width: `${cellWidth}px`,
-                          backgroundColor: isDateInSelection(date, unit.id) 
+                          backgroundColor: isSelected 
                             ? 'rgba(34, 197, 94, 0.2)'
-                            : 'transparent',
-                          '--hover-bg': hoverBgColor
-                        }}
-                        onMouseEnter={(e) => {
-                          if (!isDateInSelection(date, unit.id)) {
-                            e.currentTarget.style.backgroundColor = hoverBgColor;
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (!isDateInSelection(date, unit.id)) {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }
+                            : undefined,
+                          '--hover-bg-color': hoverBgColor
                         }}
                         onClick={() => onCellClick && onCellClick({
                           unit_id: unit.id,
