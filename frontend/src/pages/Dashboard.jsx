@@ -172,28 +172,28 @@ export function Dashboard() {
 
   const statCards = [
     {
-      title: 'Units Available',
+      title: 'Unidades Disponíveis',
       value: stats.unitsAvailable,
       icon: Home,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
     },
     {
-      title: 'Check-ins Today',
+      title: 'Check-ins Hoje',
       value: stats.checkInsToday,
       icon: Users,
       color: 'text-primary-600',
       bgColor: 'bg-primary-100',
     },
     {
-      title: 'Pending Payments',
+      title: 'Pagamentos Pendentes',
       value: stats.pendingPayments,
       icon: DollarSign,
       color: 'text-secondary-600',
       bgColor: 'bg-secondary-100',
     },
     {
-      title: 'Total Revenue',
+      title: 'Receita Total',
       value: `R$ ${stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: TrendingUp,
       color: 'text-primary-600',
@@ -204,14 +204,14 @@ export function Dashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading dashboard...</div>
+        <div className="text-gray-500">Carregando painel...</div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+      <h1 className="text-3xl font-bold text-gray-900">Painel</h1>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

@@ -5,11 +5,11 @@ from django.utils import timezone
 
 class Reservation(models.Model):
     """
-    Reservation model for managing bookings.
-    CRITICAL: Includes overlap validation to prevent double bookings.
+    Modelo de Reserva para gerenciar reservas.
+    CRÍTICO: Inclui validação de sobreposição para prevenir reservas duplicadas.
     """
     
-    # Status choices
+    # Opções de status
     PENDING = 'PENDING'
     CONFIRMED = 'CONFIRMED'
     CHECKED_IN = 'CHECKED_IN'
@@ -17,71 +17,71 @@ class Reservation(models.Model):
     CANCELLED = 'CANCELLED'
     
     STATUS_CHOICES = [
-        (PENDING, 'Pending'),
-        (CONFIRMED, 'Confirmed'),
-        (CHECKED_IN, 'Checked-in'),
-        (CHECKED_OUT, 'Checked-out'),
-        (CANCELLED, 'Cancelled'),
+        (PENDING, 'Pendente'),
+        (CONFIRMED, 'Confirmado'),
+        (CHECKED_IN, 'Check-in Feito'),
+        (CHECKED_OUT, 'Check-out Feito'),
+        (CANCELLED, 'Cancelado'),
     ]
     
-    # Foreign Keys
+    # Chaves Estrangeiras
     accommodation_unit = models.ForeignKey(
         'accommodations.AccommodationUnit',
         on_delete=models.PROTECT,
         related_name='reservations',
-        verbose_name="Accommodation Unit"
+        verbose_name="Unidade de Acomodação"
     )
     client = models.ForeignKey(
         'clients.Client',
         on_delete=models.PROTECT,
         related_name='reservations',
-        verbose_name="Client"
+        verbose_name="Cliente"
     )
     
-    # Booking details
-    check_in = models.DateTimeField(verbose_name="Check-in Date/Time")
-    check_out = models.DateTimeField(verbose_name="Check-out Date/Time")
+    # Detalhes da reserva
+    check_in = models.DateTimeField(verbose_name="Data/Hora de Check-in")
+    check_out = models.DateTimeField(verbose_name="Data/Hora de Check-out")
     guest_count_adults = models.PositiveIntegerField(
         default=1,
-        verbose_name="Adult Guests"
+        verbose_name="Hóspedes Adultos"
     )
     guest_count_children = models.PositiveIntegerField(
         default=0,
-        verbose_name="Children Guests"
+        verbose_name="Hóspedes Crianças"
     )
     
-    # Pricing - manual override support
+    # Precificação - suporte a substituição manual
     total_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Total Price (BRL)",
-        help_text="Manual price override. If not set, will be calculated automatically."
+        verbose_name="Preço Total (BRL)",
+        help_text="Substituição manual de preço. Se não definido, será calculado automaticamente."
     )
     price_breakdown = models.JSONField(
         default=list,
         blank=True,
-        verbose_name="Price Breakdown",
-        help_text="List of price items: [{'name': 'Diária', 'value': 100.00, 'quantity': 1}, ...]"
+        verbose_name="Detalhamento de Preço",
+        help_text="Lista de itens de preço: [{'name': 'Diária', 'value': 100.00, 'quantity': 1}, ...]"
     )
     
-    # Payment pool - track paid vs required amounts
+    # Pool de pagamento - rastreia valores pagos vs necessários
     amount_paid = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
-        verbose_name="Amount Paid (BRL)",
-        help_text="Total amount already paid by the client"
+        verbose_name="Valor Pago (BRL)",
+        help_text="Valor total já pago pelo cliente"
     )
     payment_history = models.JSONField(
         default=list,
         blank=True,
-        verbose_name="Payment History",
-        help_text="List of payment entries: [{'date': '...', 'amount': ..., 'method': '...'}, ...]"
+        verbose_name="Histórico de Pagamento",
+        help_text="Lista de entradas de pagamento: [{'date': '...', 'amount': ..., 'method': '...'}, ...]"
     )
     
-    # Reservation status
+    # Status da reserva
     status = models.CharField(
         max_length=20,
         choices=STATUS_CHOICES,
@@ -89,15 +89,15 @@ class Reservation(models.Model):
         verbose_name="Status"
     )
     
-    # Additional info
-    notes = models.TextField(blank=True, null=True, verbose_name="Notes")
+    # Informações adicionais
+    notes = models.TextField(blank=True, null=True, verbose_name="Observações")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        verbose_name = "Reservation"
-        verbose_name_plural = "Reservations"
+        verbose_name = "Reserva"
+        verbose_name_plural = "Reservas"
         ordering = ['-check_in']
     
     def __str__(self):
@@ -105,49 +105,49 @@ class Reservation(models.Model):
     
     @property
     def amount_remaining(self):
-        """Calculate remaining amount to be paid."""
+        """Calcula o valor restante a ser pago."""
         if self.total_price is None:
             return 0
         return max(0, self.total_price - self.amount_paid)
     
     @property
     def is_fully_paid(self):
-        """Check if reservation is fully paid."""
+        """Verifica se a reserva está totalmente paga."""
         if self.total_price is None or self.total_price == 0:
             return False
         return self.amount_paid >= self.total_price
     
     def clean(self):
         """
-        CRITICAL: Validate that there are no overlapping reservations for the same unit.
-        This prevents double bookings.
+        CRÍTICO: Valida que não há reservas sobrepostas para a mesma unidade.
+        Isso previne reservas duplicadas.
         """
         super().clean()
         
-        # Validate check-out is after check-in
+        # Valida que check-out é depois do check-in
         if self.check_out <= self.check_in:
             raise ValidationError({
-                'check_out': 'Check-out date must be after check-in date.'
+                'check_out': 'A data de check-out deve ser posterior à data de check-in.'
             })
         
-        # Check for overlapping reservations
-        # Two reservations overlap if:
-        # - One starts before the other ends AND
-        # - One ends after the other starts
-        # We exclude cancelled reservations from overlap checks
+        # Verifica reservas sobrepostas
+        # Duas reservas se sobrepõem se:
+        # - Uma começa antes da outra terminar E
+        # - Uma termina depois da outra começar
+        # Excluímos reservas canceladas das verificações de sobreposição
         overlapping = Reservation.objects.filter(
             accommodation_unit=self.accommodation_unit
         ).exclude(
             status=self.CANCELLED
         ).exclude(
-            pk=self.pk  # Exclude self when updating existing reservation
+            pk=self.pk  # Exclui a si mesmo ao atualizar reserva existente
         ).filter(
             check_in__lt=self.check_out,
             check_out__gt=self.check_in
         )
         
         if overlapping.exists():
-            # Build friendly error message (as per requirement)
+            # Constrói mensagem de erro amigável (conforme requisito)
             conflicts = []
             for reservation in overlapping:
                 conflicts.append(
@@ -162,12 +162,12 @@ class Reservation(models.Model):
     
     def save(self, *args, **kwargs):
         """
-        Override save to call clean() validation and handle auto-dirty status.
+        Sobrescreve save para chamar validação clean() e lidar com status auto-sujo.
         """
-        # Always call clean before saving
+        # Sempre chama clean antes de salvar
         self.full_clean()
         
-        # Auto-mark unit as dirty on checkout
+        # Auto-marca unidade como suja no checkout
         if self.status == self.CHECKED_OUT:
             self.accommodation_unit.status = 'DIRTY'
             self.accommodation_unit.save()

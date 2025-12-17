@@ -7,17 +7,17 @@ from clients.serializers import ClientSerializer
 
 class ReservationSerializer(serializers.ModelSerializer):
     """
-    Serializer for Reservation model.
+    Serializador para modelo Reservation.
     
-    Read Logic (GET): Returns nested client and accommodation_unit objects.
-    Write Logic (POST/PUT/PATCH): Accepts client and accommodation_unit IDs.
-    Validation: Calls model's clean() method to ensure overlap validation.
+    Lógica de Leitura (GET): Retorna objetos client e accommodation_unit aninhados.
+    Lógica de Escrita (POST/PUT/PATCH): Aceita IDs de client e accommodation_unit.
+    Validação: Chama método clean() do modelo para garantir validação de sobreposição.
     """
-    # Read-only nested representations for GET requests
+    # Representações aninhadas somente leitura para requisições GET
     client_details = ClientSerializer(source='client', read_only=True)
     accommodation_unit_details = AccommodationUnitSerializer(source='accommodation_unit', read_only=True)
     
-    # Write-only fields for POST/PUT/PATCH requests
+    # Campos somente escrita para requisições POST/PUT/PATCH
     client = serializers.PrimaryKeyRelatedField(
         queryset=__import__('clients.models', fromlist=['Client']).Client.objects.all(),
         write_only=True
@@ -27,7 +27,7 @@ class ReservationSerializer(serializers.ModelSerializer):
         write_only=True
     )
     
-    # Computed read-only fields
+    # Campos computados somente leitura
     amount_remaining = serializers.ReadOnlyField()
     is_fully_paid = serializers.ReadOnlyField()
     
@@ -58,30 +58,30 @@ class ReservationSerializer(serializers.ModelSerializer):
     
     def to_representation(self, instance):
         """
-        Customize the output representation to include nested objects.
+        Personaliza a representação de saída para incluir objetos aninhados.
         """
         representation = super().to_representation(instance)
-        # Move nested details to replace the ID fields for cleaner output
+        # Move detalhes aninhados para substituir campos de ID para saída mais limpa
         representation['client'] = representation.pop('client_details')
         representation['accommodation_unit'] = representation.pop('accommodation_unit_details')
         return representation
     
     def check_tight_turnaround(self, accommodation_unit, check_in, check_out=None):
         """
-        Check if there's a checkout within 2 hours before the check-in,
-        or if there's a check-in within 2 hours after the check-out.
-        Returns a warning message if tight turnaround is detected.
+        Verifica se há um checkout dentro de 2 horas antes do check-in,
+        ou se há um check-in dentro de 2 horas após o check-out.
+        Retorna uma mensagem de aviso se for detectado um intervalo curto.
         """
         from datetime import timedelta
         from django.utils import timezone
         
         warnings = []
         
-        # Ensure check_in is timezone aware
+        # Garante que check_in está ciente de fuso horário
         if check_in and timezone.is_naive(check_in):
             check_in = timezone.make_aware(check_in)
         
-        # Check for previous reservation with check-out close to this check-in
+        # Verifica reserva anterior com check-out próximo a este check-in
         if check_in and accommodation_unit:
             two_hours_before = check_in - timedelta(hours=2)
             previous_reservation = Reservation.objects.filter(
@@ -106,9 +106,9 @@ class ReservationSerializer(serializers.ModelSerializer):
                     f"apenas {hours}h{remaining_minutes:02d}min antes do check-in desta reserva."
                 )
         
-        # Check for next reservation with check-in close to this check-out
+        # Verifica próxima reserva com check-in próximo a este check-out
         if check_out and accommodation_unit:
-            # Ensure check_out is timezone aware
+            # Garante que check_out está ciente de fuso horário
             if timezone.is_naive(check_out):
                 check_out = timezone.make_aware(check_out)
                 
@@ -142,34 +142,34 @@ class ReservationSerializer(serializers.ModelSerializer):
     
     def validate(self, attrs):
         """
-        Call the model's clean() method to enforce overlap validation.
-        This ensures that the API respects the business rule preventing double bookings.
+        Chama o método clean() do modelo para forçar validação de sobreposição.
+        Isso garante que a API respeita a regra de negócio prevenindo reservas duplicadas.
         """
-        # For updates (PATCH/PUT), merge new attrs with existing instance values
+        # Para atualizações (PATCH/PUT), mescla novos attrs com valores de instância existentes
         if self.instance:
-            # Start with existing instance data
+            # Começa com dados de instância existentes
             instance = self.instance
-            # Update with new attrs
+            # Atualiza com novos attrs
             for key, value in attrs.items():
                 setattr(instance, key, value)
         else:
-            # For creation, create a new temporary instance
+            # Para criação, cria uma nova instância temporária
             instance = Reservation(**attrs)
         
         try:
             instance.clean()
         except DjangoValidationError as e:
-            # Convert Django ValidationError to DRF ValidationError
+            # Converte Django ValidationError para DRF ValidationError
             raise serializers.ValidationError(e.message_dict)
         
-        # Check for tight turnaround (warning, not error)
+        # Verifica intervalo curto (aviso, não erro)
         warning = self.check_tight_turnaround(
             attrs.get('accommodation_unit', getattr(self.instance, 'accommodation_unit', None)),
             attrs.get('check_in', getattr(self.instance, 'check_in', None)),
             attrs.get('check_out', getattr(self.instance, 'check_out', None))
         )
         if warning:
-            # Store warning to be returned in response (won't block the save)
+            # Armazena aviso para ser retornado na resposta (não bloqueará o salvamento)
             self.context['tight_turnaround_warning'] = warning
         
         return attrs

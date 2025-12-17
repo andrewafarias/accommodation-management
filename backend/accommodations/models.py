@@ -3,52 +3,52 @@ from django.db import models
 
 class AccommodationUnit(models.Model):
     """
-    AccommodationUnit model for managing physical rental spaces.
+    Modelo de Unidade de Acomodação para gerenciar espaços de aluguel físicos.
     """
     
-    # Status choices
+    # Opções de status
     CLEAN = 'CLEAN'
     DIRTY = 'DIRTY'
     INSPECTING = 'INSPECTING'
     
     STATUS_CHOICES = [
-        (CLEAN, 'Clean'),
-        (DIRTY, 'Dirty'),
-        (INSPECTING, 'Inspecting'),
+        (CLEAN, 'Limpo'),
+        (DIRTY, 'Sujo'),
+        (INSPECTING, 'Inspecionando'),
     ]
     
-    name = models.CharField(max_length=100, unique=True, verbose_name="Name")
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nome")
     max_capacity = models.PositiveIntegerField(
-        verbose_name="Max Capacity",
-        help_text="Maximum number of guests"
+        verbose_name="Capacidade Máxima",
+        help_text="Número máximo de hóspedes"
     )
     base_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name="Base Price (BRL)",
-        help_text="Base daily rate in Brazilian Reais"
+        verbose_name="Preço Base (BRL)",
+        help_text="Diária base em Reais"
     )
     weekend_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Weekend Price (BRL)",
-        help_text="Daily rate for weekends (Fri, Sat, Sun) in Brazilian Reais"
+        verbose_name="Preço Final de Semana (BRL)",
+        help_text="Diária para finais de semana (Sex, Sáb, Dom) em Reais"
     )
     holiday_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         null=True,
         blank=True,
-        verbose_name="Holiday Price (BRL)",
-        help_text="Daily rate for holidays in Brazilian Reais"
+        verbose_name="Preço Feriado (BRL)",
+        help_text="Diária para feriados em Reais"
     )
     color_hex = models.CharField(
         max_length=7,
         default='#4A90E2',
-        verbose_name="Calendar Color",
-        help_text="Hex color code for calendar display (e.g., #FF5733)"
+        verbose_name="Cor do Calendário",
+        help_text="Código de cor hex para exibição no calendário (ex: #FF5733)"
     )
     status = models.CharField(
         max_length=20,
@@ -58,34 +58,34 @@ class AccommodationUnit(models.Model):
     )
     auto_dirty_days = models.PositiveIntegerField(
         default=3,
-        verbose_name="Auto Dirty Days",
-        help_text="Number of days after which a clean unit automatically becomes dirty"
+        verbose_name="Dias Auto-Sujo",
+        help_text="Número de dias após os quais uma unidade limpa automaticamente fica suja"
     )
     last_cleaned_at = models.DateTimeField(
         null=True,
         blank=True,
-        verbose_name="Last Cleaned At",
-        help_text="Timestamp of when the unit was last cleaned"
+        verbose_name="Última Limpeza",
+        help_text="Data e hora em que a unidade foi limpa pela última vez"
     )
     
-    # Custom check-in/out times per unit
+    # Horários personalizados de check-in/out por unidade
     default_check_in_time = models.TimeField(
         default='14:00',
-        verbose_name="Default Check-in Time",
-        help_text="Default check-in time for this unit (e.g., 14:00)"
+        verbose_name="Horário Padrão de Check-in",
+        help_text="Horário padrão de check-in para esta unidade (ex: 14:00)"
     )
     default_check_out_time = models.TimeField(
         default='12:00',
-        verbose_name="Default Check-out Time",
-        help_text="Default check-out time for this unit (e.g., 12:00)"
+        verbose_name="Horário Padrão de Check-out",
+        help_text="Horário padrão de check-out para esta unidade (ex: 12:00)"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        verbose_name = "Accommodation Unit"
-        verbose_name_plural = "Accommodation Units"
+        verbose_name = "Unidade de Acomodação"
+        verbose_name_plural = "Unidades de Acomodação"
         ordering = ['name']
     
     def __str__(self):

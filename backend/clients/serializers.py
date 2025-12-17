@@ -5,7 +5,7 @@ import json
 
 class DocumentAttachmentSerializer(serializers.ModelSerializer):
     """
-    Serializer for DocumentAttachment model.
+    Serializador para modelo DocumentAttachment.
     """
     class Meta:
         model = DocumentAttachment
@@ -15,20 +15,20 @@ class DocumentAttachmentSerializer(serializers.ModelSerializer):
 
 class ClientSerializer(serializers.ModelSerializer):
     """
-    Serializer for Client model.
-    Includes all fields for both read and write operations.
-    Handles tags field when submitted as JSON string from FormData.
-    Includes related document_attachments.
+    Serializador para modelo Client.
+    Inclui todos os campos para operações de leitura e escrita.
+    Manipula campo tags quando submetido como string JSON do FormData.
+    Inclui document_attachments relacionados.
     """
     document_attachments = DocumentAttachmentSerializer(many=True, read_only=True)
     
     def validate_tags(self, value):
-        """Handle tags field when it comes as a JSON string from FormData."""
+        """Manipula campo tags quando vem como string JSON do FormData."""
         if isinstance(value, str):
             try:
                 return json.loads(value)
             except json.JSONDecodeError:
-                raise serializers.ValidationError("Tags must be a valid JSON array")
+                raise serializers.ValidationError("Tags devem ser um array JSON válido")
         return value
     
     class Meta:
