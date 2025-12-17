@@ -3,6 +3,7 @@ import { X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
 import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
+import { getLocalDateString } from '../../lib/utils';
 
 // Brazilian National Holidays (fixed dates and Easter-based)
 const getBrazilianHolidays = (year) => {
@@ -98,7 +99,7 @@ export function ReservationModal({
     email: '',
   });
   const [newPayment, setNewPayment] = useState('');
-  const [newPaymentDate, setNewPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [newPaymentDate, setNewPaymentDate] = useState(() => getLocalDateString());
   
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
@@ -365,7 +366,7 @@ export function ReservationModal({
       status: shouldAutoConfirm ? 'CONFIRMED' : prev.status
     }));
     setNewPayment('');
-    setNewPaymentDate(new Date().toISOString().split('T')[0]);
+    setNewPaymentDate(getLocalDateString());
   };
 
   // Calculate remaining amount
