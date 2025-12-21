@@ -258,7 +258,7 @@ export function TimelineCalendar({
         >
           {/* Header */}
           <div className="h-12 border-b bg-gray-100 flex items-center px-4 font-semibold text-gray-700">
-            Accommodation Units
+            Acomodações
           </div>
           
           {/* Unit List */}
