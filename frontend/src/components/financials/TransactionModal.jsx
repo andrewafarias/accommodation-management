@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button } from '../ui/Button';
 import { X } from 'lucide-react';
+import { getLocalDateString } from '../../lib/utils';
 
 export function TransactionModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -8,7 +9,7 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
     category: 'SUPPLIES',
     amount: '',
     payment_method: 'PIX',
-    due_date: new Date().toISOString().split('T')[0],
+    due_date: getLocalDateString(),
     description: '',
   });
 
@@ -32,7 +33,7 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
       
       // If isPaid is checked, set paid_date to today
       if (isPaid) {
-        dataToSubmit.paid_date = new Date().toISOString().split('T')[0];
+        dataToSubmit.paid_date = getLocalDateString();
       }
       
       await onSubmit(dataToSubmit);
@@ -42,7 +43,7 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
         category: 'SUPPLIES',
         amount: '',
         payment_method: 'PIX',
-        due_date: new Date().toISOString().split('T')[0],
+        due_date: getLocalDateString(),
         description: '',
       });
       setIsPaid(false);
