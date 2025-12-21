@@ -124,3 +124,23 @@ class TransactionAPITest(TestCase):
         response = self.client.get(f'/api/financials/{self.transaction2.id}/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['is_paid'])
+    
+    def test_filter_by_paid_status_true(self):
+        """Test filtering transactions by paid status (is_paid=true)."""
+        response = self.client.get('/api/financials/?is_paid=true')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertTrue(response.data['results'][0]['is_paid'])
+    
+    def test_filter_by_paid_status_false(self):
+        """Test filtering transactions by unpaid status (is_paid=false)."""
+        response = self.client.get('/api/financials/?is_paid=false')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertFalse(response.data['results'][0]['is_paid'])
+    
+    def test_filter_by_paid_status_no_filter(self):
+        """Test that without is_paid filter, all transactions are returned."""
+        response = self.client.get('/api/financials/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2)
