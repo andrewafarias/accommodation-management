@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { ImportExportButtons } from '../components/ui/ImportExportButtons';
 import { TransactionTable } from '../components/financials/TransactionTable';
 import { TransactionModal } from '../components/financials/TransactionModal';
 import { FinancialReport } from '../components/financials/FinancialReport';
@@ -171,6 +172,56 @@ export function Financials() {
     }
   };
 
+  // Handle export
+  const handleExport = async (format) => {
+    try {
+      const response = await api.get(`financials/export_data/?export_format=${format}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `financials.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting financials:', error);
+      alert('Erro ao exportar transações.');
+    }
+  };
+
+  // Handle import
+  const handleImport = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('financials/import_data/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      const { imported, errors } = response.data;
+      
+      if (errors && errors.length > 0) {
+        alert(`Importadas: ${imported} transações.\nErros: ${errors.length} registros não puderam ser importados.`);
+      } else {
+        alert(`Importadas: ${imported} transações com sucesso!`);
+      }
+      
+      // Refresh the list
+      await fetchTransactions();
+    } catch (error) {
+      console.error('Error importing financials:', error);
+      alert('Erro ao importar transações. Verifique o formato do arquivo.');
+    }
+  };
+
   // Calculate monthly summary
   const calculateMonthlySummary = () => {
     let rangeTransactions = transactions;
@@ -248,6 +299,10 @@ export function Financials() {
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
           <div className="flex gap-2">
+            <ImportExportButtons 
+              onExport={handleExport}
+              onImport={handleImport}
+            />
             <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)}>
               <FileText className="w-4 h-4 mr-2" />
               Relatório Detalhado

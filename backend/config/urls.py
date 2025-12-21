@@ -23,6 +23,7 @@ from accommodations.views import AccommodationUnitViewSet
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
+from core.views import export_all_data, import_all_data
 
 # Create a router and register our viewsets
 router = DefaultRouter()
@@ -34,6 +35,8 @@ router.register(r'financials', TransactionViewSet, basename='transaction')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('api/export-all/', export_all_data, name='export-all'),
+    path('api/import-all/', import_all_data, name='import-all'),
 ]
 
 # Serve media files in development
