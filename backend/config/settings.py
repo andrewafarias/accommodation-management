@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'clients',
     'financials',
     'housekeeping',
+    'packages',
 ]
 
 MIDDLEWARE = [

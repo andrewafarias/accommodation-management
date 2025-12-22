@@ -228,3 +228,74 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
             'imported': imported_count,
             'errors': errors
         }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def bulk_update_prices(self, request):
+        """
+        Bulk update prices for multiple accommodation units.
+        
+        Expects JSON body with:
+        {
+            "unit_ids": [1, 2, 3],
+            "price_updates": {
+                "base_price": 250.00,  // optional
+                "weekend_price": 350.00,  // optional
+                "holiday_price": 400.00  // optional
+            }
+        }
+        """
+        unit_ids = request.data.get('unit_ids', [])
+        price_updates = request.data.get('price_updates', {})
+        
+        if not unit_ids:
+            return Response(
+                {'error': 'unit_ids é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not price_updates:
+            return Response(
+                {'error': 'price_updates é obrigatório'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Validate price fields
+        valid_price_fields = ['base_price', 'weekend_price', 'holiday_price']
+        invalid_fields = [k for k in price_updates.keys() if k not in valid_price_fields]
+        if invalid_fields:
+            return Response(
+                {'error': f'Campos inválidos: {", ".join(invalid_fields)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get units
+        units = AccommodationUnit.objects.filter(id__in=unit_ids)
+        
+        if not units.exists():
+            return Response(
+                {'error': 'Nenhuma unidade encontrada'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Update prices
+        updated_count = 0
+        for unit in units:
+            updated = False
+            if 'base_price' in price_updates:
+                unit.base_price = price_updates['base_price']
+                updated = True
+            if 'weekend_price' in price_updates:
+                unit.weekend_price = price_updates['weekend_price']
+                updated = True
+            if 'holiday_price' in price_updates:
+                unit.holiday_price = price_updates['holiday_price']
+                updated = True
+            
+            if updated:
+                unit.save()
+                updated_count += 1
+        
+        return Response({
+            'updated': updated_count,
+            'message': f'{updated_count} unidade(s) atualizada(s) com sucesso'
+        }, status=status.HTTP_200_OK)

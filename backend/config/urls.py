@@ -23,6 +23,7 @@ from accommodations.views import AccommodationUnitViewSet
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
+from packages.views import PackageViewSet
 from core.views import export_all_data, import_all_data
 
 # Create a router and register our viewsets
@@ -31,6 +32,7 @@ router.register(r'accommodations', AccommodationUnitViewSet, basename='accommoda
 router.register(r'clients', ClientViewSet, basename='client')
 router.register(r'reservations', ReservationViewSet, basename='reservation')
 router.register(r'financials', TransactionViewSet, basename='transaction')
+router.register(r'packages', PackageViewSet, basename='package')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
