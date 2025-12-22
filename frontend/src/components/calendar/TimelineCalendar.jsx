@@ -104,30 +104,51 @@ export function TimelineCalendar({
     return holidays[dateStr] || null;
   };
 
-  // Check if a date is in the selection range
+  // Check if a date is in any selection range
   const isDateInSelection = (date, unitId) => {
-    if (!dateSelection || dateSelection.unitId !== unitId) return false;
+    if (!dateSelection || !dateSelection.selections) return false;
     
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    if (dateSelection.startDate && dateSelection.endDate) {
-      // Full selection - check if date is in range
-      return dateStr >= dateSelection.startDate && dateStr <= dateSelection.endDate;
-    } else if (dateSelection.startDate && dateSelection.isSelecting) {
-      // Selection in progress - highlight start date
-      return dateStr === dateSelection.startDate;
+    // Check if date is in any completed selection
+    const inCompletedSelection = dateSelection.selections.some(selection => 
+      selection.unitId === unitId && 
+      dateStr >= selection.startDate && 
+      dateStr <= selection.endDate
+    );
+    
+    if (inCompletedSelection) return true;
+    
+    // Check if date is in current selection being made
+    if (dateSelection.isSelecting && 
+        dateSelection.currentUnitId === unitId && 
+        dateSelection.currentStartDate) {
+      return dateStr === dateSelection.currentStartDate;
     }
+    
     return false;
   };
   
-  // Check if this is the start or end of selection
+  // Check if this is the start or end of any selection
   const isSelectionEdge = (date, unitId) => {
-    if (!dateSelection || dateSelection.unitId !== unitId) return null;
+    if (!dateSelection || !dateSelection.selections) return null;
     
     const dateStr = format(date, 'yyyy-MM-dd');
     
-    if (dateStr === dateSelection.startDate) return 'start';
-    if (dateStr === dateSelection.endDate) return 'end';
+    for (const selection of dateSelection.selections) {
+      if (selection.unitId === unitId) {
+        if (dateStr === selection.startDate) return 'start';
+        if (dateStr === selection.endDate) return 'end';
+      }
+    }
+    
+    // Check current selection
+    if (dateSelection.isSelecting && 
+        dateSelection.currentUnitId === unitId && 
+        dateSelection.currentStartDate === dateStr) {
+      return 'start';
+    }
+    
     return null;
   };
 

@@ -203,44 +203,67 @@ export function Calendar() {
     return differenceInDays(twoYearsLater, threeMonthsAgo);
   };
 
-  // Handle cell click for date range selection
+  // Handle cell click for multi-accommodation date range selection
   const handleCellClick = (data) => {
     const clickedDate = data.check_in;
     const unitId = data.unit_id;
     
-    if (!dateSelection.isSelecting || dateSelection.unitId !== unitId) {
-      // First click - start selection
+    if (!dateSelection.isSelecting) {
+      // First click - start new selection
       setDateSelection({
-        unitId: unitId,
-        startDate: clickedDate,
-        endDate: null,
-        isSelecting: true
+        selections: [],
+        isSelecting: true,
+        currentUnitId: unitId,
+        currentStartDate: clickedDate
       });
+    } else if (dateSelection.currentUnitId !== unitId) {
+      // Clicking on different unit - complete previous selection and start new one
+      if (dateSelection.currentStartDate) {
+        // Finalize the previous selection
+        const newSelection = {
+          unitId: dateSelection.currentUnitId,
+          startDate: dateSelection.currentStartDate,
+          endDate: dateSelection.currentStartDate // Single date selection
+        };
+        setDateSelection({
+          selections: [...dateSelection.selections, newSelection],
+          isSelecting: true,
+          currentUnitId: unitId,
+          currentStartDate: clickedDate
+        });
+      }
     } else {
-      // Second click - complete selection
-      const start = dateSelection.startDate;
+      // Second click on same unit - complete selection
+      const start = dateSelection.currentStartDate;
       const end = clickedDate;
       
       // Ensure start is before end
       const [finalStart, finalEnd] = start <= end ? [start, end] : [end, start];
       
-      setDateSelection({
+      const newSelection = {
         unitId: unitId,
         startDate: finalStart,
-        endDate: finalEnd,
-        isSelecting: false
+        endDate: finalEnd
+      };
+      
+      setDateSelection({
+        selections: [...dateSelection.selections, newSelection],
+        isSelecting: false,
+        currentUnitId: null,
+        currentStartDate: null
       });
     }
   };
   
-  // Create reservation from selected date range
+  // Create reservation from selected date range (use first selection)
   const handleCreateReservationFromSelection = () => {
-    if (dateSelection.startDate && dateSelection.endDate && dateSelection.unitId) {
+    if (dateSelection.selections.length > 0) {
+      const firstSelection = dateSelection.selections[0];
       setSelectedReservation(null);
       setPrefilledData({
-        unit_id: dateSelection.unitId,
-        check_in: dateSelection.startDate,
-        check_out: dateSelection.endDate
+        unit_id: firstSelection.unitId,
+        check_in: firstSelection.startDate,
+        check_out: firstSelection.endDate
       });
       setModalOpen(true);
     }
@@ -249,10 +272,10 @@ export function Calendar() {
   // Clear date selection
   const handleClearSelection = () => {
     setDateSelection({
-      unitId: null,
-      startDate: null,
-      endDate: null,
-      isSelecting: false
+      selections: [],
+      isSelecting: false,
+      currentUnitId: null,
+      currentStartDate: null
     });
   };
   
@@ -299,98 +322,121 @@ export function Calendar() {
     await fetchCalendarData();
   };
 
-  // Handle setting custom prices for selected date range
-  const handleSetPrices = () => {
-    if (!dateSelection.startDate || !dateSelection.endDate || !dateSelection.unitId) return;
+  // Handle setting custom prices for all selected date ranges
+  const handleSetPrices = async () => {
+    if (dateSelection.selections.length === 0) return;
     
     const price = parseFloat(newPriceData.price);
     if (isNaN(price) || price <= 0) return;
     
-    const dates = eachDayOfInterval({
-      start: parseISO(dateSelection.startDate),
-      end: parseISO(dateSelection.endDate)
-    });
-    
-    const newCustomPrices = { ...customPrices };
-    dates.forEach(date => {
-      const key = `${dateSelection.unitId}-${format(date, 'yyyy-MM-dd')}`;
-      newCustomPrices[key] = price;
-    });
-    
-    setCustomPrices(newCustomPrices);
-    setPriceModalOpen(false);
-    setNewPriceData({ price: '' });
+    try {
+      // Collect all unit-date combinations from selections
+      const items = [];
+      dateSelection.selections.forEach(selection => {
+        const dates = eachDayOfInterval({
+          start: parseISO(selection.startDate),
+          end: parseISO(selection.endDate)
+        });
+        
+        dates.forEach(date => {
+          items.push({
+            accommodation_unit: selection.unitId,
+            date: format(date, 'yyyy-MM-dd'),
+            price: price
+          });
+        });
+      });
+      
+      // Bulk create/update prices via API
+      await datePriceOverrides.bulkCreate({ items });
+      
+      // Refresh calendar data to get updated prices
+      await fetchCalendarData();
+      
+      setPriceModalOpen(false);
+      setNewPriceData({ price: '' });
+      handleClearSelection();
+    } catch (error) {
+      console.error('Error setting prices:', error);
+      alert('Erro ao definir preços. Tente novamente.');
+    }
   };
 
-  // Handle creating or applying a package for selected date range
-  const handleCreatePackage = () => {
-    if (!dateSelection.startDate || !dateSelection.endDate || !dateSelection.unitId) return;
+  // Handle creating or applying a package for all selected date ranges
+  const handleCreatePackage = async () => {
+    if (dateSelection.selections.length === 0) return;
     
-    // If a recent package is selected, apply it to the new date range
-    if (selectedPackageId) {
-      const selectedPkg = packages.find(p => p.id === selectedPackageId);
-      if (selectedPkg) {
-        const newPackage = {
-          id: Date.now(),
-          name: selectedPkg.name,
-          color: selectedPkg.color,
-          unitId: dateSelection.unitId,
-          startDate: dateSelection.startDate,
-          endDate: dateSelection.endDate,
-          createdAt: new Date().toISOString()
-        };
-        setPackages(prev => [...prev, newPackage]);
-        setPackageModalOpen(false);
-        setSelectedPackageId(null);
-        setNewPackageData({ name: '', color: '#4A90E2' });
-        return;
+    try {
+      // If a recent package is selected, apply it to all selections
+      if (selectedPackageId) {
+        const selectedPkg = packages.find(p => p.id === selectedPackageId);
+        if (selectedPkg) {
+          const items = dateSelection.selections.map(selection => ({
+            accommodation_unit: selection.unitId,
+            name: selectedPkg.name,
+            start_date: selection.startDate,
+            end_date: selection.endDate,
+            color: selectedPkg.color
+          }));
+          
+          await datePackages.bulkCreate({ items });
+          await fetchCalendarData();
+          
+          setPackageModalOpen(false);
+          setSelectedPackageId(null);
+          setNewPackageData({ name: '', color: '#4A90E2' });
+          handleClearSelection();
+          return;
+        }
       }
+      
+      // Otherwise, create a new package for all selections
+      if (!newPackageData.name.trim()) return;
+      
+      const items = dateSelection.selections.map(selection => ({
+        accommodation_unit: selection.unitId,
+        name: newPackageData.name,
+        start_date: selection.startDate,
+        end_date: selection.endDate,
+        color: newPackageData.color
+      }));
+      
+      await datePackages.bulkCreate({ items });
+      await fetchCalendarData();
+      
+      setPackageModalOpen(false);
+      setNewPackageData({ name: '', color: '#4A90E2' });
+      setSelectedPackageId(null);
+      handleClearSelection();
+    } catch (error) {
+      console.error('Error creating package:', error);
+      alert('Erro ao criar pacote. Tente novamente.');
     }
-    
-    // Otherwise, create a new package
-    if (!newPackageData.name.trim()) return;
-    
-    // Create new package - newer packages override older ones in case of conflict
-    const newPackage = {
-      id: Date.now(),
-      name: newPackageData.name,
-      color: newPackageData.color,
-      unitId: dateSelection.unitId,
-      startDate: dateSelection.startDate,
-      endDate: dateSelection.endDate,
-      createdAt: new Date().toISOString()
-    };
-    
-    setPackages(prev => [...prev, newPackage]);
-    setPackageModalOpen(false);
-    setNewPackageData({ name: '', color: '#4A90E2' });
-    setSelectedPackageId(null);
   };
   
-  // Handle clearing packages from selected date range
-  const handleClearPackages = () => {
-    if (!dateSelection.startDate || !dateSelection.endDate || !dateSelection.unitId) return;
+  // Handle clearing packages from all selected date ranges
+  const handleClearPackages = async () => {
+    if (dateSelection.selections.length === 0) return;
     
-    // Remove all packages that overlap with the selected date range
-    setPackages(prev => prev.filter(pkg => {
-      // Keep packages that don't overlap with the selection
-      if (pkg.unitId !== dateSelection.unitId) return true;
+    try {
+      // Group selections by unit for bulk delete
+      const deletePromises = dateSelection.selections.map(selection => {
+        return datePackages.bulkDelete({
+          unit_ids: [selection.unitId],
+          start_date: selection.startDate,
+          end_date: selection.endDate
+        });
+      });
       
-      // Ensure dates are in the same format for comparison
-      const pkgStart = pkg.startDate;
-      const pkgEnd = pkg.endDate;
-      const selStart = dateSelection.startDate;
-      const selEnd = dateSelection.endDate;
+      await Promise.all(deletePromises);
+      await fetchCalendarData();
       
-      // No overlap if package ends before selection starts or starts after selection ends
-      // Using string comparison since all dates are in 'yyyy-MM-dd' format
-      if (pkgEnd < selStart || pkgStart > selEnd) return true;
-      
-      // There is overlap, so remove this package
-      return false;
-    }));
-    
-    setPackageModalOpen(false);
+      setPackageModalOpen(false);
+      handleClearSelection();
+    } catch (error) {
+      console.error('Error clearing packages:', error);
+      alert('Erro ao limpar pacotes. Tente novamente.');
+    }
   };
   
   // Get the 5 most recent unique packages (by name)
@@ -520,51 +566,58 @@ export function Calendar() {
             
             {/* Selection Actions */}
             <div className="flex items-center space-x-2">
-              {dateSelection.startDate && dateSelection.endDate ? (
+              {dateSelection.selections.length > 0 || dateSelection.isSelecting ? (
                 <>
                   <span className="text-sm text-gray-600">
-                    Selecionado: {format(new Date(dateSelection.startDate), 'dd/MM/yyyy')} - {format(new Date(dateSelection.endDate), 'dd/MM/yyyy')}
+                    {dateSelection.selections.length > 0 ? (
+                      <>
+                        {dateSelection.selections.length} seleção(ões) 
+                        {dateSelection.isSelecting && ' (+ selecionando...)'}
+                      </>
+                    ) : (
+                      'Selecione a data final...'
+                    )}
                   </span>
-                  <Button
-                    onClick={handleCreateReservationFromSelection}
-                    size="sm"
-                    className="bg-accent-600 hover:bg-accent-700"
-                  >
-                    Criar Reserva
-                  </Button>
-                  <Button
-                    onClick={() => setPriceModalOpen(true)}
-                    size="sm"
-                    variant="outline"
-                    className="border-secondary-500 text-secondary-600 hover:bg-secondary-50"
-                  >
-                    <DollarSign className="w-4 h-4 mr-1" />
-                    Definir Preços
-                  </Button>
-                  <Button
-                    onClick={() => setPackageModalOpen(true)}
-                    size="sm"
-                    variant="outline"
-                    className="border-primary-500 text-primary-600 hover:bg-primary-50"
-                  >
-                    <Package className="w-4 h-4 mr-1" />
-                    Criar Pacote
-                  </Button>
-                  <Button
-                    onClick={handleClearSelection}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Limpar
-                  </Button>
+                  {dateSelection.selections.length > 0 && (
+                    <>
+                      <Button
+                        onClick={handleCreateReservationFromSelection}
+                        size="sm"
+                        className="bg-accent-600 hover:bg-accent-700"
+                      >
+                        Criar Reserva
+                      </Button>
+                      <Button
+                        onClick={() => setPriceModalOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="border-secondary-500 text-secondary-600 hover:bg-secondary-50"
+                      >
+                        <DollarSign className="w-4 h-4 mr-1" />
+                        Definir Preços
+                      </Button>
+                      <Button
+                        onClick={() => setPackageModalOpen(true)}
+                        size="sm"
+                        variant="outline"
+                        className="border-primary-500 text-primary-600 hover:bg-primary-50"
+                      >
+                        <Package className="w-4 h-4 mr-1" />
+                        Criar Pacote
+                      </Button>
+                      <Button
+                        onClick={handleClearSelection}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Limpar
+                      </Button>
+                    </>
+                  )}
                 </>
-              ) : dateSelection.isSelecting ? (
-                <span className="text-sm text-primary-600 font-medium">
-                  Selecione a data final...
-                </span>
               ) : (
                 <span className="text-sm text-gray-500">
-                  Clique em uma data para selecionar
+                  Clique em datas para selecionar (pode selecionar em várias acomodações)
                 </span>
               )}
             </div>
@@ -633,7 +686,7 @@ export function Calendar() {
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Defina um preço manual para as datas selecionadas. Este valor irá sobrepor os preços padrão.
+              Defina um preço manual para todas as datas selecionadas (em {dateSelection.selections.length} acomodação(ões)). Este valor irá sobrepor os preços padrão.
             </p>
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -691,7 +744,7 @@ export function Calendar() {
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Selecione um pacote recente ou crie um novo para agrupar as datas selecionadas.
+              Selecione um pacote recente ou crie um novo para agrupar as datas selecionadas (em {dateSelection.selections.length} acomodação(ões)).
             </p>
             
             {/* Recent packages list */}
