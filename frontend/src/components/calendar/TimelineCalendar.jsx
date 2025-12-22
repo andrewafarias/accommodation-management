@@ -273,7 +273,7 @@ export function TimelineCalendar({
                 key={unit.id}
                 className={cn(
                   "h-20 border-b flex items-center px-4 space-x-3 transition-opacity",
-                  isDimmed && "opacity-40"
+                  isDimmed && "opacity-50"
                 )}
               >
                 {/* Color Indicator - Clickable for focus mode */}
@@ -371,7 +371,7 @@ export function TimelineCalendar({
                   key={unit.id} 
                   className={cn(
                     "relative h-20 border-b transition-opacity",
-                    isDimmed && "opacity-30"
+                    isDimmed && "opacity-50"
                   )}
                   style={{
                     pointerEvents: isDimmed ? 'none' : 'auto'
