@@ -243,7 +243,7 @@ export function Calendar() {
     handleClearSelection();
   };
 
-  const handleReservationSave = async (data, hasWarning = false) => {
+  const handleReservationSave = async (data) => {
     // Refresh calendar data after saving
     await fetchCalendarData();
     // Close modal (warnings are now shown as browser alerts)
