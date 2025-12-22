@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { ImportExportButtons } from '../components/ui/ImportExportButtons';
 import { AccommodationList } from '../components/accommodations/AccommodationList';
 import { AccommodationModal } from '../components/accommodations/AccommodationModal';
 import { Home, Plus } from 'lucide-react';
@@ -66,15 +67,71 @@ export function Accommodations() {
     }
   };
 
+  // Handle export
+  const handleExport = async (format) => {
+    try {
+      const response = await api.get(`accommodations/export_data/?export_format=${format}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `units.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting units:', error);
+      alert('Erro ao exportar unidades.');
+    }
+  };
+
+  // Handle import
+  const handleImport = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('accommodations/import_data/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      const { imported, errors } = response.data;
+      
+      if (errors && errors.length > 0) {
+        alert(`Importadas: ${imported} unidades.\nErros: ${errors.length} registros não puderam ser importados.`);
+      } else {
+        alert(`Importadas: ${imported} unidades com sucesso!`);
+      }
+      
+      // Refresh the list
+      await fetchAccommodations();
+    } catch (error) {
+      console.error('Error importing units:', error);
+      alert('Erro ao importar unidades. Verifique o formato do arquivo.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Unidades</h1>
-        <Button onClick={handleNewAccommodation}>
-          <Plus className="w-5 h-5 mr-2" />
-          Nova Unidade
-        </Button>
+        <div className="flex gap-2">
+          <ImportExportButtons 
+            onExport={handleExport}
+            onImport={handleImport}
+          />
+          <Button onClick={handleNewAccommodation}>
+            <Plus className="w-5 h-5 mr-2" />
+            Nova Unidade
+          </Button>
+        </div>
       </div>
 
       {/* Accommodation List Card */}

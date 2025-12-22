@@ -6,6 +6,10 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.db import transaction
 from django.db.models import Q, Value, CharField
 from django.db.models.functions import Replace
+from django.http import HttpResponse
+import json
+import csv
+from io import StringIO
 from .models import Client, DocumentAttachment
 from .serializers import ClientSerializer, DocumentAttachmentSerializer
 
@@ -125,3 +129,128 @@ class ClientViewSet(viewsets.ModelViewSet):
                 {'error': 'Document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+    
+    @action(detail=False, methods=['get'])
+    def export_data(self, request):
+        """
+        Export all clients to JSON or CSV format.
+        Query param: export_format (json or csv, default: json)
+        """
+        export_format = request.query_params.get('export_format', 'json').lower()
+        clients = self.get_queryset()
+        serializer = self.get_serializer(clients, many=True)
+        data = serializer.data
+        
+        # Remove fields that shouldn't be exported (auto-generated)
+        export_data = []
+        for client in data:
+            export_item = {
+                'full_name': client.get('full_name', ''),
+                'cpf': client.get('cpf', ''),
+                'phone': client.get('phone', ''),
+                'email': client.get('email', ''),
+                'address': client.get('address', ''),
+                'notes': client.get('notes', ''),
+                'tags': client.get('tags', []),
+            }
+            export_data.append(export_item)
+        
+        if export_format == 'csv':
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="clients.csv"'
+            
+            if export_data:
+                writer = csv.DictWriter(response, fieldnames=['full_name', 'cpf', 'phone', 'email', 'address', 'notes', 'tags'])
+                writer.writeheader()
+                for row in export_data:
+                    row['tags'] = json.dumps(row['tags']) if row['tags'] else '[]'
+                    writer.writerow(row)
+            
+            return response
+        else:
+            response = HttpResponse(
+                json.dumps(export_data, ensure_ascii=False, indent=2),
+                content_type='application/json'
+            )
+            response['Content-Disposition'] = 'attachment; filename="clients.json"'
+            return response
+    
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser, JSONParser])
+    def import_data(self, request):
+        """
+        Import clients from JSON or CSV format.
+        Accepts file upload or JSON body.
+        """
+        imported_count = 0
+        errors = []
+        
+        # Check if file was uploaded
+        file = request.FILES.get('file')
+        
+        if file:
+            file_content = file.read().decode('utf-8')
+            filename = file.name.lower()
+            
+            if filename.endswith('.csv'):
+                # Parse CSV
+                reader = csv.DictReader(StringIO(file_content))
+                data = []
+                for row in reader:
+                    if 'tags' in row and row['tags']:
+                        try:
+                            row['tags'] = json.loads(row['tags'])
+                        except json.JSONDecodeError:
+                            row['tags'] = []
+                    data.append(row)
+            else:
+                # Parse JSON
+                try:
+                    data = json.loads(file_content)
+                except json.JSONDecodeError:
+                    return Response(
+                        {'error': 'Invalid JSON file'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        else:
+            # Check for JSON body
+            data = request.data if isinstance(request.data, list) else request.data.get('data', [])
+        
+        if not isinstance(data, list):
+            return Response(
+                {'error': 'Data must be a list of clients'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        for idx, client_data in enumerate(data):
+            try:
+                # Check if client with same CPF already exists
+                cpf = client_data.get('cpf', '')
+                existing = Client.objects.filter(cpf=cpf).first()
+                
+                if existing:
+                    # Update existing client
+                    serializer = ClientSerializer(existing, data=client_data, partial=True)
+                else:
+                    # Create new client
+                    serializer = ClientSerializer(data=client_data)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    imported_count += 1
+                else:
+                    errors.append({
+                        'index': idx,
+                        'data': client_data,
+                        'errors': serializer.errors
+                    })
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    'data': client_data,
+                    'errors': str(e)
+                })
+        
+        return Response({
+            'imported': imported_count,
+            'errors': errors
+        }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)

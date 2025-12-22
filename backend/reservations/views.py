@@ -2,11 +2,17 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
+from django.http import HttpResponse
+import json
+import csv
+from io import StringIO
 from .models import Reservation
 from .serializers import ReservationSerializer
 from accommodations.models import AccommodationUnit
+from clients.models import Client
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -137,3 +143,178 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'check_out': check_out_str,
             'available_units': serializer.data
         })
+    
+    @action(detail=False, methods=['get'])
+    def export_data(self, request):
+        """
+        Export all reservations to JSON or CSV format.
+        Query param: export_format (json or csv, default: json)
+        """
+        export_format = request.query_params.get('export_format', 'json').lower()
+        reservations = self.get_queryset()
+        serializer = self.get_serializer(reservations, many=True)
+        data = serializer.data
+        
+        # Prepare export data with references by CPF and unit name
+        export_data = []
+        for res in data:
+            client_cpf = res.get('client', {}).get('cpf', '') if isinstance(res.get('client'), dict) else ''
+            unit_name = res.get('accommodation_unit', {}).get('name', '') if isinstance(res.get('accommodation_unit'), dict) else ''
+            
+            export_item = {
+                'client_cpf': client_cpf,
+                'unit_name': unit_name,
+                'check_in': res.get('check_in', ''),
+                'check_out': res.get('check_out', ''),
+                'guest_count_adults': res.get('guest_count_adults', 1),
+                'guest_count_children': res.get('guest_count_children', 0),
+                'total_price': res.get('total_price', ''),
+                'amount_paid': res.get('amount_paid', '0.00'),
+                'status': res.get('status', 'PENDING'),
+                'notes': res.get('notes', ''),
+                'price_breakdown': res.get('price_breakdown', []),
+                'payment_history': res.get('payment_history', []),
+            }
+            export_data.append(export_item)
+        
+        if export_format == 'csv':
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="reservations.csv"'
+            
+            if export_data:
+                writer = csv.DictWriter(response, fieldnames=[
+                    'client_cpf', 'unit_name', 'check_in', 'check_out',
+                    'guest_count_adults', 'guest_count_children', 'total_price',
+                    'amount_paid', 'status', 'notes', 'price_breakdown', 'payment_history'
+                ])
+                writer.writeheader()
+                for row in export_data:
+                    row['price_breakdown'] = json.dumps(row['price_breakdown']) if row['price_breakdown'] else '[]'
+                    row['payment_history'] = json.dumps(row['payment_history']) if row['payment_history'] else '[]'
+                    writer.writerow(row)
+            
+            return response
+        else:
+            response = HttpResponse(
+                json.dumps(export_data, ensure_ascii=False, indent=2),
+                content_type='application/json'
+            )
+            response['Content-Disposition'] = 'attachment; filename="reservations.json"'
+            return response
+    
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser, JSONParser])
+    def import_data(self, request):
+        """
+        Import reservations from JSON or CSV format.
+        Accepts file upload or JSON body.
+        Uses client_cpf and unit_name to link to existing records.
+        """
+        imported_count = 0
+        errors = []
+        
+        # Check if file was uploaded
+        file = request.FILES.get('file')
+        
+        if file:
+            file_content = file.read().decode('utf-8')
+            filename = file.name.lower()
+            
+            if filename.endswith('.csv'):
+                # Parse CSV
+                reader = csv.DictReader(StringIO(file_content))
+                data = []
+                for row in reader:
+                    if 'price_breakdown' in row and row['price_breakdown']:
+                        try:
+                            row['price_breakdown'] = json.loads(row['price_breakdown'])
+                        except json.JSONDecodeError:
+                            row['price_breakdown'] = []
+                    if 'payment_history' in row and row['payment_history']:
+                        try:
+                            row['payment_history'] = json.loads(row['payment_history'])
+                        except json.JSONDecodeError:
+                            row['payment_history'] = []
+                    data.append(row)
+            else:
+                # Parse JSON
+                try:
+                    data = json.loads(file_content)
+                except json.JSONDecodeError:
+                    return Response(
+                        {'error': 'Invalid JSON file'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        else:
+            # Check for JSON body
+            data = request.data if isinstance(request.data, list) else request.data.get('data', [])
+        
+        if not isinstance(data, list):
+            return Response(
+                {'error': 'Data must be a list of reservations'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        for idx, res_data in enumerate(data):
+            try:
+                # Look up client by CPF
+                client_cpf = res_data.get('client_cpf', '')
+                client = Client.objects.filter(cpf=client_cpf).first()
+                
+                if not client:
+                    errors.append({
+                        'index': idx,
+                        'data': res_data,
+                        'errors': f"Client with CPF '{client_cpf}' not found"
+                    })
+                    continue
+                
+                # Look up unit by name
+                unit_name = res_data.get('unit_name', '')
+                unit = AccommodationUnit.objects.filter(name=unit_name).first()
+                
+                if not unit:
+                    errors.append({
+                        'index': idx,
+                        'data': res_data,
+                        'errors': f"Unit with name '{unit_name}' not found"
+                    })
+                    continue
+                
+                # Prepare data for serializer
+                serializer_data = {
+                    'client': client.id,
+                    'accommodation_unit': unit.id,
+                    'check_in': res_data.get('check_in'),
+                    'check_out': res_data.get('check_out'),
+                    'guest_count_adults': res_data.get('guest_count_adults', 1),
+                    'guest_count_children': res_data.get('guest_count_children', 0),
+                    'total_price': res_data.get('total_price') if res_data.get('total_price') != '' else None,
+                    'amount_paid': res_data.get('amount_paid', '0.00'),
+                    'status': res_data.get('status', 'PENDING'),
+                    'notes': res_data.get('notes', ''),
+                    'price_breakdown': res_data.get('price_breakdown', []),
+                    'payment_history': res_data.get('payment_history', []),
+                }
+                
+                serializer = ReservationSerializer(data=serializer_data)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    imported_count += 1
+                else:
+                    errors.append({
+                        'index': idx,
+                        'data': res_data,
+                        'errors': serializer.errors
+                    })
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    'data': res_data,
+                    'errors': str(e)
+                })
+        
+        return Response({
+            'imported': imported_count,
+            'errors': errors
+        }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { ImportExportButtons } from '../components/ui/ImportExportButtons';
 import { ReservationTable } from '../components/reservations/ReservationTable';
 import { ReservationModal } from '../components/reservations/ReservationModal';
 import { Calendar, Plus } from 'lucide-react';
@@ -191,15 +192,71 @@ export function ReservationList() {
     });
   }, [reservations, filterMonth, filterYear, filterStatus, filterAccommodation, sortBy]);
 
+  // Handle export
+  const handleExport = async (format) => {
+    try {
+      const response = await api.get(`reservations/export_data/?export_format=${format}`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `reservations.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting reservations:', error);
+      alert('Erro ao exportar reservas.');
+    }
+  };
+
+  // Handle import
+  const handleImport = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('reservations/import_data/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      const { imported, errors } = response.data;
+      
+      if (errors && errors.length > 0) {
+        alert(`Importadas: ${imported} reservas.\nErros: ${errors.length} registros não puderam ser importados.`);
+      } else {
+        alert(`Importadas: ${imported} reservas com sucesso!`);
+      }
+      
+      // Refresh the list
+      await fetchData();
+    } catch (error) {
+      console.error('Error importing reservations:', error);
+      alert('Erro ao importar reservas. Verifique o formato do arquivo.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-        <Button onClick={handleNewReservation}>
-          <Plus className="w-5 h-5 mr-2" />
-          Nova Reserva
-        </Button>
+        <div className="flex gap-2">
+          <ImportExportButtons 
+            onExport={handleExport}
+            onImport={handleImport}
+          />
+          <Button onClick={handleNewReservation}>
+            <Plus className="w-5 h-5 mr-2" />
+            Nova Reserva
+          </Button>
+        </div>
       </div>
 
       {/* Filter Controls */}

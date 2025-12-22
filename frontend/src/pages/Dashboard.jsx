@@ -1,12 +1,13 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Home, Users, DollarSign, TrendingUp, Sparkles, CalendarCheck, Check, Plus } from 'lucide-react';
+import { Home, Users, DollarSign, TrendingUp, Sparkles, CalendarCheck, Check, Plus, Download, Upload } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, addDays, parseISO, subMonths, isAfter, isBefore } from 'date-fns';
 import api from '../services/api';
 import { PeriodSelector } from '../components/dashboard/PeriodSelector';
 import { ActiveReservationsWidget } from '../components/dashboard/ActiveReservationsWidget';
 import { PendingPaymentsWidget } from '../components/dashboard/PendingPaymentsWidget';
+import { Button } from '../components/ui/Button';
 
 export function Dashboard() {
   const [stats, setStats] = useState({
@@ -25,6 +26,8 @@ export function Dashboard() {
   const [startDate, setStartDate] = useState(subMonths(new Date(), 6));
   const [endDate, setEndDate] = useState(new Date());
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -170,6 +173,68 @@ export function Dashboard() {
     return allUnits.filter(unit => unit.status !== 'DIRTY');
   };
 
+  // Handle export all data
+  const handleExportAll = async () => {
+    try {
+      const response = await api.get('export-all/', {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'all_data.json');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting all data:', error);
+      alert('Erro ao exportar dados.');
+    }
+  };
+
+  // Handle import all data
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportAll = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const response = await api.post('import-all/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      const results = response.data;
+      const message = `Importação concluída!\n\n` +
+        `Clientes: ${results.clients.imported} importados, ${results.clients.errors.length} erros\n` +
+        `Unidades: ${results.units.imported} importados, ${results.units.errors.length} erros\n` +
+        `Reservas: ${results.reservations.imported} importados, ${results.reservations.errors.length} erros\n` +
+        `Financeiro: ${results.financials.imported} importados, ${results.financials.errors.length} erros`;
+      
+      alert(message);
+      
+      // Refresh the dashboard
+      await fetchDashboardData();
+    } catch (error) {
+      console.error('Error importing all data:', error);
+      alert('Erro ao importar dados. Verifique o formato do arquivo.');
+    } finally {
+      setImporting(false);
+      event.target.value = '';
+    }
+  };
+
   const statCards = [
     {
       title: 'Unidades Disponíveis',
@@ -211,7 +276,31 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Painel</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Painel</h1>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleExportAll}>
+            <Download className="w-4 h-4 mr-2" />
+            Exportar Tudo
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleImportClick}
+            disabled={importing}
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            {importing ? 'Importando...' : 'Importar Tudo'}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportAll}
+            className="hidden"
+          />
+        </div>
+      </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

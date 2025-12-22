@@ -2,9 +2,14 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.filters import OrderingFilter
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
+from django.http import HttpResponse
 from datetime import timedelta
+import json
+import csv
+from io import StringIO
 from .models import AccommodationUnit
 from .serializers import AccommodationUnitSerializer
 
@@ -100,3 +105,126 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
             response.data = serializer.data
         
         return response
+    
+    @action(detail=False, methods=['get'])
+    def export_data(self, request):
+        """
+        Export all accommodation units to JSON or CSV format.
+        Query param: export_format (json or csv, default: json)
+        """
+        export_format = request.query_params.get('export_format', 'json').lower()
+        units = self.get_queryset()
+        serializer = self.get_serializer(units, many=True)
+        data = serializer.data
+        
+        # Remove fields that shouldn't be exported (auto-generated)
+        export_data = []
+        for unit in data:
+            export_item = {
+                'name': unit.get('name', ''),
+                'max_capacity': unit.get('max_capacity', 0),
+                'base_price': unit.get('base_price', '0.00'),
+                'weekend_price': unit.get('weekend_price', ''),
+                'holiday_price': unit.get('holiday_price', ''),
+                'color_hex': unit.get('color_hex', '#4A90E2'),
+                'status': unit.get('status', 'CLEAN'),
+                'auto_dirty_days': unit.get('auto_dirty_days', 3),
+                'default_check_in_time': unit.get('default_check_in_time', '14:00:00'),
+                'default_check_out_time': unit.get('default_check_out_time', '12:00:00'),
+            }
+            export_data.append(export_item)
+        
+        if export_format == 'csv':
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="units.csv"'
+            
+            if export_data:
+                writer = csv.DictWriter(response, fieldnames=[
+                    'name', 'max_capacity', 'base_price', 'weekend_price', 'holiday_price',
+                    'color_hex', 'status', 'auto_dirty_days', 'default_check_in_time', 'default_check_out_time'
+                ])
+                writer.writeheader()
+                for row in export_data:
+                    writer.writerow(row)
+            
+            return response
+        else:
+            response = HttpResponse(
+                json.dumps(export_data, ensure_ascii=False, indent=2),
+                content_type='application/json'
+            )
+            response['Content-Disposition'] = 'attachment; filename="units.json"'
+            return response
+    
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser, JSONParser])
+    def import_data(self, request):
+        """
+        Import accommodation units from JSON or CSV format.
+        Accepts file upload or JSON body.
+        """
+        imported_count = 0
+        errors = []
+        
+        # Check if file was uploaded
+        file = request.FILES.get('file')
+        
+        if file:
+            file_content = file.read().decode('utf-8')
+            filename = file.name.lower()
+            
+            if filename.endswith('.csv'):
+                # Parse CSV
+                reader = csv.DictReader(StringIO(file_content))
+                data = list(reader)
+            else:
+                # Parse JSON
+                try:
+                    data = json.loads(file_content)
+                except json.JSONDecodeError:
+                    return Response(
+                        {'error': 'Invalid JSON file'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+        else:
+            # Check for JSON body
+            data = request.data if isinstance(request.data, list) else request.data.get('data', [])
+        
+        if not isinstance(data, list):
+            return Response(
+                {'error': 'Data must be a list of accommodation units'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        for idx, unit_data in enumerate(data):
+            try:
+                # Check if unit with same name already exists
+                name = unit_data.get('name', '')
+                existing = AccommodationUnit.objects.filter(name=name).first()
+                
+                if existing:
+                    # Update existing unit
+                    serializer = AccommodationUnitSerializer(existing, data=unit_data, partial=True)
+                else:
+                    # Create new unit
+                    serializer = AccommodationUnitSerializer(data=unit_data)
+                
+                if serializer.is_valid():
+                    serializer.save()
+                    imported_count += 1
+                else:
+                    errors.append({
+                        'index': idx,
+                        'data': unit_data,
+                        'errors': serializer.errors
+                    })
+            except Exception as e:
+                errors.append({
+                    'index': idx,
+                    'data': unit_data,
+                    'errors': str(e)
+                })
+        
+        return Response({
+            'imported': imported_count,
+            'errors': errors
+        }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)
