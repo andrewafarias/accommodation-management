@@ -207,17 +207,18 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       newErrors.full_name = 'Nome completo é obrigatório';
     }
 
-    if (!formData.cpf.trim()) {
-      newErrors.cpf = 'CPF é obrigatório';
-    } else if (!isValidCPF(formData.cpf)) {
-      newErrors.cpf = 'CPF inválido';
-    } else {
-      // Check if CPF is unique (exclude current client when editing)
-      const cpfExists = existingCpfs.some(
-        existingCpf => existingCpf === formData.cpf && (!client || client.cpf !== formData.cpf)
-      );
-      if (cpfExists) {
-        newErrors.cpf = 'CPF já cadastrado';
+    // CPF is now optional, but if provided, must be valid
+    if (formData.cpf.trim()) {
+      if (!isValidCPF(formData.cpf)) {
+        newErrors.cpf = 'CPF inválido';
+      } else {
+        // Check if CPF is unique (exclude current client when editing)
+        const cpfExists = existingCpfs.some(
+          existingCpf => existingCpf === formData.cpf && (!client || client.cpf !== formData.cpf)
+        );
+        if (cpfExists) {
+          newErrors.cpf = 'CPF já cadastrado';
+        }
       }
     }
 
@@ -248,7 +249,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       
       // Append all text fields
       submitData.append('full_name', formData.full_name);
-      submitData.append('cpf', formData.cpf);
+      // Only append CPF if it's provided
+      if (formData.cpf.trim()) {
+        submitData.append('cpf', formData.cpf);
+      }
       // Convert phone to international format before sending
       submitData.append('phone', formatPhoneInternational(formData.phone));
       if (formData.email) submitData.append('email', formData.email);
@@ -399,7 +403,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
             {/* CPF */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                CPF <span className="text-red-500">*</span>
+                CPF
               </label>
               <input
                 type="text"
@@ -410,7 +414,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
                 className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 ${
                   errors.cpf ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="Somente números (11 dígitos)"
+                placeholder="Somente números (11 dígitos) - Opcional"
               />
               {errors.cpf && (
                 <p className="mt-1 text-sm text-red-500">{errors.cpf}</p>

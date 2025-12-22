@@ -47,6 +47,19 @@ class ClientAPITest(TestCase):
         self.assertEqual(response.data['full_name'], 'Carlos Oliveira')
         self.assertEqual(Client.objects.count(), 3)
     
+    def test_create_client_without_cpf(self):
+        """Test creating a new client without CPF (optional field)."""
+        data = {
+            'full_name': 'Ana Costa',
+            'phone': '+55 (21) 98888-7777',
+            'email': 'ana@example.com'
+        }
+        response = self.client.post('/api/clients/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['full_name'], 'Ana Costa')
+        self.assertIsNone(response.data['cpf'])
+        self.assertEqual(Client.objects.count(), 3)
+    
     def test_get_client(self):
         """Test retrieving a specific client."""
         response = self.client.get(f'/api/clients/{self.client1.id}/')

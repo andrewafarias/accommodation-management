@@ -21,7 +21,7 @@ class ClientModelTest(TestCase):
         self.assertEqual(client.cpf, "987.654.321-00")
         
     def test_cpf_unique(self):
-        """Test that CPF must be unique."""
+        """Test that CPF must be unique when provided."""
         Client.objects.create(
             full_name="João Silva",
             cpf="123.456.789-00",
@@ -36,6 +36,34 @@ class ClientModelTest(TestCase):
                 cpf="123.456.789-00",
                 phone="+55 (11) 99999-9999"
             )
+    
+    def test_create_client_without_cpf(self):
+        """Test that clients can be created without CPF."""
+        client = Client.objects.create(
+            full_name="Cliente Sem CPF",
+            phone="+55 (11) 98765-4321",
+            email="sem.cpf@example.com"
+        )
+        
+        self.assertIsNotNone(client.pk)
+        self.assertEqual(client.full_name, "Cliente Sem CPF")
+        self.assertIsNone(client.cpf)
+    
+    def test_multiple_clients_without_cpf(self):
+        """Test that multiple clients can exist without CPF (NULL is allowed)."""
+        client1 = Client.objects.create(
+            full_name="Cliente 1",
+            phone="+55 (11) 98765-4321"
+        )
+        client2 = Client.objects.create(
+            full_name="Cliente 2",
+            phone="+55 (21) 98765-4321"
+        )
+        
+        self.assertIsNotNone(client1.pk)
+        self.assertIsNotNone(client2.pk)
+        self.assertIsNone(client1.cpf)
+        self.assertIsNone(client2.cpf)
     
     def test_tags_field(self):
         """Test that tags field works as JSONField."""

@@ -223,9 +223,12 @@ class ClientViewSet(viewsets.ModelViewSet):
         
         for idx, client_data in enumerate(data):
             try:
-                # Check if client with same CPF already exists
-                cpf = client_data.get('cpf', '')
-                existing = Client.objects.filter(cpf=cpf).first()
+                # Check if client with same CPF already exists (only if CPF is provided)
+                cpf = client_data.get('cpf', '').strip()
+                existing = None
+                
+                if cpf:
+                    existing = Client.objects.filter(cpf=cpf).first()
                 
                 if existing:
                     # Update existing client
