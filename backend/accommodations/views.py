@@ -6,12 +6,12 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.http import HttpResponse
-from datetime import timedelta
+from datetime import timedelta, datetime
 import json
 import csv
 from io import StringIO
-from .models import AccommodationUnit
-from .serializers import AccommodationUnitSerializer
+from .models import AccommodationUnit, DatePriceOverride, DatePackage
+from .serializers import AccommodationUnitSerializer, DatePriceOverrideSerializer, DatePackageSerializer
 
 
 class AccommodationUnitViewSet(viewsets.ModelViewSet):
@@ -263,4 +263,276 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
         return Response({
             'updated': updated_count,
             'message': f'Successfully updated display order for {updated_count} units'
+        }, status=status.HTTP_200_OK)
+
+
+class DatePriceOverrideViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing DatePriceOverride resources.
+    Supports bulk creation and filtering by date range and accommodation unit.
+    """
+    queryset = DatePriceOverride.objects.select_related('accommodation_unit').all()
+    serializer_class = DatePriceOverrideSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['accommodation_unit', 'date']
+    ordering_fields = ['date', 'accommodation_unit', 'price']
+    ordering = ['date', 'accommodation_unit']
+    
+    def get_queryset(self):
+        """Filter by date range if provided."""
+        queryset = super().get_queryset()
+        
+        # Filter by date range
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        
+        if start_date:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+        
+        return queryset
+    
+    @action(detail=False, methods=['post'])
+    def bulk_create(self, request):
+        """
+        Bulk create price overrides for multiple dates and units.
+        
+        Body: {
+            "unit_ids": [1, 2, 3],
+            "dates": ["2025-12-25", "2025-12-26"],
+            "price": 500.00
+        }
+        
+        Or for individual items:
+        Body: {
+            "items": [
+                {"accommodation_unit": 1, "date": "2025-12-25", "price": 500.00},
+                {"accommodation_unit": 2, "date": "2025-12-25", "price": 450.00}
+            ]
+        }
+        """
+        # Check if using bulk format or individual items
+        items = request.data.get('items')
+        
+        if items:
+            # Individual items format
+            serializer = self.get_serializer(data=items, many=True)
+        else:
+            # Bulk format - expand unit_ids and dates
+            unit_ids = request.data.get('unit_ids', [])
+            dates = request.data.get('dates', [])
+            price = request.data.get('price')
+            
+            if not unit_ids or not dates or price is None:
+                return Response(
+                    {'error': 'unit_ids, dates, and price are required for bulk creation'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create items for each unit-date combination
+            items = []
+            for unit_id in unit_ids:
+                for date_str in dates:
+                    items.append({
+                        'accommodation_unit': unit_id,
+                        'date': date_str,
+                        'price': price
+                    })
+            
+            serializer = self.get_serializer(data=items, many=True)
+        
+        if serializer.is_valid():
+            # Use update_or_create to handle duplicates
+            created_count = 0
+            updated_count = 0
+            errors = []
+            
+            for item_data in serializer.validated_data:
+                try:
+                    obj, created = DatePriceOverride.objects.update_or_create(
+                        accommodation_unit=item_data['accommodation_unit'],
+                        date=item_data['date'],
+                        defaults={'price': item_data['price']}
+                    )
+                    if created:
+                        created_count += 1
+                    else:
+                        updated_count += 1
+                except Exception as e:
+                    errors.append(str(e))
+            
+            return Response({
+                'created': created_count,
+                'updated': updated_count,
+                'errors': errors
+            }, status=status.HTTP_201_CREATED if created_count > 0 else status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """
+        Bulk delete price overrides for specified date ranges and units.
+        
+        Body: {
+            "unit_ids": [1, 2],
+            "start_date": "2025-12-25",
+            "end_date": "2025-12-31"
+        }
+        """
+        unit_ids = request.data.get('unit_ids', [])
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        
+        if not unit_ids or not start_date or not end_date:
+            return Response(
+                {'error': 'unit_ids, start_date, and end_date are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Filter and delete
+        queryset = DatePriceOverride.objects.filter(
+            accommodation_unit_id__in=unit_ids,
+            date__gte=start_date,
+            date__lte=end_date
+        )
+        
+        deleted_count, _ = queryset.delete()
+        
+        return Response({
+            'deleted': deleted_count,
+            'message': f'Successfully deleted {deleted_count} price overrides'
+        }, status=status.HTTP_200_OK)
+
+
+class DatePackageViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing DatePackage resources.
+    Supports bulk creation and filtering by date range and accommodation unit.
+    """
+    queryset = DatePackage.objects.select_related('accommodation_unit').all()
+    serializer_class = DatePackageSerializer
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['accommodation_unit', 'name']
+    ordering_fields = ['start_date', 'end_date', 'created_at']
+    ordering = ['-created_at']
+    
+    def get_queryset(self):
+        """Filter by date range if provided."""
+        queryset = super().get_queryset()
+        
+        # Filter packages that overlap with the given date range
+        start_date = self.request.query_params.get('start_date')
+        end_date = self.request.query_params.get('end_date')
+        
+        if start_date and end_date:
+            # Packages that overlap: package.start <= end_date AND package.end >= start_date
+            queryset = queryset.filter(
+                start_date__lte=end_date,
+                end_date__gte=start_date
+            )
+        elif start_date:
+            queryset = queryset.filter(end_date__gte=start_date)
+        elif end_date:
+            queryset = queryset.filter(start_date__lte=end_date)
+        
+        return queryset
+    
+    @action(detail=False, methods=['post'])
+    def bulk_create(self, request):
+        """
+        Bulk create packages for multiple units with the same date range and name.
+        
+        Body: {
+            "unit_ids": [1, 2, 3],
+            "name": "Natal 2025",
+            "start_date": "2025-12-20",
+            "end_date": "2025-12-26",
+            "color": "#FF5733"
+        }
+        
+        Or for individual items:
+        Body: {
+            "items": [
+                {"accommodation_unit": 1, "name": "Natal", "start_date": "2025-12-20", "end_date": "2025-12-26", "color": "#FF5733"},
+                {"accommodation_unit": 2, "name": "Natal", "start_date": "2025-12-20", "end_date": "2025-12-26", "color": "#FF5733"}
+            ]
+        }
+        """
+        # Check if using bulk format or individual items
+        items = request.data.get('items')
+        
+        if items:
+            # Individual items format
+            serializer = self.get_serializer(data=items, many=True)
+        else:
+            # Bulk format - expand unit_ids
+            unit_ids = request.data.get('unit_ids', [])
+            name = request.data.get('name')
+            start_date = request.data.get('start_date')
+            end_date = request.data.get('end_date')
+            color = request.data.get('color', '#4A90E2')
+            
+            if not unit_ids or not name or not start_date or not end_date:
+                return Response(
+                    {'error': 'unit_ids, name, start_date, and end_date are required'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Create items for each unit
+            items = []
+            for unit_id in unit_ids:
+                items.append({
+                    'accommodation_unit': unit_id,
+                    'name': name,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'color': color
+                })
+            
+            serializer = self.get_serializer(data=items, many=True)
+        
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'created': len(serializer.data),
+                'packages': serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def bulk_delete(self, request):
+        """
+        Bulk delete packages that overlap with specified date ranges and units.
+        
+        Body: {
+            "unit_ids": [1, 2],
+            "start_date": "2025-12-25",
+            "end_date": "2025-12-31"
+        }
+        """
+        unit_ids = request.data.get('unit_ids', [])
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        
+        if not unit_ids or not start_date or not end_date:
+            return Response(
+                {'error': 'unit_ids, start_date, and end_date are required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Filter packages that overlap with the date range
+        queryset = DatePackage.objects.filter(
+            accommodation_unit_id__in=unit_ids,
+            start_date__lte=end_date,
+            end_date__gte=start_date
+        )
+        
+        deleted_count, _ = queryset.delete()
+        
+        return Response({
+            'deleted': deleted_count,
+            'message': f'Successfully deleted {deleted_count} packages'
         }, status=status.HTTP_200_OK)

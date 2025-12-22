@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class AccommodationUnit(models.Model):
@@ -96,3 +97,104 @@ class AccommodationUnit(models.Model):
     
     def __str__(self):
         return self.name
+
+
+class DatePriceOverride(models.Model):
+    """
+    Model for storing custom prices for specific dates and accommodation units.
+    This allows bulk setting of prices across multiple dates and units.
+    """
+    accommodation_unit = models.ForeignKey(
+        AccommodationUnit,
+        on_delete=models.CASCADE,
+        related_name='date_price_overrides',
+        verbose_name="Unidade de Acomodação"
+    )
+    date = models.DateField(
+        verbose_name="Data",
+        help_text="Data específica para aplicar o preço customizado"
+    )
+    price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name="Preço (BRL)",
+        help_text="Preço customizado para esta data"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Preço Customizado por Data"
+        verbose_name_plural = "Preços Customizados por Data"
+        # Ensure only one price override per unit per date
+        unique_together = [['accommodation_unit', 'date']]
+        ordering = ['date', 'accommodation_unit']
+        indexes = [
+            models.Index(fields=['accommodation_unit', 'date']),
+            models.Index(fields=['date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.accommodation_unit.name} - {self.date.strftime('%d/%m/%Y')} - R$ {self.price}"
+    
+    def clean(self):
+        """Validate that the price is positive."""
+        super().clean()
+        if self.price <= 0:
+            raise ValidationError({
+                'price': 'O preço deve ser maior que zero.'
+            })
+
+
+class DatePackage(models.Model):
+    """
+    Model for storing packages (named date ranges) for accommodation units.
+    This allows visual grouping and labeling of date ranges in the calendar.
+    """
+    accommodation_unit = models.ForeignKey(
+        AccommodationUnit,
+        on_delete=models.CASCADE,
+        related_name='date_packages',
+        verbose_name="Unidade de Acomodação"
+    )
+    name = models.CharField(
+        max_length=100,
+        verbose_name="Nome do Pacote",
+        help_text="Nome descritivo do pacote (ex: Natal 2025, Carnaval)"
+    )
+    start_date = models.DateField(
+        verbose_name="Data Inicial"
+    )
+    end_date = models.DateField(
+        verbose_name="Data Final"
+    )
+    color = models.CharField(
+        max_length=7,
+        default='#4A90E2',
+        verbose_name="Cor",
+        help_text="Código de cor hex para exibição no calendário (ex: #FF5733)"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Pacote de Datas"
+        verbose_name_plural = "Pacotes de Datas"
+        ordering = ['-created_at', 'start_date', 'accommodation_unit']
+        indexes = [
+            models.Index(fields=['accommodation_unit', 'start_date', 'end_date']),
+            models.Index(fields=['start_date', 'end_date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} - {self.accommodation_unit.name} ({self.start_date.strftime('%d/%m/%Y')} - {self.end_date.strftime('%d/%m/%Y')})"
+    
+    def clean(self):
+        """Validate that end_date is after start_date."""
+        super().clean()
+        if self.end_date < self.start_date:
+            raise ValidationError({
+                'end_date': 'A data final deve ser posterior à data inicial.'
+            })
