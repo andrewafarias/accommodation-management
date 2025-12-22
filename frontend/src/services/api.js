@@ -33,4 +33,24 @@ api.interceptors.response.use(
   }
 );
 
+// Date price overrides API
+export const datePriceOverrides = {
+  list: (params) => api.get('/date-price-overrides/', { params }),
+  create: (data) => api.post('/date-price-overrides/', data),
+  bulkCreate: (data) => api.post('/date-price-overrides/bulk_create/', data),
+  bulkDelete: (data) => api.post('/date-price-overrides/bulk_delete/', data),
+  update: (id, data) => api.put(`/date-price-overrides/${id}/`, data),
+  delete: (id) => api.delete(`/date-price-overrides/${id}/`),
+};
+
+// Date packages API
+export const datePackages = {
+  list: (params) => api.get('/date-packages/', { params }),
+  create: (data) => api.post('/date-packages/', data),
+  bulkCreate: (data) => api.post('/date-packages/bulk_create/', data),
+  bulkDelete: (data) => api.post('/date-packages/bulk_delete/', data),
+  update: (id, data) => api.put(`/date-packages/${id}/`, data),
+  delete: (id) => api.delete(`/date-packages/${id}/`),
+};
+
 export default api;

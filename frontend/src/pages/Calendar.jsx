@@ -7,7 +7,7 @@ import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
 import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears, parseISO, eachDayOfInterval, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import api from '../services/api';
+import api, { datePriceOverrides, datePackages } from '../services/api';
 
 export function Calendar() {
   const [accommodations, setAccommodations] = useState([]);
@@ -36,12 +36,12 @@ export function Calendar() {
   const [newPackageData, setNewPackageData] = useState({ name: '', color: '#4A90E2' });
   const [selectedPackageId, setSelectedPackageId] = useState(null);
   
-  // Date range selection state
+  // Date range selection state - NOW SUPPORTS MULTI-ACCOMMODATION SELECTION
   const [dateSelection, setDateSelection] = useState({
-    unitId: null,
-    startDate: null,
-    endDate: null,
-    isSelecting: false
+    selections: [], // Array of { unitId, startDate, endDate }
+    isSelecting: false,
+    currentUnitId: null,
+    currentStartDate: null
   });
   
   // Cell width constant (must match TimelineCalendar)
@@ -76,6 +76,42 @@ export function Calendar() {
       const reservationsRes = await api.get('reservations/');
       const reservationsData = reservationsRes.data.results || reservationsRes.data;
       setReservations(reservationsData);
+
+      // Fetch custom prices from backend
+      const endDate = format(addYears(new Date(), 2), 'yyyy-MM-dd');
+      const startDateStr = format(startDate, 'yyyy-MM-dd');
+      const pricesRes = await datePriceOverrides.list({ 
+        start_date: startDateStr, 
+        end_date: endDate 
+      });
+      const pricesData = pricesRes.data.results || pricesRes.data;
+      
+      // Convert to map format { 'unitId-date': price }
+      const pricesMap = {};
+      pricesData.forEach(priceOverride => {
+        const key = `${priceOverride.accommodation_unit}-${priceOverride.date}`;
+        pricesMap[key] = parseFloat(priceOverride.price);
+      });
+      setCustomPrices(pricesMap);
+
+      // Fetch packages from backend
+      const packagesRes = await datePackages.list({ 
+        start_date: startDateStr, 
+        end_date: endDate 
+      });
+      const packagesData = packagesRes.data.results || packagesRes.data;
+      
+      // Convert to frontend format
+      const packagesArray = packagesData.map(pkg => ({
+        id: pkg.id,
+        name: pkg.name,
+        color: pkg.color,
+        unitId: pkg.accommodation_unit,
+        startDate: pkg.start_date,
+        endDate: pkg.end_date,
+        createdAt: pkg.created_at
+      }));
+      setPackages(packagesArray);
     } catch (err) {
       console.error('Error fetching calendar data:', err);
       setError('Failed to load calendar data. Please try again.');
