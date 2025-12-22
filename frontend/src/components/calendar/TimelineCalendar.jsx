@@ -76,7 +76,9 @@ export function TimelineCalendar({
   getPackageForDate = () => null,
   scrollRef = null,
   onVisibleDateChange = null,
-  onNavigate = null
+  onNavigate = null,
+  focusedUnitId = null,
+  onUnitFocus = null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -262,40 +264,57 @@ export function TimelineCalendar({
           </div>
           
           {/* Unit List */}
-          {units.map(unit => (
-            <div
-              key={unit.id}
-              className="h-20 border-b flex items-center px-4 space-x-3"
-            >
-              {/* Color Indicator */}
+          {units.map(unit => {
+            const isFocused = focusedUnitId === unit.id;
+            const isDimmed = focusedUnitId !== null && !isFocused;
+            
+            return (
               <div
-                className="w-4 h-4 rounded-full flex-shrink-0 border-2 border-gray-300"
-                style={{ backgroundColor: unit.color_hex }}
-                title={`Cor: ${unit.color_hex}`}
-              />
-              
-              {/* Unit Details */}
-              <div className="flex-1 min-w-0">
-                <div className="font-medium text-gray-900 truncate">
-                  {unit.name}
-                </div>
-                <div className="text-xs text-gray-500 truncate">
-                  {unit.type} • {unit.max_capacity} hóspedes
-                </div>
-                <div className="text-xs">
-                  <span 
-                    className={cn(
-                      'inline-block px-1.5 py-0.5 rounded text-white text-[10px]',
-                      unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
-                    )}
-                    title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                  >
-                    {unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                  </span>
+                key={unit.id}
+                className={cn(
+                  "h-20 border-b flex items-center px-4 space-x-3 transition-opacity",
+                  isDimmed && "opacity-40"
+                )}
+              >
+                {/* Color Indicator - Clickable for focus mode */}
+                <div
+                  className={cn(
+                    "w-4 h-4 rounded-full flex-shrink-0 border-2 cursor-pointer transition-all",
+                    isFocused ? "border-primary-500 ring-2 ring-primary-300 scale-125" : "border-gray-300 hover:border-primary-400"
+                  )}
+                  style={{ backgroundColor: unit.color_hex }}
+                  title={isFocused ? `Modo foco ativo - ${unit.name}` : `Clique para focar em ${unit.name}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onUnitFocus) {
+                      onUnitFocus(unit.id);
+                    }
+                  }}
+                />
+                
+                {/* Unit Details */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 truncate">
+                    {unit.name}
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">
+                    {unit.type} • {unit.max_capacity} hóspedes
+                  </div>
+                  <div className="text-xs">
+                    <span 
+                      className={cn(
+                        'inline-block px-1.5 py-0.5 rounded text-white text-[10px]',
+                        unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
+                      )}
+                      title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
+                    >
+                      {unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Scrollable Timeline Area */}
@@ -343,8 +362,21 @@ export function TimelineCalendar({
             </div>
 
             {/* Grid Rows - One per Unit */}
-            {units.map(unit => (
-              <div key={unit.id} className="relative h-20 border-b">
+            {units.map(unit => {
+              const isFocused = focusedUnitId === unit.id;
+              const isDimmed = focusedUnitId !== null && !isFocused;
+              
+              return (
+                <div 
+                  key={unit.id} 
+                  className={cn(
+                    "relative h-20 border-b transition-opacity",
+                    isDimmed && "opacity-30"
+                  )}
+                  style={{
+                    pointerEvents: isDimmed ? 'none' : 'auto'
+                  }}
+                >
                 {/* Grid Cells */}
                 <div className="absolute inset-0 flex">
                   {dates.map((date, index) => {
@@ -445,7 +477,8 @@ export function TimelineCalendar({
                   );
                 })}
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       </div>
