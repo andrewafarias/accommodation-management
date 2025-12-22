@@ -227,6 +227,18 @@ export function Calendar() {
       const firstUnitIndex = accommodations.findIndex(u => u.id === firstUnitId);
       const secondUnitIndex = accommodations.findIndex(u => u.id === secondUnitId);
       
+      // Validate indices
+      if (firstUnitIndex === -1 || secondUnitIndex === -1) {
+        console.error('Invalid unit IDs in selection');
+        setDateSelection({
+          selections: [],
+          isSelecting: false,
+          currentUnitId: null,
+          currentStartDate: null
+        });
+        return;
+      }
+      
       // Determine the bounding box
       const minUnitIndex = Math.min(firstUnitIndex, secondUnitIndex);
       const maxUnitIndex = Math.max(firstUnitIndex, secondUnitIndex);
