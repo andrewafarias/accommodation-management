@@ -203,7 +203,7 @@ export function Calendar() {
     return differenceInDays(twoYearsLater, threeMonthsAgo);
   };
 
-  // Handle cell click for multi-accommodation date range selection
+  // Handle cell click for multi-accommodation date range selection (rectangular selection like Excel)
   const handleCellClick = (data) => {
     const clickedDate = data.check_in;
     const unitId = data.unit_id;
@@ -216,43 +216,59 @@ export function Calendar() {
         currentUnitId: unitId,
         currentStartDate: clickedDate
       });
-    } else if (dateSelection.currentUnitId !== unitId) {
-      // Clicking on different unit - complete previous selection and start new one
-      if (dateSelection.currentStartDate) {
-        // Finalize the previous selection
-        const newSelection = {
-          unitId: dateSelection.currentUnitId,
-          startDate: dateSelection.currentStartDate,
-          endDate: dateSelection.currentStartDate // Single date selection
-        };
+    } else {
+      // Second click - complete rectangular selection
+      const firstUnitId = dateSelection.currentUnitId;
+      const firstDate = dateSelection.currentStartDate;
+      const secondUnitId = unitId;
+      const secondDate = clickedDate;
+      
+      // Find the indices of the units in the accommodations array
+      const firstUnitIndex = accommodations.findIndex(u => u.id === firstUnitId);
+      const secondUnitIndex = accommodations.findIndex(u => u.id === secondUnitId);
+      
+      // Validate indices
+      if (firstUnitIndex === -1 || secondUnitIndex === -1) {
+        console.error('Invalid unit IDs in selection');
         setDateSelection({
-          selections: [...dateSelection.selections, newSelection],
-          isSelecting: true,
-          currentUnitId: unitId,
-          currentStartDate: clickedDate
+          selections: [],
+          isSelecting: false,
+          currentUnitId: null,
+          currentStartDate: null
+        });
+        return;
+      }
+      
+      // Determine the bounding box
+      const minUnitIndex = Math.min(firstUnitIndex, secondUnitIndex);
+      const maxUnitIndex = Math.max(firstUnitIndex, secondUnitIndex);
+      const minDate = firstDate <= secondDate ? firstDate : secondDate;
+      const maxDate = firstDate <= secondDate ? secondDate : firstDate;
+      
+      // Create selections for all cells within the rectangle
+      const newSelections = [];
+      for (let i = minUnitIndex; i <= maxUnitIndex; i++) {
+        const unit = accommodations[i];
+        newSelections.push({
+          unitId: unit.id,
+          startDate: minDate,
+          endDate: maxDate
         });
       }
-    } else {
-      // Second click on same unit - complete selection
-      const start = dateSelection.currentStartDate;
-      const end = clickedDate;
-      
-      // Ensure start is before end
-      const [finalStart, finalEnd] = start <= end ? [start, end] : [end, start];
-      
-      const newSelection = {
-        unitId: unitId,
-        startDate: finalStart,
-        endDate: finalEnd
-      };
       
       setDateSelection({
-        selections: [...dateSelection.selections, newSelection],
+        selections: newSelections,
         isSelecting: false,
         currentUnitId: null,
         currentStartDate: null
       });
     }
+  };
+  
+  // Helper to get unique unit IDs from selections
+  const getUniqueUnitIds = () => {
+    const uniqueIds = new Set(dateSelection.selections.map(s => s.unitId));
+    return Array.from(uniqueIds);
   };
   
   // Create reservation from selected date range (use first selection)
@@ -581,13 +597,16 @@ export function Calendar() {
                   </span>
                   {dateSelection.selections.length > 0 && (
                     <>
-                      <Button
-                        onClick={handleCreateReservationFromSelection}
-                        size="sm"
-                        className="bg-accent-600 hover:bg-accent-700"
-                      >
-                        Criar Reserva
-                      </Button>
+                      {/* Only show "Create Reservation" button if selections are from a single accommodation */}
+                      {getUniqueUnitIds().length === 1 && (
+                        <Button
+                          onClick={handleCreateReservationFromSelection}
+                          size="sm"
+                          className="bg-accent-600 hover:bg-accent-700"
+                        >
+                          Criar Reserva
+                        </Button>
+                      )}
                       <Button
                         onClick={() => setPriceModalOpen(true)}
                         size="sm"
