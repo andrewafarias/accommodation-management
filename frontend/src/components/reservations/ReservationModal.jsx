@@ -684,9 +684,8 @@ export function ReservationModal({
                   name="cpf"
                   value={newClientData.cpf}
                   onChange={handleNewClientChange}
-                  placeholder="CPF *"
+                  placeholder="CPF (opcional)"
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
                 />
                 <input
                   type="tel"
@@ -709,7 +708,7 @@ export function ReservationModal({
                   <button
                     type="button"
                     onClick={handleCreateClient}
-                    disabled={loading || !newClientData.full_name || !newClientData.cpf || !newClientData.phone}
+                    disabled={loading || !newClientData.full_name || !newClientData.phone}
                     className="flex-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Criar
