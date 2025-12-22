@@ -22,6 +22,7 @@ export function Financials() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
+  const [paidStatusFilter, setPaidStatusFilter] = useState('ALL');
   // Default to show all dates (as per requirement: "O padrão do financeiro deve ser ver tudo")
   const [showAllDates, setShowAllDates] = useState(true);
   
@@ -62,8 +63,15 @@ export function Financials() {
       filtered = filtered.filter((t) => t.category === categoryFilter);
     }
 
+    // Filter by paid status
+    if (paidStatusFilter === 'PAID') {
+      filtered = filtered.filter((t) => t.is_paid);
+    } else if (paidStatusFilter === 'UNPAID') {
+      filtered = filtered.filter((t) => !t.is_paid);
+    }
+
     setFilteredTransactions(filtered);
-  }, [transactions, activeFilter, categoryFilter, startDate, endDate, showAllDates]);
+  }, [transactions, activeFilter, categoryFilter, paidStatusFilter, startDate, endDate, showAllDates]);
 
   const fetchTransactions = async () => {
     try {
@@ -391,6 +399,34 @@ export function Financials() {
                     </option>
                   ))}
                 </select>
+              </div>
+
+              {/* Paid Status Filter Buttons */}
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Status:</span>
+                <div className="flex gap-2">
+                  <Button
+                    variant={paidStatusFilter === 'ALL' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaidStatusFilter('ALL')}
+                  >
+                    Todos
+                  </Button>
+                  <Button
+                    variant={paidStatusFilter === 'PAID' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaidStatusFilter('PAID')}
+                  >
+                    Pago
+                  </Button>
+                  <Button
+                    variant={paidStatusFilter === 'UNPAID' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setPaidStatusFilter('UNPAID')}
+                  >
+                    Não Pago
+                  </Button>
+                </div>
               </div>
               
               {/* Type Filter Buttons */}

@@ -20,7 +20,7 @@ class TransactionViewSet(viewsets.ModelViewSet):
     
     def get_queryset(self):
         """
-        Optionally filter by due_date range (month/year).
+        Optionally filter by due_date range (month/year) and paid status.
         """
         queryset = super().get_queryset()
         
@@ -32,5 +32,13 @@ class TransactionViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(due_date__gte=due_date_start)
         if due_date_end:
             queryset = queryset.filter(due_date__lte=due_date_end)
+        
+        # Filter by paid status
+        is_paid = self.request.query_params.get('is_paid', None)
+        if is_paid is not None:
+            if is_paid.lower() == 'true':
+                queryset = queryset.filter(paid_date__isnull=False)
+            elif is_paid.lower() == 'false':
+                queryset = queryset.filter(paid_date__isnull=True)
         
         return queryset
