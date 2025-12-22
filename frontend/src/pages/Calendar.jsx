@@ -46,6 +46,9 @@ export function Calendar() {
   
   // Cell width constant (must match TimelineCalendar)
   const cellWidth = 120;
+  
+  // Focus mode state
+  const [focusedUnitId, setFocusedUnitId] = useState(null);
 
   useEffect(() => {
     fetchCalendarData();
@@ -215,6 +218,16 @@ export function Calendar() {
       endDate: null,
       isSelecting: false
     });
+  };
+  
+  // Handle color circle click to enable/toggle focus mode
+  const handleUnitFocus = (unitId) => {
+    setFocusedUnitId(unitId);
+  };
+  
+  // Exit focus mode
+  const handleExitFocusMode = () => {
+    setFocusedUnitId(null);
   };
 
   const handleReservationClick = (reservation) => {
@@ -407,6 +420,19 @@ export function Calendar() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
         
+        {/* Focus Mode Exit Button */}
+        {focusedUnitId && (
+          <Button
+            onClick={handleExitFocusMode}
+            variant="outline"
+            size="sm"
+            className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Sair do modo foco
+          </Button>
+        )}
+        
         {/* Date Navigation Controls */}
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -535,6 +561,8 @@ export function Calendar() {
               scrollRef={timelineScrollRef}
               onVisibleDateChange={setVisibleDate}
               onNavigate={handleNavigate}
+              focusedUnitId={focusedUnitId}
+              onUnitFocus={handleUnitFocus}
             />
           )}
         </CardContent>
