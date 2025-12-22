@@ -245,16 +245,20 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # Update display_order for each unit
-        updated_count = 0
+        # Update display_order for each unit using bulk_update for better performance
+        units_to_update = []
         for index, unit_id in enumerate(unit_ids):
             try:
                 unit = AccommodationUnit.objects.get(id=unit_id)
                 unit.display_order = index
-                unit.save(update_fields=['display_order', 'updated_at'])
-                updated_count += 1
+                units_to_update.append(unit)
             except AccommodationUnit.DoesNotExist:
                 pass  # Skip non-existent units
+        
+        # Bulk update all units
+        if units_to_update:
+            AccommodationUnit.objects.bulk_update(units_to_update, ['display_order'])
+        updated_count = len(units_to_update)
         
         return Response({
             'updated': updated_count,
