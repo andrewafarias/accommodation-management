@@ -19,6 +19,7 @@ class ClientSerializer(serializers.ModelSerializer):
     Inclui todos os campos para operações de leitura e escrita.
     Manipula campo tags quando submetido como string JSON do FormData.
     Inclui document_attachments relacionados.
+    CPF é opcional.
     """
     document_attachments = DocumentAttachmentSerializer(many=True, read_only=True)
     
@@ -29,6 +30,12 @@ class ClientSerializer(serializers.ModelSerializer):
                 return json.loads(value)
             except json.JSONDecodeError:
                 raise serializers.ValidationError("Tags devem ser um array JSON válido")
+        return value
+    
+    def validate_cpf(self, value):
+        """Validate CPF field - allow empty string to be converted to None."""
+        if value == '' or value is None:
+            return None
         return value
     
     class Meta:

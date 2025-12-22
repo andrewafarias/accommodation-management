@@ -4,12 +4,14 @@ from django.db import models
 class Client(models.Model):
     """
     Modelo de Cliente para gerenciar informações de hóspedes.
-    Identificador único é o CPF (Cadastro de Pessoa Física).
+    CPF (Cadastro de Pessoa Física) é opcional.
     """
     full_name = models.CharField(max_length=255, verbose_name="Nome Completo")
     cpf = models.CharField(
         max_length=14,
         unique=True,
+        blank=True,
+        null=True,
         verbose_name="CPF",
         help_text="Formato: XXX.XXX.XXX-XX"
     )
@@ -43,7 +45,9 @@ class Client(models.Model):
         ordering = ['full_name']
     
     def __str__(self):
-        return f"{self.full_name} (CPF: {self.cpf})"
+        if self.cpf:
+            return f"{self.full_name} (CPF: {self.cpf})"
+        return self.full_name
 
 
 class DocumentAttachment(models.Model):
