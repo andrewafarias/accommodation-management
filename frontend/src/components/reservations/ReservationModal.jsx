@@ -223,12 +223,24 @@ export function ReservationModal({
         setClientSearchTerm(reservation.client?.full_name || '');
       } else {
         // Create mode with prefilled data
+        // If unit_id is prefilled, use that unit's default check-in/out times
+        let defaultCheckInTime = '14:00';
+        let defaultCheckOutTime = '12:00';
+        
+        if (prefilledDataRef.current.unit_id) {
+          const selectedUnit = units.find(u => u.id === prefilledDataRef.current.unit_id);
+          if (selectedUnit) {
+            defaultCheckInTime = selectedUnit.default_check_in_time?.substring(0, 5) || '14:00';
+            defaultCheckOutTime = selectedUnit.default_check_out_time?.substring(0, 5) || '12:00';
+          }
+        }
+        
         setFormData({
           client_name: '',
           check_in_date: prefilledDataRef.current.check_in || '',
-          check_in_time: '14:00',
+          check_in_time: defaultCheckInTime,
           check_out_date: prefilledDataRef.current.check_out || '',
-          check_out_time: '12:00',
+          check_out_time: defaultCheckOutTime,
           accommodation_unit: prefilledDataRef.current.unit_id || '',
           guest_count_adults: 1,
           guest_count_children: 0,
@@ -246,7 +258,7 @@ export function ReservationModal({
       // Reset when modal closes
       initializedRef.current = false;
     }
-  }, [isOpen, reservation, prefilledData]);
+  }, [isOpen, reservation, prefilledData, units]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
