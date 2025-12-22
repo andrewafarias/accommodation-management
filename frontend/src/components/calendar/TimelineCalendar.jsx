@@ -196,6 +196,9 @@ export function TimelineCalendar({
     // Calculate total days of reservation
     const totalDays = Math.floor((checkOut - checkIn) / (1000 * 60 * 60 * 24));
     
+    // Special handling for same-day check-in and check-out
+    const isSameDayCheckInOut = totalDays === 0;
+    
     // Determine visible start position
     let visibleStartIndex = 0;
     if (checkIn >= firstVisibleDate) {
@@ -215,13 +218,37 @@ export function TimelineCalendar({
     
     const visibleDays = visibleEndIndex - visibleStartIndex;
     
+    // For same-day check-in/out, show a half-day bar
+    if (isSameDayCheckInOut) {
+      const checkInIndex = dates.findIndex(date => isSameDay(date, checkIn));
+      if (checkInIndex === -1) return null;
+      
+      return {
+        left: checkInIndex * cellWidth,
+        width: cellWidth * 0.5 - 4, // Half-day width
+        totalDays: 0,
+        visibleDays: 0.5,
+        hasCheckOutExtension: false,
+        isSameDayCheckInOut: true,
+      };
+    }
+    
     if (visibleDays <= 0) return null;
+    
+    // Extension to show partial occupation on check-out day
+    // Extend by 30% of a cell width to indicate the reservation extends into check-out day
+    const checkOutExtension = 0.3 * cellWidth;
+    
+    // Check if the checkout day is visible in the current date range
+    const checkOutVisible = checkOut <= lastVisibleDate;
     
     return {
       left: visibleStartIndex * cellWidth,
-      width: visibleDays * cellWidth - 4, // -4 for padding
+      width: visibleDays * cellWidth - 4 + checkOutExtension, // -4 for padding, +extension for check-out day
       totalDays,
       visibleDays,
+      hasCheckOutExtension: checkOutVisible, // Only show extension if check-out is visible
+      isSameDayCheckInOut: false,
     };
   };
 
@@ -414,6 +441,11 @@ export function TimelineCalendar({
                   const barConfig = calculateReservationBar(reservation, dates);
                   if (!barConfig) return null;
 
+                  // Build the tooltip text
+                  const tooltipText = barConfig.isSameDayCheckInOut
+                    ? `${reservation.client.full_name} - Check-in e Check-out no mesmo dia (${format(parseISO(reservation.check_in), 'dd/MM/yyyy')})`
+                    : `${reservation.client.full_name} - ${format(parseISO(reservation.check_in), 'dd/MM/yyyy')} até ${format(parseISO(reservation.check_out), 'dd/MM/yyyy')}${barConfig.hasCheckOutExtension ? '\n(Extensão indica ocupação parcial no dia do check-out)' : ''}`;
+
                   return (
                     <div
                       key={reservation.id}
@@ -421,25 +453,48 @@ export function TimelineCalendar({
                         'absolute top-2 h-16 rounded border-2 shadow-sm',
                         'flex items-center px-2 overflow-hidden cursor-pointer',
                         'transition-all hover:shadow-md hover:z-10',
-                        getStatusColor(reservation.status)
+                        'relative',
+                        getStatusColor(reservation.status),
+                        barConfig.isSameDayCheckInOut && 'opacity-75 italic'
                       )}
                       style={{
                         left: `${barConfig.left}px`,
                         width: `${barConfig.width}px`,
                       }}
-                      title={`${reservation.client.full_name} - ${format(parseISO(reservation.check_in), 'dd/MM/yyyy')} até ${format(parseISO(reservation.check_out), 'dd/MM/yyyy')}`}
+                      title={tooltipText}
                       onClick={(e) => {
                         e.stopPropagation();
                         onReservationClick && onReservationClick(reservation);
                       }}
                     >
-                      <div className="text-white font-medium text-sm truncate">
-                        {reservation.client.full_name}
-                      </div>
-                      {barConfig.visibleDays >= 3 && (
-                        <div className="ml-auto text-white text-xs font-semibold">
-                          {barConfig.totalDays}d
+                      {/* Main reservation bar content */}
+                      <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
+                        <div className="text-white font-medium text-sm truncate z-10">
+                          {reservation.client.full_name}
                         </div>
+                        {barConfig.visibleDays >= 3 && (
+                          <div className="ml-auto text-white text-xs font-semibold z-10">
+                            {barConfig.totalDays}d
+                          </div>
+                        )}
+                        {/* Same-day indicator */}
+                        {barConfig.isSameDayCheckInOut && (
+                          <div className="ml-auto text-white text-[10px] font-bold z-10">
+                            IN/OUT
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Check-out extension overlay - striped pattern to show partial occupation */}
+                      {barConfig.hasCheckOutExtension && (
+                        <div
+                          className="absolute top-0 bottom-0 right-0 border-l-2 border-white/70"
+                          style={{
+                            width: `${0.3 * cellWidth}px`,
+                            background: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.3) 4px, rgba(255,255,255,0.5) 4px, rgba(255,255,255,0.5) 8px)',
+                          }}
+                          title="Check-out neste dia"
+                        />
                       )}
                     </div>
                   );
