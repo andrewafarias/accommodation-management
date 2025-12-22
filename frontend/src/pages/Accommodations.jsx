@@ -4,6 +4,8 @@ import { Button } from '../components/ui/Button';
 import { ImportExportButtons } from '../components/ui/ImportExportButtons';
 import { AccommodationList } from '../components/accommodations/AccommodationList';
 import { AccommodationModal } from '../components/accommodations/AccommodationModal';
+import { BulkPriceUpdateModal } from '../components/accommodations/BulkPriceUpdateModal';
+import { PackageModal } from '../components/packages/PackageModal';
 import { Home, Plus } from 'lucide-react';
 import api from '../services/api';
 
@@ -12,6 +14,9 @@ export function Accommodations() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAccommodation, setEditingAccommodation] = useState(null);
+  const [isBulkPriceModalOpen, setIsBulkPriceModalOpen] = useState(false);
+  const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
+  const [selectedUnitIds, setSelectedUnitIds] = useState([]);
 
   // Fetch accommodations on mount
   useEffect(() => {
@@ -65,6 +70,29 @@ export function Accommodations() {
       console.error('Error deleting accommodation:', error);
       alert('Falha ao excluir unidade. Pode haver reservas associadas.');
     }
+  };
+
+  // Handle bulk price update
+  const handleBulkPriceUpdate = (unitIds) => {
+    setSelectedUnitIds(unitIds);
+    setIsBulkPriceModalOpen(true);
+  };
+
+  // Handle create package
+  const handleCreatePackage = (unitIds) => {
+    setSelectedUnitIds(unitIds);
+    setIsPackageModalOpen(true);
+  };
+
+  // Handle bulk price update save
+  const handleBulkPriceSave = async () => {
+    await fetchAccommodations();
+  };
+
+  // Handle package save
+  const handlePackageSave = async () => {
+    setIsPackageModalOpen(false);
+    setSelectedUnitIds([]);
   };
 
   // Handle export
@@ -147,6 +175,8 @@ export function Accommodations() {
             accommodations={accommodations}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onBulkPriceUpdate={handleBulkPriceUpdate}
+            onCreatePackage={handleCreatePackage}
             loading={loading}
           />
         </CardContent>
@@ -158,6 +188,22 @@ export function Accommodations() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         accommodation={editingAccommodation}
+      />
+
+      {/* Bulk Price Update Modal */}
+      <BulkPriceUpdateModal
+        isOpen={isBulkPriceModalOpen}
+        onClose={() => setIsBulkPriceModalOpen(false)}
+        unitIds={selectedUnitIds}
+        onSave={handleBulkPriceSave}
+      />
+
+      {/* Package Creation Modal */}
+      <PackageModal
+        isOpen={isPackageModalOpen}
+        onClose={() => setIsPackageModalOpen(false)}
+        onSave={handlePackageSave}
+        preselectedUnits={selectedUnitIds}
       />
     </div>
   );

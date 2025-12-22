@@ -5,6 +5,7 @@ import { Calendar } from './pages/Calendar';
 import { Clients } from './pages/Clients';
 import { Financials } from './pages/Financials';
 import { Accommodations } from './pages/Accommodations';
+import { Packages } from './pages/Packages';
 import { ReservationList } from './pages/ReservationList';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/accommodations" element={<Accommodations />} />
+          <Route path="/packages" element={<Packages />} />
           <Route path="/calendar" element={<Calendar />} />
           <Route path="/clients" element={<Clients />} />
           <Route path="/reservations" element={<ReservationList />} />
