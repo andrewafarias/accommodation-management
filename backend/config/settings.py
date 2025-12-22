@@ -142,6 +142,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite default port
     "http://localhost:5174",  # Vite alternative port
     "http://localhost:5175",  # Vite alternative port
+    "http://localhost:5176",  # Vite alternative port
     "http://localhost:3000",  # Alternative React port
 ]
 
