@@ -23,6 +23,7 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'last_cleaned_at',
             'default_check_in_time',
             'default_check_out_time',
+            'display_order',
             'created_at',
             'updated_at',
         ]

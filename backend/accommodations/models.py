@@ -80,13 +80,19 @@ class AccommodationUnit(models.Model):
         help_text="Horário padrão de check-out para esta unidade (ex: 12:00)"
     )
     
+    display_order = models.IntegerField(
+        default=0,
+        verbose_name="Ordem de Exibição",
+        help_text="Ordem em que a unidade aparece na lista e no calendário (menor = primeiro)"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         verbose_name = "Unidade de Acomodação"
         verbose_name_plural = "Unidades de Acomodação"
-        ordering = ['name']
+        ordering = ['display_order', 'name']
     
     def __str__(self):
         return self.name

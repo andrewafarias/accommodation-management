@@ -67,6 +67,18 @@ export function Accommodations() {
     }
   };
 
+  // Handle reorder
+  const handleReorder = async (newOrder) => {
+    try {
+      await api.post('accommodations/reorder/', { unit_ids: newOrder });
+      // Refresh the list to get the updated order
+      await fetchAccommodations();
+    } catch (error) {
+      console.error('Error reordering accommodations:', error);
+      alert('Falha ao reordenar unidades.');
+    }
+  };
+
   // Handle export
   const handleExport = async (format) => {
     try {
@@ -147,6 +159,7 @@ export function Accommodations() {
             accommodations={accommodations}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onReorder={handleReorder}
             loading={loading}
           />
         </CardContent>
