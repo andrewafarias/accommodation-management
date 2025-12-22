@@ -222,7 +222,8 @@ export function Calendar() {
   
   // Handle color circle click to enable/toggle focus mode
   const handleUnitFocus = (unitId) => {
-    setFocusedUnitId(unitId);
+    // Toggle: if clicking the same unit, exit focus mode
+    setFocusedUnitId(prevId => prevId === unitId ? null : unitId);
   };
   
   // Exit focus mode
