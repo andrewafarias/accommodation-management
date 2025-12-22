@@ -165,4 +165,57 @@ class AccommodationUnitAPITest(TestCase):
         response = self.client.post('/api/accommodations/', data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['auto_dirty_days'], 7)
+    
+    def test_default_display_order(self):
+        """Test that new accommodations have default display_order of 0."""
+        unit = AccommodationUnit.objects.create(
+            name="Test Order",
+            max_capacity=2,
+            base_price=100.00
+        )
+        self.assertEqual(unit.display_order, 0)
+    
+    def test_reorder_accommodations(self):
+        """Test reordering accommodations via API."""
+        # Create a third unit
+        unit3 = AccommodationUnit.objects.create(
+            name="Test Unit 3",
+            max_capacity=3,
+            base_price=200.00
+        )
+        
+        # Reorder: unit3, unit1, unit2
+        new_order = [unit3.id, self.unit1.id, self.unit2.id]
+        response = self.client.post(
+            '/api/accommodations/reorder/',
+            {'unit_ids': new_order},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['updated'], 3)
+        
+        # Verify order was updated
+        unit3.refresh_from_db()
+        self.unit1.refresh_from_db()
+        self.unit2.refresh_from_db()
+        
+        self.assertEqual(unit3.display_order, 0)
+        self.assertEqual(self.unit1.display_order, 1)
+        self.assertEqual(self.unit2.display_order, 2)
+        
+        # Verify list returns them in the correct order
+        response = self.client.get('/api/accommodations/')
+        results = response.data['results']
+        self.assertEqual(results[0]['id'], unit3.id)
+        self.assertEqual(results[1]['id'], self.unit1.id)
+        self.assertEqual(results[2]['id'], self.unit2.id)
+    
+    def test_reorder_with_invalid_data(self):
+        """Test reorder endpoint with invalid data."""
+        response = self.client.post(
+            '/api/accommodations/reorder/',
+            {'unit_ids': 'not a list'},
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 

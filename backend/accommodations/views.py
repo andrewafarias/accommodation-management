@@ -24,8 +24,8 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
     serializer_class = AccommodationUnitSerializer
     filter_backends = [DjangoFilterBackend, OrderingFilter]
     filterset_fields = ['status']
-    ordering_fields = ['name', 'created_at', 'base_price']
-    ordering = ['name']
+    ordering_fields = ['name', 'created_at', 'base_price', 'display_order']
+    ordering = ['display_order', 'name']
     
     def list(self, request, *args, **kwargs):
         """
@@ -228,3 +228,35 @@ class AccommodationUnitViewSet(viewsets.ModelViewSet):
             'imported': imported_count,
             'errors': errors
         }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def reorder(self, request):
+        """
+        Reorder accommodation units by updating their display_order.
+        Expects a list of unit IDs in the desired order.
+        
+        Body: { "unit_ids": [3, 1, 2] }
+        """
+        unit_ids = request.data.get('unit_ids', [])
+        
+        if not isinstance(unit_ids, list):
+            return Response(
+                {'error': 'unit_ids must be a list'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update display_order for each unit
+        updated_count = 0
+        for index, unit_id in enumerate(unit_ids):
+            try:
+                unit = AccommodationUnit.objects.get(id=unit_id)
+                unit.display_order = index
+                unit.save(update_fields=['display_order', 'updated_at'])
+                updated_count += 1
+            except AccommodationUnit.DoesNotExist:
+                pass  # Skip non-existent units
+        
+        return Response({
+            'updated': updated_count,
+            'message': f'Successfully updated display order for {updated_count} units'
+        }, status=status.HTTP_200_OK)
