@@ -276,12 +276,12 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Painel</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Painel</h1>
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={handleExportAll}>
-            <Download className="w-4 h-4 mr-2" />
-            Exportar Tudo
+            <Download className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">Exportar Tudo</span>
           </Button>
           <Button 
             variant="outline" 
@@ -289,8 +289,8 @@ export function Dashboard() {
             onClick={handleImportClick}
             disabled={importing}
           >
-            <Upload className="w-4 h-4 mr-2" />
-            {importing ? 'Importando...' : 'Importar Tudo'}
+            <Upload className="w-4 h-4 sm:mr-2" />
+            <span className="hidden sm:inline">{importing ? 'Importando...' : 'Importar Tudo'}</span>
           </Button>
           <input
             ref={fileInputRef}
@@ -311,15 +311,15 @@ export function Dashboard() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">
                       {stat.title}
                     </p>
-                    <p className="mt-2 text-3xl font-bold text-gray-900">
+                    <p className="mt-2 text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 break-words">
                       {stat.value}
                     </p>
                   </div>
-                  <div className={`p-3 rounded-full ${stat.bgColor}`}>
-                    <Icon className={`w-6 h-6 ${stat.color}`} />
+                  <div className={`p-2 sm:p-3 rounded-full ${stat.bgColor}`}>
+                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
                   </div>
                 </div>
               </CardContent>

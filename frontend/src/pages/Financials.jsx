@@ -304,33 +304,33 @@ export function Financials() {
       {/* Main Content - Hidden when printing */}
       <div className="no-print">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
-          <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Financeiro</h1>
+          <div className="flex flex-wrap gap-2">
             <ImportExportButtons 
               onExport={handleExport}
               onImport={handleImport}
             />
             <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)}>
-              <FileText className="w-4 h-4 mr-2" />
-              Relatório Detalhado
+              <FileText className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Relatório Detalhado</span>
             </Button>
             <Button variant="outline" onClick={() => setIsGroupedModalOpen(true)}>
-              <BarChart3 className="w-4 h-4 mr-2" />
-              Relatório Agrupado
+              <BarChart3 className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Relatório Agrupado</span>
             </Button>
-            <Button onClick={() => setIsModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Nova Transação
+            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-initial">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Nova Transação</span>
             </Button>
           </div>
         </div>
 
       {/* Date Range Filter */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+        <CardContent className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex items-center gap-2 sm:order-first">
               <input
                 type="checkbox"
                 id="showAllDates"
@@ -338,7 +338,7 @@ export function Financials() {
                 onChange={(e) => setShowAllDates(e.target.checked)}
                 className="w-4 h-4 text-primary-600 bg-gray-100 border-gray-300 rounded focus:ring-primary-500 focus:ring-2"
               />
-              <label htmlFor="showAllDates" className="text-sm font-medium text-gray-700">
+              <label htmlFor="showAllDates" className="text-xs sm:text-sm font-medium text-gray-700">
                 Ignorar Datas / Ver Tudo
               </label>
             </div>
@@ -371,7 +371,7 @@ export function Financials() {
       </Card>
 
       {/* Monthly Summary Cards */}
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">

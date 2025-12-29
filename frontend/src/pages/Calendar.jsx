@@ -516,8 +516,8 @@ export function Calendar() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Calendar</h1>
         
         {/* Focus Mode Exit Button */}
         {focusedUnitId && (
@@ -528,27 +528,28 @@ export function Calendar() {
             className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
           >
             <X className="w-4 h-4 mr-2" />
-            Sair do modo foco
+            <span className="hidden sm:inline">Sair do modo foco</span>
           </Button>
         )}
         
         {/* Date Navigation Controls */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2">
             <Button
               onClick={handlePreviousMonth}
               variant="outline"
               size="sm"
-              className="flex items-center"
+              className="flex items-center flex-1 sm:flex-initial"
             >
               <ChevronLeft className="w-4 h-4" />
-              Mês Anterior
+              <span className="hidden sm:inline">Mês Anterior</span>
             </Button>
             
             <Button
               onClick={handleToday}
               variant="outline"
               size="sm"
+              className="flex-1 sm:flex-initial"
             >
               Hoje
             </Button>
@@ -557,14 +558,14 @@ export function Calendar() {
               onClick={handleNextMonth}
               variant="outline"
               size="sm"
-              className="flex items-center"
+              className="flex items-center flex-1 sm:flex-initial"
             >
-              Próximo Mês
+              <span className="hidden sm:inline">Próximo Mês</span>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
           
-          <div className="text-sm font-medium text-gray-700 bg-gray-100 px-4 py-2 rounded-lg">
+          <div className="text-sm font-medium text-gray-700 bg-gray-100 px-4 py-2 rounded-lg text-center">
             {format(visibleDate, 'MMMM yyyy', { locale: ptBR })}
           </div>
         </div>
@@ -582,10 +583,10 @@ export function Calendar() {
             </CardTitle>
             
             {/* Selection Actions */}
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               {dateSelection.selections.length > 0 || dateSelection.isSelecting ? (
                 <>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto">
                     {dateSelection.selections.length > 0 ? (
                       <>
                         {dateSelection.selections.length} seleção(ões) 
@@ -604,7 +605,8 @@ export function Calendar() {
                           size="sm"
                           className="bg-accent-600 hover:bg-accent-700"
                         >
-                          Criar Reserva
+                          <span className="hidden sm:inline">Criar Reserva</span>
+                          <span className="sm:hidden">Reserva</span>
                         </Button>
                       )}
                       <Button
@@ -613,8 +615,8 @@ export function Calendar() {
                         variant="outline"
                         className="border-secondary-500 text-secondary-600 hover:bg-secondary-50"
                       >
-                        <DollarSign className="w-4 h-4 mr-1" />
-                        Definir Preços
+                        <DollarSign className="w-4 h-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Definir Preços</span>
                       </Button>
                       <Button
                         onClick={() => setPackageModalOpen(true)}
@@ -622,8 +624,8 @@ export function Calendar() {
                         variant="outline"
                         className="border-primary-500 text-primary-600 hover:bg-primary-50"
                       >
-                        <Package className="w-4 h-4 mr-1" />
-                        Criar Pacote
+                        <Package className="w-4 h-4 sm:mr-1" />
+                        <span className="hidden sm:inline">Criar Pacote</span>
                       </Button>
                       <Button
                         onClick={handleClearSelection}
@@ -636,8 +638,9 @@ export function Calendar() {
                   )}
                 </>
               ) : (
-                <span className="text-sm text-gray-500">
-                  Clique em datas para selecionar (pode selecionar em várias acomodações)
+                <span className="text-xs sm:text-sm text-gray-500">
+                  <span className="hidden sm:inline">Clique em datas para selecionar (pode selecionar em várias acomodações)</span>
+                  <span className="sm:hidden">Selecione datas no calendário</span>
                 </span>
               )}
             </div>
