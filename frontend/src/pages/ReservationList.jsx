@@ -245,16 +245,16 @@ export function ReservationList() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-        <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reservas</h1>
+        <div className="flex flex-wrap gap-2">
           <ImportExportButtons 
             onExport={handleExport}
             onImport={handleImport}
           />
-          <Button onClick={handleNewReservation}>
-            <Plus className="w-5 h-5 mr-2" />
-            Nova Reserva
+          <Button onClick={handleNewReservation} className="flex-1 sm:flex-initial" aria-label="Nova Reserva">
+            <Plus className="w-5 h-5 sm:mr-2" />
+            <span className="hidden sm:inline">Nova Reserva</span>
           </Button>
         </div>
       </div>
@@ -262,7 +262,7 @@ export function ReservationList() {
       {/* Filter Controls */}
       <Card>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             {/* Month Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Mês</label>
