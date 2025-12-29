@@ -315,10 +315,10 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
+        <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900">
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900">
               {client ? 'Editar Cliente' : 'Novo Cliente'}
             </h2>
             <button
@@ -330,7 +330,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
             {/* Profile Picture */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

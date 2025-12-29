@@ -67,10 +67,10 @@ export function TransactionModal({ isOpen, onClose, onSubmit }) {
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md transform rounded-lg bg-white p-6 shadow-xl transition-all">
+        <div className="relative w-full max-w-md transform rounded-lg bg-white p-4 sm:p-6 shadow-xl transition-all max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               Nova Transação
             </h2>
             <button

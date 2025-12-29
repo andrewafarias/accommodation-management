@@ -84,25 +84,25 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Foto
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Nome
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden md:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   CPF
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Telefone
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   E-mail
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Etiquetas
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
                 </th>
               </tr>
@@ -110,7 +110,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClients.map((client) => (
                 <tr key={client.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     {client.profile_picture ? (
                       <img
                         src={client.profile_picture}
@@ -124,27 +124,31 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                       </div>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {client.full_name}
                     </div>
+                    {/* Show CPF on mobile below name */}
+                    <div className="md:hidden text-xs text-gray-500 mt-1">
+                      {client.cpf}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden md:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
                       {client.cpf}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
                       {formatPhoneDisplay(client.phone)}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="hidden lg:table-cell px-3 sm:px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
                       {client.email || '-'}
                     </div>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className="hidden lg:table-cell px-3 sm:px-6 py-4">
                     <div className="flex flex-wrap gap-1">
                       {client.tags && client.tags.length > 0 ? (
                         client.tags.map((tag, index) => (
@@ -160,11 +164,11 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                       )}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center justify-end space-x-2">
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex items-center justify-end gap-1 sm:gap-2">
                       {/* Show count of document attachments */}
                       {client.document_attachments && client.document_attachments.length > 0 && (
-                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded hidden sm:inline">
                           {client.document_attachments.length} doc{client.document_attachments.length > 1 ? 's' : ''}
                         </span>
                       )}
@@ -172,7 +176,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(client)}
-                        className="text-primary-600 hover:text-primary-900"
+                        className="text-primary-600 hover:text-primary-900 p-1 sm:p-2"
                       >
                         <Edit className="w-4 h-4" />
                       </Button>
@@ -180,7 +184,7 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(client)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 hover:text-red-900 p-1 sm:p-2"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
