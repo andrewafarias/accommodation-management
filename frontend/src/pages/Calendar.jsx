@@ -501,12 +501,12 @@ export function Calendar() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Calendar</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Calendário</h1>
         <Card>
           <CardContent className="p-6">
             <div className="text-center text-red-600">{error}</div>
             <div className="text-center mt-4">
-              <Button onClick={fetchCalendarData}>Retry</Button>
+              <Button onClick={fetchCalendarData}>Tentar Novamente</Button>
             </div>
           </CardContent>
         </Card>
@@ -517,7 +517,7 @@ export function Calendar() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Calendar</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Calendário</h1>
         
         {/* Focus Mode Exit Button */}
         {focusedUnitId && (
