@@ -526,6 +526,7 @@ export function Calendar() {
             variant="outline"
             size="sm"
             className="bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
+            aria-label="Sair do modo foco"
           >
             <X className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Sair do modo foco</span>

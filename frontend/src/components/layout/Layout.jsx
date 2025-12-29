@@ -37,7 +37,7 @@ export function Layout({ children }) {
       {/* Mobile Menu Button */}
       <button
         onClick={toggleMobileMenu}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-white rounded-lg shadow-soft border border-primary-100 no-print"
+        className="fixed top-4 left-4 z-50 lg:hidden p-2 bg-white rounded-lg shadow-soft border border-primary-100 no-print focus:outline-none focus:ring-2 focus:ring-primary-500"
         aria-label="Toggle menu"
       >
         {isMobileMenuOpen ? (

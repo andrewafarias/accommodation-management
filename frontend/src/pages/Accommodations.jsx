@@ -139,7 +139,7 @@ export function Accommodations() {
             onExport={handleExport}
             onImport={handleImport}
           />
-          <Button onClick={handleNewAccommodation} className="flex-1 sm:flex-initial">
+          <Button onClick={handleNewAccommodation} className="flex-1 sm:flex-initial" aria-label="Nova Unidade">
             <Plus className="w-5 h-5 sm:mr-2" />
             <span className="hidden sm:inline">Nova Unidade</span>
           </Button>

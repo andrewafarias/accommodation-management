@@ -279,7 +279,7 @@ export function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Painel</h1>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={handleExportAll}>
+          <Button variant="outline" size="sm" onClick={handleExportAll} aria-label="Exportar Tudo">
             <Download className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Exportar Tudo</span>
           </Button>
@@ -288,6 +288,7 @@ export function Dashboard() {
             size="sm" 
             onClick={handleImportClick}
             disabled={importing}
+            aria-label={importing ? 'Importando...' : 'Importar Tudo'}
           >
             <Upload className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">{importing ? 'Importando...' : 'Importar Tudo'}</span>

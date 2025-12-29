@@ -252,7 +252,7 @@ export function ReservationList() {
             onExport={handleExport}
             onImport={handleImport}
           />
-          <Button onClick={handleNewReservation} className="flex-1 sm:flex-initial">
+          <Button onClick={handleNewReservation} className="flex-1 sm:flex-initial" aria-label="Nova Reserva">
             <Plus className="w-5 h-5 sm:mr-2" />
             <span className="hidden sm:inline">Nova Reserva</span>
           </Button>

@@ -311,15 +311,15 @@ export function Financials() {
               onExport={handleExport}
               onImport={handleImport}
             />
-            <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)}>
+            <Button variant="outline" onClick={() => setIsDetailedModalOpen(true)} aria-label="Relatório Detalhado">
               <FileText className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Relatório Detalhado</span>
             </Button>
-            <Button variant="outline" onClick={() => setIsGroupedModalOpen(true)}>
+            <Button variant="outline" onClick={() => setIsGroupedModalOpen(true)} aria-label="Relatório Agrupado">
               <BarChart3 className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Relatório Agrupado</span>
             </Button>
-            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-initial">
+            <Button onClick={() => setIsModalOpen(true)} className="flex-1 sm:flex-initial" aria-label="Nova Transação">
               <Plus className="w-4 h-4 sm:mr-2" />
               <span className="hidden sm:inline">Nova Transação</span>
             </Button>
