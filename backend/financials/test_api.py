@@ -1,8 +1,10 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta, date
 from rest_framework.test import APIClient
 from rest_framework import status
+from rest_framework.authtoken.models import Token
 from .models import Transaction
 from reservations.models import Reservation
 from accommodations.models import AccommodationUnit
@@ -17,6 +19,14 @@ class TransactionAPITest(TestCase):
     def setUp(self):
         """Set up test client and sample data."""
         self.client = APIClient()
+        
+        # Create a test user and authenticate
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
         
         # Create accommodation and client for testing
         self.unit = AccommodationUnit.objects.create(
