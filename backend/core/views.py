@@ -1,9 +1,12 @@
 from django.http import HttpResponse
-from rest_framework.decorators import api_view
+from django.contrib.auth import authenticate
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.decorators import parser_classes
 from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny, IsAuthenticated
 import json
 import csv
 from io import StringIO
@@ -293,3 +296,98 @@ def import_all_data(request):
         results,
         status=status.HTTP_200_OK if total_imported > 0 else status.HTTP_400_BAD_REQUEST
     )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """
+    Authenticate user and return token.
+    
+    Body: {
+        "username": "user",
+        "password": "password"
+    }
+    
+    Returns: {
+        "token": "abc123...",
+        "user": {
+            "id": 1,
+            "username": "user",
+            "email": "user@example.com"
+        }
+    }
+    """
+    username = request.data.get('username')
+    password = request.data.get('password')
+    
+    if not username or not password:
+        return Response(
+            {'error': 'Username and password are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    user = authenticate(username=username, password=password)
+    
+    if user is None:
+        return Response(
+            {'error': 'Invalid credentials'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    if not user.is_active:
+        return Response(
+            {'error': 'User account is disabled'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    # Get or create token
+    token, created = Token.objects.get_or_create(user=user)
+    
+    return Response({
+        'token': token.key,
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+        }
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    """
+    Delete user's authentication token.
+    """
+    try:
+        # Delete the user's token
+        request.user.auth_token.delete()
+        return Response(
+            {'message': 'Successfully logged out'},
+            status=status.HTTP_200_OK
+        )
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_info_view(request):
+    """
+    Get current authenticated user information.
+    """
+    user = request.user
+    return Response({
+        'id': user.id,
+        'username': user.username,
+        'email': user.email,
+        'first_name': user.first_name,
+        'last_name': user.last_name,
+    }, status=status.HTTP_200_OK)
+
