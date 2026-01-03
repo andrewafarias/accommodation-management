@@ -363,8 +363,14 @@ def logout_view(request):
     Delete user's authentication token.
     """
     try:
-        # Delete the user's token
+        # Delete the user's token - DRF tokens have unique constraint on user
         request.user.auth_token.delete()
+        return Response(
+            {'message': 'Successfully logged out'},
+            status=status.HTTP_200_OK
+        )
+    except Token.DoesNotExist:
+        # Token doesn't exist, but that's fine - user is logged out
         return Response(
             {'message': 'Successfully logged out'},
             status=status.HTTP_200_OK

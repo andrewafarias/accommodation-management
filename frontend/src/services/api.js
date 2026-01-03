@@ -33,6 +33,8 @@ api.interceptors.response.use(
       const currentPath = window.location.pathname;
       if (currentPath !== '/login') {
         localStorage.removeItem('authToken');
+        // Using window.location instead of navigate() because this interceptor
+        // runs outside React Router context and needs to work globally
         window.location.href = '/login';
       }
     }

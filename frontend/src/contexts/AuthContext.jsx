@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -16,6 +16,21 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('authToken'));
   const [loading, setLoading] = useState(true);
 
+  const validateToken = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/user/');
+      setUser(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      // Clear invalid token
+      localStorage.removeItem('authToken');
+      setToken(null);
+      setUser(null);
+      setLoading(false);
+    }
+  }, []); // No dependencies needed as it only uses setters and api
+
   useEffect(() => {
     // Validate token on mount
     if (token) {
@@ -23,18 +38,9 @@ export const AuthProvider = ({ children }) => {
     } else {
       setLoading(false);
     }
-  }, []);
-
-  const validateToken = async () => {
-    try {
-      const response = await api.get('/auth/user/');
-      setUser(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Token validation failed:', error);
-      logout();
-    }
-  };
+    // Only run when token changes, not when validateToken changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const login = async (username, password) => {
     try {
