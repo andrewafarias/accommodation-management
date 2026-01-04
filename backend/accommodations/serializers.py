@@ -24,10 +24,6 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'default_check_in_time',
             'default_check_out_time',
             'display_order',
-            'short_description',
-            'long_description',
-            'album_photos',
-            'rules',
             'created_at',
             'updated_at',
         ]
