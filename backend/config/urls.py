@@ -23,7 +23,7 @@ from accommodations.views import AccommodationUnitViewSet, DatePriceOverrideView
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
-from core.views import export_all_data, import_all_data
+from core.views import export_all_data, import_all_data, login_view, logout_view, user_info_view
 
 # Create a router and register our viewsets
 router = DefaultRouter()
@@ -37,6 +37,9 @@ router.register(r'financials', TransactionViewSet, basename='transaction')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path('api/auth/login/', login_view, name='login'),
+    path('api/auth/logout/', logout_view, name='logout'),
+    path('api/auth/user/', user_info_view, name='user-info'),
     path('api/export-all/', export_all_data, name='export-all'),
     path('api/import-all/', import_all_data, name='import-all'),
 ]

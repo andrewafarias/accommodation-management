@@ -11,11 +11,11 @@ const api = axios.create({
 // Request interceptor for adding auth tokens if needed
 api.interceptors.request.use(
   (config) => {
-    // Add auth token here if implementing authentication later
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
+    // Add auth token from localStorage
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Token ${token}`;
+    }
     return config;
   },
   (error) => {
@@ -27,6 +27,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Handle 401 Unauthorized errors
+    if (error.response?.status === 401) {
+      // Token is invalid or expired, redirect to login
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login') {
+        localStorage.removeItem('authToken');
+        // Using window.location instead of navigate() because this interceptor
+        // runs outside React Router context and needs to work globally
+        window.location.href = '/login';
+      }
+    }
     // Handle errors globally
     console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);

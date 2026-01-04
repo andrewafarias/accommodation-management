@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -8,8 +8,10 @@ import {
   DollarSign,
   Building2,
   Menu,
-  X
+  X,
+  LogOut
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const navigation = [
   { name: 'Painel', href: '/', icon: LayoutDashboard },
@@ -22,6 +24,8 @@ const navigation = [
 
 export function Layout({ children }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const toggleMobileMenu = () => {
@@ -30,6 +34,11 @@ export function Layout({ children }) {
 
   const closeMobileMenu = () => {
     setIsMobileMenuOpen(false);
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   return (
@@ -96,6 +105,20 @@ export function Layout({ children }) {
 
           {/* Footer */}
           <div className="px-4 py-5 border-t border-primary-100 bg-gradient-to-r from-primary-50/50 to-secondary-50/50">
+            {user && (
+              <div className="mb-3">
+                <p className="text-sm text-gray-600 text-center mb-2">
+                  {user.first_name || user.username}
+                </p>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sair
+                </button>
+              </div>
+            )}
             <p className="text-sm text-primary-400 text-center font-medium">
               © 2025 Chalés Jasmim
             </p>
