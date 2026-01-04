@@ -397,7 +397,9 @@ export function AccommodationModal({
               }}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Uma URL por linha&#10;https://example.com/foto1.jpg&#10;https://example.com/foto2.jpg"
+              placeholder="Uma URL por linha
+https://example.com/foto1.jpg
+https://example.com/foto2.jpg"
             />
             <p className="text-xs text-gray-500 mt-1">
               Digite uma URL por linha
