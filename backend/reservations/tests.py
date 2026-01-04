@@ -335,4 +335,34 @@ class ReservationOverlapValidationTest(TestCase):
         # Refresh unit from database
         self.unit.refresh_from_db()
         self.assertEqual(self.unit.status, 'DIRTY')
+    
+    def test_pet_count_field(self):
+        """Test that pet_count field works correctly."""
+        check_in = self.base_date
+        check_out = self.base_date + timedelta(days=3)
+        
+        reservation = Reservation.objects.create(
+            accommodation_unit=self.unit,
+            client=self.client,
+            check_in=check_in,
+            check_out=check_out,
+            guest_count_adults=2,
+            guest_count_children=1,
+            pet_count=2,
+            status=Reservation.CONFIRMED
+        )
+        
+        self.assertEqual(reservation.pet_count, 2)
+        
+        # Test default value
+        reservation2 = Reservation.objects.create(
+            accommodation_unit=self.unit,
+            client=self.client,
+            check_in=check_in + timedelta(days=5),
+            check_out=check_out + timedelta(days=5),
+            guest_count_adults=1,
+            status=Reservation.CONFIRMED
+        )
+        
+        self.assertEqual(reservation2.pet_count, 0)
 

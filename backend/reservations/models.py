@@ -49,6 +49,11 @@ class Reservation(models.Model):
         default=0,
         verbose_name="Hóspedes Crianças"
     )
+    pet_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Quantidade de Animais",
+        help_text="Número de animais de estimação"
+    )
     
     # Precificação - suporte a substituição manual
     total_price = models.DecimalField(

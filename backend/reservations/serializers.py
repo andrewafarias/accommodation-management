@@ -43,6 +43,7 @@ class ReservationSerializer(serializers.ModelSerializer):
             'check_out',
             'guest_count_adults',
             'guest_count_children',
+            'pet_count',
             'total_price',
             'price_breakdown',
             'amount_paid',
