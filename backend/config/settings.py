@@ -151,17 +151,15 @@ CLOUDINARY_STORAGE = {
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
+# Allow localhost ports for development
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",  # Vite default port
-    "http://localhost:5174",  # Vite alternative port
-    "http://localhost:5175",  # Vite alternative port
-    "http://localhost:5176",  # Vite alternative port
-    "http://localhost:5177",  # Vite alternative port
-    "http://localhost:5178",  # Vite alternative port
-    "http://localhost:5179",  # Vite alternative port
-    "http://localhost:5180",  # Vite alternative port
-    "http://localhost:3000",  # Alternative React port
+    "http://localhost:5173",
+    "http://localhost:3000",
 ]
+
+# Add production origins from environment variable (comma separated)
+if os.environ.get('CORS_ALLOWED_ORIGINS'):
+    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if origin.strip()]
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
