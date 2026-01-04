@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { ColorPicker } from '../ui/ColorPicker';
 import api from '../../services/api';
@@ -26,13 +26,7 @@ export function AccommodationModal({
     auto_dirty_days: 3,
     default_check_in_time: '14:00',
     default_check_out_time: '12:00',
-    short_description: '',
-    long_description: '',
-    album_photos: [],
-    rules: '',
   });
-  
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -54,10 +48,6 @@ export function AccommodationModal({
           auto_dirty_days: accommodation.auto_dirty_days || 3,
           default_check_in_time: accommodation.default_check_in_time || '14:00',
           default_check_out_time: accommodation.default_check_out_time || '12:00',
-          short_description: accommodation.short_description || '',
-          long_description: accommodation.long_description || '',
-          album_photos: accommodation.album_photos || [],
-          rules: accommodation.rules || '',
         });
       } else {
         // Create mode
@@ -71,14 +61,9 @@ export function AccommodationModal({
           auto_dirty_days: 3,
           default_check_in_time: '14:00',
           default_check_out_time: '12:00',
-          short_description: '',
-          long_description: '',
-          album_photos: [],
-          rules: '',
         });
       }
       setError(null);
-      setNewPhotoUrl('');
     }
   }, [isOpen, accommodation]);
 
@@ -107,10 +92,6 @@ export function AccommodationModal({
         auto_dirty_days: Number(formData.auto_dirty_days),
         default_check_in_time: formData.default_check_in_time,
         default_check_out_time: formData.default_check_out_time,
-        short_description: formData.short_description || null,
-        long_description: formData.long_description || null,
-        album_photos: formData.album_photos || [],
-        rules: formData.rules || null,
       };
 
       let response;
@@ -151,7 +132,7 @@ export function AccommodationModal({
       />
       
       {/* Modal */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b">
           <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
@@ -326,124 +307,6 @@ export function AccommodationModal({
               onChange={(color) => setFormData(prev => ({ ...prev, color_hex: color }))}
             />
             <p className="text-xs text-gray-500 mt-2">Cor selecionada: {formData.color_hex}</p>
-          </div>
-
-          {/* Short Description */}
-          <div>
-            <label htmlFor="short_description" className="block text-sm font-medium text-gray-700 mb-1">
-              Descrição Curta
-            </label>
-            <textarea
-              id="short_description"
-              name="short_description"
-              value={formData.short_description}
-              onChange={handleChange}
-              rows={2}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Breve descrição da unidade (suporta markdown)"
-            />
-          </div>
-
-          {/* Long Description */}
-          <div>
-            <label htmlFor="long_description" className="block text-sm font-medium text-gray-700 mb-1">
-              Descrição Longa
-            </label>
-            <textarea
-              id="long_description"
-              name="long_description"
-              value={formData.long_description}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Descrição detalhada da unidade (suporta markdown)"
-            />
-          </div>
-
-          {/* Rules */}
-          <div>
-            <label htmlFor="rules" className="block text-sm font-medium text-gray-700 mb-1">
-              Regras da Acomodação
-            </label>
-            <textarea
-              id="rules"
-              name="rules"
-              value={formData.rules}
-              onChange={handleChange}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Regras e normas da unidade (suporta markdown)"
-            />
-          </div>
-
-          {/* Album Photos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Álbum de Fotos
-            </label>
-            <div className="space-y-2">
-              {/* Add new photo URL */}
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  value={newPhotoUrl}
-                  onChange={(e) => setNewPhotoUrl(e.target.value)}
-                  placeholder="URL da foto"
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    if (newPhotoUrl.trim()) {
-                      setFormData(prev => ({
-                        ...prev,
-                        album_photos: [...prev.album_photos, newPhotoUrl.trim()]
-                      }));
-                      setNewPhotoUrl('');
-                    }
-                  }}
-                  disabled={!newPhotoUrl.trim()}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              
-              {/* List of photos */}
-              {formData.album_photos.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mt-2">
-                  {formData.album_photos.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Foto ${index + 1}`}
-                        className="w-full h-20 object-cover rounded border bg-gray-100"
-                        onError={(e) => {
-                          e.target.classList.add('opacity-50');
-                          e.target.alt = 'Erro ao carregar imagem';
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            album_photos: prev.album_photos.filter((_, i) => i !== index)
-                          }));
-                        }}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <p className="text-xs text-gray-500">
-                {formData.album_photos.length} foto(s) adicionada(s)
-              </p>
-            </div>
           </div>
 
           {/* Actions */}

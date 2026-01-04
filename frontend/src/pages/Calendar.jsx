@@ -2,10 +2,9 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ColorPicker } from '../components/ui/ColorPicker';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X, Eye } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
-import { BookingPreviewModal } from '../components/reservations/BookingPreviewModal';
 import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears, parseISO, eachDayOfInterval, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api, { datePriceOverrides, datePackages } from '../services/api';
@@ -50,10 +49,6 @@ export function Calendar() {
   
   // Focus mode state
   const [focusedUnitId, setFocusedUnitId] = useState(null);
-  
-  // Booking preview modal state
-  const [bookingPreviewOpen, setBookingPreviewOpen] = useState(false);
-  const [bookingPreviewData, setBookingPreviewData] = useState({});
 
   useEffect(() => {
     fetchCalendarData();
@@ -288,25 +283,6 @@ export function Calendar() {
       });
       setModalOpen(true);
     }
-  };
-  
-  // Open booking preview from selected date range (use first selection)
-  const handleOpenBookingPreview = () => {
-    if (dateSelection.selections.length > 0) {
-      const firstSelection = dateSelection.selections[0];
-      setBookingPreviewData({
-        unit_id: firstSelection.unitId,
-        check_in: firstSelection.startDate,
-        check_out: firstSelection.endDate
-      });
-      setBookingPreviewOpen(true);
-    }
-  };
-  
-  // Close booking preview
-  const handleCloseBookingPreview = () => {
-    setBookingPreviewOpen(false);
-    setBookingPreviewData({});
   };
   
   // Clear date selection
@@ -623,27 +599,16 @@ export function Calendar() {
                   </span>
                   {dateSelection.selections.length > 0 && (
                     <>
-                      {/* Only show "Create Reservation" and "Consulta" buttons if selections are from a single accommodation */}
+                      {/* Only show "Create Reservation" button if selections are from a single accommodation */}
                       {getUniqueUnitIds().length === 1 && (
-                        <>
-                          <Button
-                            onClick={handleCreateReservationFromSelection}
-                            size="sm"
-                            className="bg-accent-600 hover:bg-accent-700"
-                          >
-                            <span className="hidden sm:inline">Criar Reserva</span>
-                            <span className="sm:hidden">Reserva</span>
-                          </Button>
-                          <Button
-                            onClick={handleOpenBookingPreview}
-                            size="sm"
-                            variant="outline"
-                            className="border-primary-500 text-primary-600 hover:bg-primary-50"
-                          >
-                            <Eye className="w-4 h-4 sm:mr-1" />
-                            <span className="hidden sm:inline">Consulta</span>
-                          </Button>
-                        </>
+                        <Button
+                          onClick={handleCreateReservationFromSelection}
+                          size="sm"
+                          className="bg-accent-600 hover:bg-accent-700"
+                        >
+                          <span className="hidden sm:inline">Criar Reserva</span>
+                          <span className="sm:hidden">Reserva</span>
+                        </Button>
                       )}
                       <Button
                         onClick={() => setPriceModalOpen(true)}
@@ -725,14 +690,6 @@ export function Calendar() {
         prefilledData={prefilledData}
         onSave={handleReservationSave}
         onDelete={handleReservationDelete}
-      />
-
-      {/* Booking Preview Modal */}
-      <BookingPreviewModal
-        isOpen={bookingPreviewOpen}
-        onClose={handleCloseBookingPreview}
-        prefilledData={bookingPreviewData}
-        units={accommodations}
       />
 
       {/* Price Override Modal */}

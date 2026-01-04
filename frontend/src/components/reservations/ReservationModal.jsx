@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Trash2, FileText } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import { Button } from '../ui/Button';
-import api, { reservations } from '../../services/api';
+import api from '../../services/api';
 import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
 import { getLocalDateString } from '../../lib/utils';
 
@@ -484,32 +484,6 @@ export function ReservationModal({
     } catch (err) {
       console.error('Error deleting reservation:', err);
       setError('Erro ao excluir reserva. Verifique se não há transações associadas.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Download receipt PDF
-  const handleDownloadReceipt = async () => {
-    if (!reservation) return;
-    
-    try {
-      setLoading(true);
-      const response = await reservations.getReceipt(reservation.id);
-      
-      // Create blob URL and download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `recibo-reserva-${reservation.id}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Error downloading receipt:', err);
-      setError('Erro ao gerar recibo. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -1128,27 +1102,15 @@ export function ReservationModal({
           <div className="flex justify-between pt-4">
             {/* Delete button (only shown when editing) */}
             {reservation && (
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDelete}
-                  disabled={loading}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  Excluir
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleDownloadReceipt}
-                  disabled={loading}
-                  className="text-primary-600 hover:text-primary-700 hover:bg-primary-50"
-                >
-                  <FileText className="w-4 h-4 mr-1" />
-                  Recibo
-                </Button>
-              </div>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleDelete}
+                disabled={loading}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                Excluir
+              </Button>
             )}
             
             <div className={`flex space-x-3 ${reservation ? 'ml-auto' : 'ml-auto'}`}>
