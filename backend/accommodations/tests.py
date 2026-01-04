@@ -42,4 +42,48 @@ class AccommodationUnitModelTest(TestCase):
             unit.save()
             unit.refresh_from_db()
             self.assertEqual(unit.status, status)
+    
+    def test_new_description_fields(self):
+        """Test new description and rules fields."""
+        unit = AccommodationUnit.objects.create(
+            name="Chalet Deluxe",
+            max_capacity=8,
+            base_price=450.00,
+            short_description="# Breve descrição\nUma descrição curta em markdown.",
+            long_description="# Descrição Completa\n\n## Características\n- Item 1\n- Item 2",
+            rules="# Regras\n\n1. Não fumar\n2. Não permitido animais"
+        )
+        
+        self.assertEqual(unit.short_description, "# Breve descrição\nUma descrição curta em markdown.")
+        self.assertEqual(unit.long_description, "# Descrição Completa\n\n## Características\n- Item 1\n- Item 2")
+        self.assertEqual(unit.rules, "# Regras\n\n1. Não fumar\n2. Não permitido animais")
+    
+    def test_album_photos_field(self):
+        """Test album_photos JSONField."""
+        unit = AccommodationUnit.objects.create(
+            name="Chalet Panorama",
+            max_capacity=6,
+            base_price=400.00,
+            album_photos=[
+                "https://example.com/photo1.jpg",
+                "https://example.com/photo2.jpg",
+                "https://example.com/photo3.jpg"
+            ]
+        )
+        
+        self.assertEqual(len(unit.album_photos), 3)
+        self.assertEqual(unit.album_photos[0], "https://example.com/photo1.jpg")
+        
+    def test_default_values_for_new_fields(self):
+        """Test that new fields have proper default values."""
+        unit = AccommodationUnit.objects.create(
+            name="Simple Unit",
+            max_capacity=2,
+            base_price=150.00
+        )
+        
+        self.assertEqual(unit.short_description, '')
+        self.assertEqual(unit.long_description, '')
+        self.assertEqual(unit.rules, '')
+        self.assertEqual(unit.album_photos, [])
 

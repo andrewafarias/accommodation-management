@@ -26,6 +26,10 @@ export function AccommodationModal({
     auto_dirty_days: 3,
     default_check_in_time: '14:00',
     default_check_out_time: '12:00',
+    short_description: '',
+    long_description: '',
+    rules: '',
+    album_photos: [],
   });
   
   const [loading, setLoading] = useState(false);
@@ -48,6 +52,10 @@ export function AccommodationModal({
           auto_dirty_days: accommodation.auto_dirty_days || 3,
           default_check_in_time: accommodation.default_check_in_time || '14:00',
           default_check_out_time: accommodation.default_check_out_time || '12:00',
+          short_description: accommodation.short_description || '',
+          long_description: accommodation.long_description || '',
+          rules: accommodation.rules || '',
+          album_photos: accommodation.album_photos || [],
         });
       } else {
         // Create mode
@@ -61,6 +69,10 @@ export function AccommodationModal({
           auto_dirty_days: 3,
           default_check_in_time: '14:00',
           default_check_out_time: '12:00',
+          short_description: '',
+          long_description: '',
+          rules: '',
+          album_photos: [],
         });
       }
       setError(null);
@@ -92,6 +104,10 @@ export function AccommodationModal({
         auto_dirty_days: Number(formData.auto_dirty_days),
         default_check_in_time: formData.default_check_in_time,
         default_check_out_time: formData.default_check_out_time,
+        short_description: formData.short_description || '',
+        long_description: formData.long_description || '',
+        rules: formData.rules || '',
+        album_photos: formData.album_photos || [],
       };
 
       let response;
@@ -307,6 +323,87 @@ export function AccommodationModal({
               onChange={(color) => setFormData(prev => ({ ...prev, color_hex: color }))}
             />
             <p className="text-xs text-gray-500 mt-2">Cor selecionada: {formData.color_hex}</p>
+          </div>
+
+          {/* Short Description */}
+          <div>
+            <label htmlFor="short_description" className="block text-sm font-medium text-gray-700 mb-1">
+              Descrição Curta
+            </label>
+            <textarea
+              id="short_description"
+              name="short_description"
+              value={formData.short_description}
+              onChange={handleChange}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Breve descrição da unidade (suporta Markdown)"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Suporta formatação Markdown
+            </p>
+          </div>
+
+          {/* Long Description */}
+          <div>
+            <label htmlFor="long_description" className="block text-sm font-medium text-gray-700 mb-1">
+              Descrição Longa
+            </label>
+            <textarea
+              id="long_description"
+              name="long_description"
+              value={formData.long_description}
+              onChange={handleChange}
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Descrição completa da unidade (suporta Markdown)"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Suporta formatação Markdown
+            </p>
+          </div>
+
+          {/* Rules */}
+          <div>
+            <label htmlFor="rules" className="block text-sm font-medium text-gray-700 mb-1">
+              Regras
+            </label>
+            <textarea
+              id="rules"
+              name="rules"
+              value={formData.rules}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Regras da unidade (suporta Markdown)"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Suporta formatação Markdown
+            </p>
+          </div>
+
+          {/* Album Photos */}
+          <div>
+            <label htmlFor="album_photos" className="block text-sm font-medium text-gray-700 mb-1">
+              URLs das Fotos (Álbum)
+            </label>
+            <textarea
+              id="album_photos"
+              name="album_photos"
+              value={formData.album_photos.join('\n')}
+              onChange={(e) => {
+                const urls = e.target.value.split('\n').filter(url => url.trim() !== '');
+                setFormData(prev => ({ ...prev, album_photos: urls }));
+              }}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Uma URL por linha
+https://example.com/foto1.jpg
+https://example.com/foto2.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Digite uma URL por linha
+            </p>
           </div>
 
           {/* Actions */}

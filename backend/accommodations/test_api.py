@@ -229,4 +229,55 @@ class AccommodationUnitAPITest(TestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    
+    def test_create_with_new_fields(self):
+        """Test creating accommodation with new description and photo fields."""
+        data = {
+            'name': 'Chalet with Details',
+            'max_capacity': 6,
+            'base_price': 400.00,
+            'color_hex': '#AABBCC',
+            'short_description': '# Chalé Luxo\nDescobra o conforto!',
+            'long_description': '# Descrição Completa\n\n## Comodidades\n- Wi-Fi\n- Piscina',
+            'rules': '# Regras\n\n1. Não fumar\n2. Check-out às 12h',
+            'album_photos': [
+                'https://example.com/photo1.jpg',
+                'https://example.com/photo2.jpg'
+            ]
+        }
+        response = self.client.post('/api/accommodations/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['short_description'], '# Chalé Luxo\nDescobra o conforto!')
+        self.assertEqual(response.data['long_description'], '# Descrição Completa\n\n## Comodidades\n- Wi-Fi\n- Piscina')
+        self.assertEqual(response.data['rules'], '# Regras\n\n1. Não fumar\n2. Check-out às 12h')
+        self.assertEqual(len(response.data['album_photos']), 2)
+        self.assertEqual(response.data['album_photos'][0], 'https://example.com/photo1.jpg')
+    
+    def test_update_new_fields(self):
+        """Test updating accommodation with new fields."""
+        data = {
+            'short_description': 'Nova descrição curta',
+            'long_description': 'Nova descrição longa detalhada',
+            'rules': 'Novas regras aqui',
+            'album_photos': ['https://example.com/new-photo.jpg']
+        }
+        response = self.client.patch(
+            f'/api/accommodations/{self.unit1.id}/',
+            data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['short_description'], 'Nova descrição curta')
+        self.assertEqual(response.data['long_description'], 'Nova descrição longa detalhada')
+        self.assertEqual(response.data['rules'], 'Novas regras aqui')
+        self.assertEqual(len(response.data['album_photos']), 1)
+    
+    def test_get_accommodation_includes_new_fields(self):
+        """Test that GET request includes all new fields."""
+        response = self.client.get(f'/api/accommodations/{self.unit1.id}/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('short_description', response.data)
+        self.assertIn('long_description', response.data)
+        self.assertIn('rules', response.data)
+        self.assertIn('album_photos', response.data)
 

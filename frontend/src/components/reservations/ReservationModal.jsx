@@ -81,10 +81,12 @@ export function ReservationModal({
     accommodation_unit: '',
     guest_count_adults: 1,
     guest_count_children: 0,
+    pet_count: 0,
     total_price: '',
     price_breakdown: [],
     amount_paid: 0,
     status: 'PENDING',
+    notes: '',
   });
   
   const [clients, setClients] = useState([]);
@@ -214,11 +216,13 @@ export function ReservationModal({
           accommodation_unit: reservation.accommodation_unit?.id || '',
           guest_count_adults: reservation.guest_count_adults || 1,
           guest_count_children: reservation.guest_count_children || 0,
+          pet_count: reservation.pet_count || 0,
           total_price: reservation.total_price || '',
           price_breakdown: reservation.price_breakdown || [],
           amount_paid: reservation.amount_paid || 0,
           payment_history: reservation.payment_history || [],
           status: reservation.status || 'PENDING',
+          notes: reservation.notes || '',
         });
         setClientSearchTerm(reservation.client?.full_name || '');
       } else {
@@ -244,11 +248,13 @@ export function ReservationModal({
           accommodation_unit: prefilledDataRef.current.unit_id || '',
           guest_count_adults: 1,
           guest_count_children: 0,
+          pet_count: 0,
           total_price: '',
           price_breakdown: [],
           amount_paid: 0,
           payment_history: [],
           status: 'PENDING',
+          notes: '',
         });
         setClientSearchTerm('');
       }
@@ -514,9 +520,11 @@ export function ReservationModal({
         accommodation_unit: formData.accommodation_unit,
         guest_count_adults: parseInt(formData.guest_count_adults, 10),
         guest_count_children: parseInt(formData.guest_count_children, 10),
+        pet_count: parseInt(formData.pet_count, 10),
         status: formData.status,
         amount_paid: parseFloat(formData.amount_paid) || 0,
         payment_history: formData.payment_history || [],
+        notes: formData.notes || '',
       };
       
       // Add total_price if provided (convert to number)
@@ -863,6 +871,22 @@ export function ReservationModal({
             </div>
           </div>
 
+          {/* Pet Count */}
+          <div>
+            <label htmlFor="pet_count" className="block text-sm font-medium text-gray-700 mb-1">
+              Quantidade de Animais
+            </label>
+            <input
+              type="number"
+              id="pet_count"
+              name="pet_count"
+              value={formData.pet_count}
+              onChange={handleChange}
+              min="0"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           {/* Price Breakdown Section */}
           <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
             <div className="flex items-center justify-between mb-2">
@@ -1075,6 +1099,22 @@ export function ReservationModal({
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Notes */}
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
+              Observações
+            </label>
+            <textarea
+              id="notes"
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Observações adicionais sobre a reserva"
+            />
           </div>
 
           {/* Status */}

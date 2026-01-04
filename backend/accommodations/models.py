@@ -87,6 +87,32 @@ class AccommodationUnit(models.Model):
         help_text="Ordem em que a unidade aparece na lista e no calendário (menor = primeiro)"
     )
     
+    # New fields for descriptions, rules, and photos
+    short_description = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Descrição Curta",
+        help_text="Breve descrição da unidade (formato markdown)"
+    )
+    long_description = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Descrição Longa",
+        help_text="Descrição completa da unidade (formato markdown)"
+    )
+    rules = models.TextField(
+        blank=True,
+        default='',
+        verbose_name="Regras",
+        help_text="Regras da unidade (formato markdown)"
+    )
+    album_photos = models.JSONField(
+        blank=True,
+        default=list,
+        verbose_name="Álbum de Fotos",
+        help_text="Lista de URLs de fotos da unidade"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
