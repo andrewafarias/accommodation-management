@@ -8,11 +8,21 @@ from django.db.models import Q
 from django.http import HttpResponse
 import json
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
+from datetime import datetime
+from decimal import Decimal
 from .models import Reservation
 from .serializers import ReservationSerializer
 from accommodations.models import AccommodationUnit
 from clients.models import Client
+
+# PDF generation imports
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.units import cm
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.enums import TA_CENTER
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -318,3 +328,230 @@ class ReservationViewSet(viewsets.ModelViewSet):
             'imported': imported_count,
             'errors': errors
         }, status=status.HTTP_200_OK if imported_count > 0 else status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'])
+    def receipt(self, request, pk=None):
+        """
+        Generate a PDF receipt for a reservation.
+        Returns the PDF file as a response.
+        """
+        try:
+            reservation = self.get_object()
+        except Reservation.DoesNotExist:
+            return Response(
+                {'error': 'Reservation not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Create PDF buffer
+        buffer = BytesIO()
+        
+        # Define colors based on site theme (soft lavender/purple)
+        primary_color = colors.HexColor('#9333ea')  # primary-600
+        secondary_color = colors.HexColor('#ec4899')  # secondary-500
+        accent_color = colors.HexColor('#10b981')  # accent-500
+        light_purple = colors.HexColor('#f3e8ff')  # primary-100
+        light_pink = colors.HexColor('#fce7f3')  # secondary-100
+        
+        # Create PDF document
+        doc = SimpleDocTemplate(
+            buffer,
+            pagesize=A4,
+            rightMargin=2*cm,
+            leftMargin=2*cm,
+            topMargin=2*cm,
+            bottomMargin=2*cm
+        )
+        
+        # Create custom styles
+        styles = getSampleStyleSheet()
+        
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=24,
+            alignment=TA_CENTER,
+            textColor=primary_color,
+            spaceAfter=10
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            textColor=colors.gray,
+            spaceAfter=20
+        )
+        
+        section_header_style = ParagraphStyle(
+            'SectionHeader',
+            parent=styles['Heading2'],
+            fontSize=14,
+            textColor=primary_color,
+            spaceBefore=15,
+            spaceAfter=10
+        )
+        
+        normal_style = ParagraphStyle(
+            'CustomNormal',
+            parent=styles['Normal'],
+            fontSize=10,
+            spaceAfter=5
+        )
+        
+        # Build PDF content
+        elements = []
+        
+        # Title
+        elements.append(Paragraph("Chalés Jasmim", title_style))
+        elements.append(Paragraph("Recibo de Reserva", subtitle_style))
+        elements.append(Spacer(1, 10))
+        
+        # Reservation Info Section
+        elements.append(Paragraph("Informações da Reserva", section_header_style))
+        
+        unit = reservation.accommodation_unit
+        check_in_date = reservation.check_in.strftime('%d/%m/%Y')
+        check_in_time = reservation.check_in.strftime('%H:%M')
+        check_out_date = reservation.check_out.strftime('%d/%m/%Y')
+        check_out_time = reservation.check_out.strftime('%H:%M')
+        
+        # Calculate nights
+        nights = (reservation.check_out.date() - reservation.check_in.date()).days
+        
+        reservation_data = [
+            ['Unidade:', unit.name],
+            ['Check-in:', f'{check_in_date} às {check_in_time}'],
+            ['Check-out:', f'{check_out_date} às {check_out_time}'],
+            ['Noites:', str(nights)],
+            ['Adultos:', str(reservation.guest_count_adults)],
+            ['Crianças:', str(reservation.guest_count_children)],
+            ['Status:', dict(Reservation.STATUS_CHOICES).get(reservation.status, reservation.status)],
+        ]
+        
+        reservation_table = Table(reservation_data, colWidths=[4*cm, 10*cm])
+        reservation_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), light_purple),
+            ('TEXTCOLOR', (0, 0), (0, -1), primary_color),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(reservation_table)
+        elements.append(Spacer(1, 10))
+        
+        # Price Breakdown Section
+        elements.append(Paragraph("Discriminação de Valores", section_header_style))
+        
+        price_data = [['Item', 'Qtd', 'Valor Unit.', 'Total']]
+        total_from_breakdown = Decimal('0.00')
+        
+        if reservation.price_breakdown:
+            for item in reservation.price_breakdown:
+                name = item.get('name', 'Diária')
+                quantity = item.get('quantity', 1)
+                value = Decimal(str(item.get('value', 0)))
+                item_total = value * quantity
+                total_from_breakdown += item_total
+                price_data.append([
+                    name,
+                    str(quantity),
+                    f'R$ {value:.2f}',
+                    f'R$ {item_total:.2f}'
+                ])
+        
+        # Add total row
+        total_price = reservation.total_price or total_from_breakdown
+        price_data.append(['', '', 'Total:', f'R$ {total_price:.2f}'])
+        
+        # Add payment info
+        amount_paid = reservation.amount_paid or Decimal('0.00')
+        amount_remaining = max(Decimal('0.00'), total_price - amount_paid)
+        price_data.append(['', '', 'Pago:', f'R$ {amount_paid:.2f}'])
+        price_data.append(['', '', 'Restante:', f'R$ {amount_remaining:.2f}'])
+        
+        price_table = Table(price_data, colWidths=[6*cm, 2*cm, 3*cm, 3*cm])
+        price_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), primary_color),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ('PADDING', (0, 0), (-1, -1), 8),
+            # Highlight total rows
+            ('FONTNAME', (2, -3), (-1, -1), 'Helvetica-Bold'),
+            ('BACKGROUND', (2, -3), (-1, -3), light_purple),
+            ('TEXTCOLOR', (3, -1), (3, -1), accent_color if amount_remaining == 0 else secondary_color),
+        ]))
+        elements.append(price_table)
+        elements.append(Spacer(1, 20))
+        
+        # Client Info Section
+        elements.append(Paragraph("Informações do Cliente", section_header_style))
+        
+        client = reservation.client
+        client_data = [
+            ['Nome:', client.full_name],
+            ['CPF:', client.cpf or 'Não informado'],
+            ['Telefone:', client.phone or 'Não informado'],
+            ['E-mail:', client.email or 'Não informado'],
+        ]
+        
+        client_table = Table(client_data, colWidths=[4*cm, 10*cm])
+        client_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), light_pink),
+            ('TEXTCOLOR', (0, 0), (0, -1), secondary_color),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+            ('PADDING', (0, 0), (-1, -1), 8),
+        ]))
+        elements.append(client_table)
+        elements.append(Spacer(1, 20))
+        
+        # Rules Section
+        if unit.rules:
+            elements.append(Paragraph("Regras da Acomodação", section_header_style))
+            # Split rules by newlines and add as paragraphs
+            rules_lines = unit.rules.split('\n')
+            for line in rules_lines:
+                if line.strip():
+                    elements.append(Paragraph(f"• {line.strip()}", normal_style))
+            elements.append(Spacer(1, 20))
+        
+        # Long Description Section
+        if unit.long_description:
+            elements.append(Paragraph("Sobre a Acomodação", section_header_style))
+            # Split description by newlines
+            desc_lines = unit.long_description.split('\n')
+            for line in desc_lines:
+                if line.strip():
+                    elements.append(Paragraph(line.strip(), normal_style))
+            elements.append(Spacer(1, 10))
+        
+        # Footer
+        elements.append(Spacer(1, 30))
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=8,
+            alignment=TA_CENTER,
+            textColor=colors.gray
+        )
+        elements.append(Paragraph(f"Recibo gerado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}", footer_style))
+        elements.append(Paragraph("Chalés Jasmim - Seu refúgio na natureza", footer_style))
+        
+        # Build PDF
+        doc.build(elements)
+        
+        # Prepare response
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="recibo-reserva-{reservation.id}.pdf"'
+        
+        return response
