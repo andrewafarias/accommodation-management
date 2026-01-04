@@ -64,4 +64,9 @@ export const datePackages = {
   delete: (id) => api.delete(`/date-packages/${id}/`),
 };
 
+// Reservations API (additional methods)
+export const reservations = {
+  getReceipt: (id) => api.get(`/reservations/${id}/receipt/`, { responseType: 'blob' }),
+};
+
 export default api;
