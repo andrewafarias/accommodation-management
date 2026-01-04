@@ -357,13 +357,14 @@ export function BookingPreviewModal({
               <h5 className="text-sm font-semibold text-gray-700 mb-3 uppercase">Fotos</h5>
               <div className="grid grid-cols-4 gap-2">
                 {selectedUnit.album_photos.slice(0, 8).map((url, index) => (
-                  <div key={index} className="aspect-square">
+                  <div key={index} className="aspect-square bg-gray-100 rounded">
                     <img
                       src={url}
                       alt={`Foto ${index + 1}`}
                       className="w-full h-full object-cover rounded"
                       onError={(e) => {
-                        e.target.style.display = 'none';
+                        e.target.classList.add('opacity-50');
+                        e.target.alt = 'Erro';
                       }}
                     />
                   </div>

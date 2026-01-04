@@ -418,9 +418,10 @@ export function AccommodationModal({
                       <img
                         src={url}
                         alt={`Foto ${index + 1}`}
-                        className="w-full h-20 object-cover rounded border"
+                        className="w-full h-20 object-cover rounded border bg-gray-100"
                         onError={(e) => {
-                          e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="80" viewBox="0 0 100 80"><rect fill="%23f3f4f6" width="100" height="80"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="10">Erro</text></svg>';
+                          e.target.classList.add('opacity-50');
+                          e.target.alt = 'Erro ao carregar imagem';
                         }}
                       />
                       <button

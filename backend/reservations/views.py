@@ -18,12 +18,11 @@ from clients.models import Client
 
 # PDF generation imports
 from reportlab.lib.pagesizes import A4
-from reportlab.lib.units import cm, mm
+from reportlab.lib.units import cm
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
-from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
-import os
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.enums import TA_CENTER
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -403,15 +402,6 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # Build PDF content
         elements = []
-        
-        # Logo
-        logo_path = os.path.join(os.path.dirname(__file__), '..', '..', 'frontend', 'images', 'logocentral.svg')
-        if os.path.exists(logo_path):
-            try:
-                # SVG requires conversion, use PNG fallback or skip
-                pass
-            except Exception:
-                pass
         
         # Title
         elements.append(Paragraph("Chalés Jasmim", title_style))
