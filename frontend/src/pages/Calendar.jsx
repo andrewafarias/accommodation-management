@@ -2,9 +2,10 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ColorPicker } from '../components/ui/ColorPicker';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, DollarSign, Package, X, FileSearch } from 'lucide-react';
 import { TimelineCalendar } from '../components/calendar/TimelineCalendar';
 import { ReservationModal } from '../components/reservations/ReservationModal';
+import { InquiryModal } from '../components/reservations/InquiryModal';
 import { format, startOfMonth, addMonths, subMonths, differenceInDays, addYears, parseISO, eachDayOfInterval, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import api, { datePriceOverrides, datePackages } from '../services/api';
@@ -21,6 +22,10 @@ export function Calendar() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
   const [prefilledData, setPrefilledData] = useState({});
+  
+  // Inquiry modal state
+  const [inquiryModalOpen, setInquiryModalOpen] = useState(false);
+  const [inquiryPrefilledData, setInquiryPrefilledData] = useState({});
   
   // Reference to the timeline scroll container
   const timelineScrollRef = useRef(null);
@@ -283,6 +288,26 @@ export function Calendar() {
       });
       setModalOpen(true);
     }
+  };
+  
+  // Create inquiry/quote from selected date range
+  const handleCreateInquiryFromSelection = () => {
+    if (dateSelection.selections.length > 0) {
+      const firstSelection = dateSelection.selections[0];
+      setInquiryPrefilledData({
+        unit_id: firstSelection.unitId,
+        check_in: firstSelection.startDate,
+        check_out: firstSelection.endDate
+      });
+      setInquiryModalOpen(true);
+    }
+  };
+  
+  // Close inquiry modal
+  const handleInquiryModalClose = () => {
+    setInquiryModalOpen(false);
+    setInquiryPrefilledData({});
+    handleClearSelection();
   };
   
   // Clear date selection
@@ -599,16 +624,27 @@ export function Calendar() {
                   </span>
                   {dateSelection.selections.length > 0 && (
                     <>
-                      {/* Only show "Create Reservation" button if selections are from a single accommodation */}
+                      {/* Only show "Create Reservation" and "Consulta" buttons if selections are from a single accommodation */}
                       {getUniqueUnitIds().length === 1 && (
-                        <Button
-                          onClick={handleCreateReservationFromSelection}
-                          size="sm"
-                          className="bg-accent-600 hover:bg-accent-700"
-                        >
-                          <span className="hidden sm:inline">Criar Reserva</span>
-                          <span className="sm:hidden">Reserva</span>
-                        </Button>
+                        <>
+                          <Button
+                            onClick={handleCreateReservationFromSelection}
+                            size="sm"
+                            className="bg-accent-600 hover:bg-accent-700"
+                          >
+                            <span className="hidden sm:inline">Criar Reserva</span>
+                            <span className="sm:hidden">Reserva</span>
+                          </Button>
+                          <Button
+                            onClick={handleCreateInquiryFromSelection}
+                            size="sm"
+                            variant="outline"
+                            className="border-purple-500 text-purple-600 hover:bg-purple-50"
+                          >
+                            <FileSearch className="w-4 h-4 sm:mr-1" />
+                            <span className="hidden sm:inline">Consulta</span>
+                          </Button>
+                        </>
                       )}
                       <Button
                         onClick={() => setPriceModalOpen(true)}
@@ -690,6 +726,14 @@ export function Calendar() {
         prefilledData={prefilledData}
         onSave={handleReservationSave}
         onDelete={handleReservationDelete}
+      />
+
+      {/* Inquiry Modal */}
+      <InquiryModal
+        isOpen={inquiryModalOpen}
+        onClose={handleInquiryModalClose}
+        units={accommodations}
+        prefilledData={inquiryPrefilledData}
       />
 
       {/* Price Override Modal */}
