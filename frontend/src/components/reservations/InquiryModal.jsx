@@ -353,15 +353,14 @@ export function InquiryModal({
         })
       ]);
       
-      // Show success message
-      setErrorMessage('');
-      alert('Imagem copiada para a área de transferência!');
+      // Close preview after successful copy
+      handleClosePreview();
     } catch (error) {
       console.error('Error copying to clipboard:', error);
       setErrorMessage('Erro ao copiar imagem. Tente fazer o download.');
       setTimeout(() => setErrorMessage(''), 5000);
     }
-  }, [generatedImageUrl]);
+  }, [generatedImageUrl, handleClosePreview]);
   
   // Close preview modal
   const handleClosePreview = useCallback(() => {
@@ -1067,19 +1066,7 @@ export function InquiryModal({
                 onClick={handleCopyToClipboard}
                 className="flex items-center gap-2"
               >
-                <svg 
-                  xmlns="http://www.w3.org/2000/svg" 
-                  className="w-5 h-5" 
-                  viewBox="0 0 24 24" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  strokeWidth="2" 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round"
-                >
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
+                <Copy className="w-5 h-5" />
                 Copiar para Área de Transferência
               </Button>
               <Button
