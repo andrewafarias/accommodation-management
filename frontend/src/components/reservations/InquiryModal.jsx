@@ -305,8 +305,8 @@ export function InquiryModal({
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 2160,
-        height: 1300,
+        width: 1080,
+        height: 810,
       });
       
       // Hide template again
@@ -750,8 +750,8 @@ export function InquiryModal({
       <div
         ref={quoteTemplateRef}
         style={{
-          width: '2160px',
-          height: '1300px',
+          width: '1080px',
+          height: '810px',
           display: 'none',
           position: 'fixed',
           left: '-9999px',
@@ -765,135 +765,79 @@ export function InquiryModal({
           width: '100%',
           height: '100%',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '40px',
+          padding: '20px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
         }}>
-          {/* Header */}
+          {/* Header with CONSULTA badge */}
           <div style={{
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '20px',
-            padding: '24px 32px',
-            marginBottom: '20px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            borderRadius: '12px',
+            padding: '12px 16px',
+            marginBottom: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ flex: '1', overflow: 'hidden' }}>
-                <h1 style={{
-                  fontSize: '32px',
-                  fontWeight: '700',
-                  color: '#1f2937',
-                  margin: '0 0 8px 0',
-                }}>
-                  {selectedUnit?.name || 'Consulta'}
-                </h1>
-                {selectedUnit?.short_description && (
-                  <p style={{
-                    fontSize: '16px',
-                    color: '#6b7280',
-                    margin: '0',
-                    maxWidth: '600px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '3',
-                    WebkitBoxOrient: 'vertical',
-                  }}>
-                    {selectedUnit.short_description}
-                  </p>
-                )}
-              </div>
-              <div style={{
-                backgroundColor: '#667eea',
-                color: 'white',
-                padding: '12px 24px',
-                borderRadius: '12px',
-                fontSize: '16px',
-                fontWeight: '600',
-                marginLeft: '20px',
-                flexShrink: '0',
-              }}>
-                CONSULTA
-              </div>
+            <div style={{
+              backgroundColor: '#667eea',
+              color: 'white',
+              padding: '8px 20px',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '600',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              lineHeight: '1',
+            }}>
+              CONSULTA
             </div>
           </div>
 
-          {/* Photo Mosaic */}
-          {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: selectedUnit.album_photos.length === 1 ? '1fr' : 
-                                  selectedUnit.album_photos.length === 2 ? '1fr 1fr' :
-                                  selectedUnit.album_photos.length <= 4 ? '1fr 1fr' : '1fr 1fr 1fr',
-              gridTemplateRows: selectedUnit.album_photos.length <= 2 ? '1fr' : 'auto auto',
-              gap: '12px',
-              marginBottom: '20px',
-              height: selectedUnit.album_photos.length === 1 ? '400px' : '320px',
-            }}>
-              {selectedUnit.album_photos.slice(0, 6).map((photo, index) => (
-                <div
-                  key={index}
-                  style={{
-                    borderRadius: '16px',
-                    overflow: 'hidden',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
-                    gridColumn: selectedUnit.album_photos.length === 3 && index === 2 ? 'span 2' : 'auto',
-                  }}
-                >
-                  <img
-                    src={photo}
-                    alt={`${selectedUnit.name} - Foto ${index + 1}`}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                    }}
-                    crossOrigin="anonymous"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Details Section */}
+          {/* Main Content Section */}
           <div style={{
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '20px',
-            padding: '28px',
+            borderRadius: '12px',
+            padding: '16px',
             flex: '1',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
           }}>
-            {/* Dates and Guests */}
+            {/* Dates Row */}
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '24px',
-              marginBottom: '24px',
+              gap: '12px',
+              marginBottom: '12px',
             }}>
               {/* Check-in */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '20px',
-                borderRadius: '16px',
+                padding: '12px',
+                borderRadius: '10px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{
                     backgroundColor: '#10b981',
-                    borderRadius: '8px',
-                    padding: '8px',
-                    marginRight: '12px',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    marginRight: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}>
-                    <Calendar style={{ width: '20px', height: '20px', color: 'white' }} />
+                    <Calendar style={{ width: '14px', height: '14px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>CHECK-IN</span>
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-IN</span>
                 </div>
-                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
+                <p style={{ fontSize: '13px', fontWeight: '700', color: '#1f2937', margin: '0 0 2px 0' }}>
                   {formatDisplayDate(formData.check_in_date)}
                 </p>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
                   às {formatDisplayTime(formData.check_in_time)}
                 </p>
               </div>
@@ -901,24 +845,27 @@ export function InquiryModal({
               {/* Check-out */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '20px',
-                borderRadius: '16px',
+                padding: '12px',
+                borderRadius: '10px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{
                     backgroundColor: '#ef4444',
-                    borderRadius: '8px',
-                    padding: '8px',
-                    marginRight: '12px',
+                    borderRadius: '6px',
+                    padding: '6px',
+                    marginRight: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}>
-                    <Clock style={{ width: '20px', height: '20px', color: 'white' }} />
+                    <Clock style={{ width: '14px', height: '14px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>CHECK-OUT</span>
+                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-OUT</span>
                 </div>
-                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
+                <p style={{ fontSize: '13px', fontWeight: '700', color: '#1f2937', margin: '0 0 2px 0' }}>
                   {formatDisplayDate(formData.check_out_date)}
                 </p>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
                   às {formatDisplayTime(formData.check_out_time)}
                 </p>
               </div>
@@ -929,30 +876,30 @@ export function InquiryModal({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '32px',
-              padding: '16px',
+              gap: '20px',
+              padding: '10px',
               backgroundColor: '#fef3c7',
-              borderRadius: '12px',
-              marginBottom: '24px',
+              borderRadius: '8px',
+              marginBottom: '12px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <User style={{ width: '24px', height: '24px', color: '#d97706' }} />
-                <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <User style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
+                <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
                   {formData.guest_count_adults} Adulto{formData.guest_count_adults !== 1 ? 's' : ''}
                 </span>
               </div>
               {formData.guest_count_children > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Baby style={{ width: '24px', height: '24px', color: '#d97706' }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Baby style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
                     {formData.guest_count_children} Criança{formData.guest_count_children !== 1 ? 's' : ''}
                   </span>
                 </div>
               )}
               {formData.pet_count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <PawPrint style={{ width: '24px', height: '24px', color: '#d97706' }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <PawPrint style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
+                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
                     {formData.pet_count} Pet{formData.pet_count !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -963,11 +910,11 @@ export function InquiryModal({
             {hasManualBreakdown && (
               <div style={{
                 backgroundColor: '#f9fafb',
-                borderRadius: '12px',
-                padding: '16px',
-                marginBottom: '16px',
+                borderRadius: '8px',
+                padding: '10px',
+                marginBottom: '10px',
               }}>
-                <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', marginBottom: '12px' }}>
+                <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', margin: '0 0 8px 0' }}>
                   DISCRIMINAÇÃO DE VALORES
                 </p>
                 {formData.price_breakdown.filter(item => item.name && item.value).map((item, index) => {
@@ -976,13 +923,13 @@ export function InquiryModal({
                     <div key={index} style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      padding: '8px 0',
+                      padding: '4px 0',
                       borderBottom: index < formData.price_breakdown.filter(i => i.name && i.value).length - 1 ? '1px solid #e5e7eb' : 'none',
                     }}>
-                      <span style={{ fontSize: '14px', color: '#374151' }}>
+                      <span style={{ fontSize: '11px', color: '#374151' }}>
                         {item.name} {parseFloat(item.quantity) > 1 ? `(x${item.quantity})` : ''}
                       </span>
-                      <span style={{ fontSize: '14px', fontWeight: '600', color: '#374151' }}>
+                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151' }}>
                         R$ {itemTotal.toFixed(2)}
                       </span>
                     </div>
@@ -993,31 +940,107 @@ export function InquiryModal({
 
             {/* Financial Summary */}
             <div style={{
-              marginTop: 'auto',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-end',
-              paddingTop: '20px',
+              paddingTop: '10px',
               borderTop: '2px solid #e5e7eb',
+              marginBottom: '12px',
             }}>
               <div>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
                   {calculateTotalNights} noite{calculateTotalNights !== 1 ? 's' : ''}
                 </p>
-                <p style={{ fontSize: '16px', color: '#374151', margin: '4px 0 0 0' }}>
+                <p style={{ fontSize: '12px', color: '#374151', margin: '2px 0 0 0' }}>
                   Média: <span style={{ fontWeight: '600' }}>R$ {averagePerNight.toFixed(2)}</span> /noite
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '14px', color: '#6b7280', margin: '0' }}>TOTAL</p>
+                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>TOTAL</p>
                 <p style={{
-                  fontSize: '36px',
+                  fontSize: '24px',
                   fontWeight: '700',
                   color: '#059669',
                   margin: '0',
                 }}>
                   R$ {displayTotal.toFixed(2)}
                 </p>
+              </div>
+            </div>
+
+            {/* Chalet Info Section with Photo Mosaic - Small footer */}
+            <div style={{
+              marginTop: 'auto',
+              backgroundColor: '#f9fafb',
+              borderRadius: '10px',
+              padding: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}>
+              {/* Photo Mosaic - 1:1 square grid, Facebook style */}
+              {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (
+                <div style={{
+                  width: '100px',
+                  height: '100px',
+                  flexShrink: 0,
+                  display: 'grid',
+                  gridTemplateColumns: selectedUnit.album_photos.length === 1 ? '1fr' : '1fr 1fr',
+                  gridTemplateRows: selectedUnit.album_photos.length <= 2 ? '1fr' : '1fr 1fr',
+                  gap: '2px',
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                }}>
+                  {selectedUnit.album_photos.slice(0, 4).map((photo, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        overflow: 'hidden',
+                        position: 'relative',
+                      }}
+                    >
+                      <img
+                        src={photo}
+                        alt={`${selectedUnit.name} - Foto ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                        }}
+                        crossOrigin="anonymous"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Chalet Name and Description */}
+              <div style={{ flex: '1', overflow: 'hidden' }}>
+                <h2 style={{
+                  fontSize: '14px',
+                  fontWeight: '700',
+                  color: '#1f2937',
+                  margin: '0 0 4px 0',
+                }}>
+                  {selectedUnit?.name || 'Acomodação'}
+                </h2>
+                {selectedUnit?.short_description && (
+                  <p style={{
+                    fontSize: '11px',
+                    color: '#6b7280',
+                    margin: '0',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: '2',
+                    WebkitBoxOrient: 'vertical',
+                    lineHeight: '1.4',
+                  }}>
+                    {selectedUnit.short_description}
+                  </p>
+                )}
               </div>
             </div>
           </div>
