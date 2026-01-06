@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { X, User, Baby, PawPrint, Calendar, Clock, Download, Image } from 'lucide-react';
+import { X, User, Baby, PawPrint, Calendar, Clock, Download, Image, Copy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -78,6 +78,8 @@ export function InquiryModal({
   
   const [generating, setGenerating] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [generatedImageUrl, setGeneratedImageUrl] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const initializedRef = useRef(false);
   const prefilledDataRef = useRef(prefilledData);
   const quoteTemplateRef = useRef(null);
@@ -303,20 +305,17 @@ export function InquiryModal({
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
-        width: 1080,
-        height: 1080,
+        width: 2160,
+        height: 1300,
       });
       
       // Hide template again
       templateEl.style.display = 'none';
       
-      // Download image
-      const link = document.createElement('a');
-      const unitName = selectedUnit?.name || 'consulta';
-      const dateStr = format(new Date(), 'dd-MM-yyyy');
-      link.download = `${unitName.replace(/\s+/g, '-').toLowerCase()}-${dateStr}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+      // Store the generated image URL
+      const imageUrl = canvas.toDataURL('image/png');
+      setGeneratedImageUrl(imageUrl);
+      setShowPreview(true);
     } catch (error) {
       console.error('Error generating image:', error);
       setErrorMessage('Erro ao gerar imagem. Tente novamente.');
@@ -324,7 +323,51 @@ export function InquiryModal({
     } finally {
       setGenerating(false);
     }
-  }, [selectedUnit]);
+  }, []);
+  
+  // Download generated image
+  const handleDownloadImage = useCallback(() => {
+    if (!generatedImageUrl) return;
+    
+    const link = document.createElement('a');
+    const unitName = selectedUnit?.name || 'consulta';
+    const dateStr = format(new Date(), 'dd-MM-yyyy');
+    link.download = `${unitName.replace(/\s+/g, '-').toLowerCase()}-${dateStr}.png`;
+    link.href = generatedImageUrl;
+    link.click();
+  }, [generatedImageUrl, selectedUnit]);
+  
+  // Copy image to clipboard
+  const handleCopyToClipboard = useCallback(async () => {
+    if (!generatedImageUrl) return;
+    
+    try {
+      // Convert data URL to blob
+      const response = await fetch(generatedImageUrl);
+      const blob = await response.blob();
+      
+      // Copy to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'image/png': blob
+        })
+      ]);
+      
+      // Show success message
+      setErrorMessage('');
+      alert('Imagem copiada para a área de transferência!');
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      setErrorMessage('Erro ao copiar imagem. Tente fazer o download.');
+      setTimeout(() => setErrorMessage(''), 5000);
+    }
+  }, [generatedImageUrl]);
+  
+  // Close preview modal
+  const handleClosePreview = useCallback(() => {
+    setShowPreview(false);
+    setGeneratedImageUrl(null);
+  }, []);
 
   // Format date for display
   const formatDisplayDate = (dateStr) => {
@@ -708,8 +751,8 @@ export function InquiryModal({
       <div
         ref={quoteTemplateRef}
         style={{
-          width: '1080px',
-          height: '1080px',
+          width: '2160px',
+          height: '1300px',
           display: 'none',
           position: 'fixed',
           left: '-9999px',
@@ -737,7 +780,7 @@ export function InquiryModal({
             boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
+              <div style={{ flex: '1', overflow: 'hidden' }}>
                 <h1 style={{
                   fontSize: '32px',
                   fontWeight: '700',
@@ -752,6 +795,11 @@ export function InquiryModal({
                     color: '#6b7280',
                     margin: '0',
                     maxWidth: '600px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: '3',
+                    WebkitBoxOrient: 'vertical',
                   }}>
                     {selectedUnit.short_description}
                   </p>
@@ -764,6 +812,8 @@ export function InquiryModal({
                 borderRadius: '12px',
                 fontSize: '16px',
                 fontWeight: '600',
+                marginLeft: '20px',
+                flexShrink: '0',
               }}>
                 CONSULTA
               </div>
@@ -780,7 +830,7 @@ export function InquiryModal({
               gridTemplateRows: selectedUnit.album_photos.length <= 2 ? '1fr' : 'auto auto',
               gap: '12px',
               marginBottom: '20px',
-              height: selectedUnit.album_photos.length === 1 ? '280px' : '240px',
+              height: selectedUnit.album_photos.length === 1 ? '400px' : '320px',
             }}>
               {selectedUnit.album_photos.slice(0, 6).map((photo, index) => (
                 <div
@@ -879,6 +929,7 @@ export function InquiryModal({
             <div style={{
               display: 'flex',
               justifyContent: 'center',
+              alignItems: 'center',
               gap: '32px',
               padding: '16px',
               backgroundColor: '#fef3c7',
@@ -973,6 +1024,76 @@ export function InquiryModal({
           </div>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      {showPreview && generatedImageUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-70"
+            onClick={handleClosePreview}
+          />
+          
+          {/* Preview Content */}
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 border-b pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Prévia da Imagem de Consulta
+              </h2>
+              <button
+                onClick={handleClosePreview}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Preview Image */}
+            <div className="mb-4 bg-gray-100 rounded-lg p-4 flex justify-center">
+              <img 
+                src={generatedImageUrl} 
+                alt="Prévia da consulta" 
+                className="max-w-full h-auto rounded shadow-lg"
+                style={{ maxHeight: '60vh' }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyToClipboard}
+                className="flex items-center gap-2"
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="w-5 h-5" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copiar para Área de Transferência
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDownloadImage}
+                className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
+              >
+                <Download className="w-5 h-5" />
+                Baixar Imagem
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
