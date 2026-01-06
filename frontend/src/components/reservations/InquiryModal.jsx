@@ -325,6 +325,12 @@ export function InquiryModal({
     }
   }, []);
   
+  // Close preview modal
+  const handleClosePreview = useCallback(() => {
+    setShowPreview(false);
+    setGeneratedImageUrl(null);
+  }, []);
+  
   // Download generated image
   const handleDownloadImage = useCallback(() => {
     if (!generatedImageUrl) return;
@@ -361,12 +367,6 @@ export function InquiryModal({
       setTimeout(() => setErrorMessage(''), 5000);
     }
   }, [generatedImageUrl, handleClosePreview]);
-  
-  // Close preview modal
-  const handleClosePreview = useCallback(() => {
-    setShowPreview(false);
-    setGeneratedImageUrl(null);
-  }, []);
 
   // Format date for display
   const formatDisplayDate = (dateStr) => {
