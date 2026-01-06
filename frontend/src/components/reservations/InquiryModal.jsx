@@ -856,28 +856,38 @@ export function InquiryModal({
               marginBottom: '16px',
               minHeight: '56px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '100%' }}>
-                <User style={{ width: '22px', height: '22px', color: '#d97706', flexShrink: 0 }} />
-                <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '22px', display: 'flex', alignItems: 'center' }}>
-                  {formData.guest_count_adults} Adulto{formData.guest_count_adults !== 1 ? 's' : ''}
-                </span>
-              </div>
-              {formData.guest_count_children > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '100%' }}>
-                  <Baby style={{ width: '22px', height: '22px', color: '#d97706', flexShrink: 0 }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '22px', display: 'flex', alignItems: 'center' }}>
-                    {formData.guest_count_children} Criança{formData.guest_count_children !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              )}
-              {formData.pet_count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '100%' }}>
-                  <PawPrint style={{ width: '22px', height: '22px', color: '#d97706', flexShrink: 0 }} />
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '22px', display: 'flex', alignItems: 'center' }}>
-                    {formData.pet_count} Pet{formData.pet_count !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              )}
+              {/* Guest count items - reusable styles */}
+              {(() => {
+                const guestItemStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
+                const iconStyle = { width: '22px', height: '22px', color: '#d97706', flexShrink: 0 };
+                const textStyle = { fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '1' };
+                return (
+                  <>
+                    <div style={guestItemStyle}>
+                      <User style={iconStyle} />
+                      <span style={textStyle}>
+                        {formData.guest_count_adults} Adulto{formData.guest_count_adults !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {formData.guest_count_children > 0 && (
+                      <div style={guestItemStyle}>
+                        <Baby style={iconStyle} />
+                        <span style={textStyle}>
+                          {formData.guest_count_children} Criança{formData.guest_count_children !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                    {formData.pet_count > 0 && (
+                      <div style={guestItemStyle}>
+                        <PawPrint style={iconStyle} />
+                        <span style={textStyle}>
+                          {formData.pet_count} Pet{formData.pet_count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Price Breakdown (conditional) */}
@@ -949,7 +959,7 @@ export function InquiryModal({
               borderRadius: '12px',
               padding: '16px',
               display: 'flex',
-              alignItems: 'center',
+              alignItems: 'flex-start',
               gap: '16px',
             }}>
               {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
@@ -957,26 +967,27 @@ export function InquiryModal({
                 const photoCount = selectedUnit.album_photos.length;
                 // Determine grid layout based on photo count
                 // 1 photo: 1x1, 2 photos: 2x1, 3 photos: 3x1, 4 photos: 2x2
-                // 5-6 photos: 3x2, 7-9 photos: 3x3
-                let columns, rows, maxPhotos;
-                if (photoCount === 1) {
-                  columns = 1; rows = 1; maxPhotos = 1;
-                } else if (photoCount === 2) {
-                  columns = 2; rows = 1; maxPhotos = 2;
-                } else if (photoCount === 3) {
-                  columns = 3; rows = 1; maxPhotos = 3;
-                } else if (photoCount === 4) {
-                  columns = 2; rows = 2; maxPhotos = 4;
-                } else if (photoCount <= 6) {
-                  columns = 3; rows = 2; maxPhotos = 6;
-                } else {
-                  columns = 3; rows = 3; maxPhotos = 9;
-                }
+                // Photo grid layout configuration based on photo count
+                // 1 photo: 1x1, 2 photos: 2x1, 3 photos: 3x1, 4 photos: 2x2, 5-6 photos: 3x2, 7-9 photos: 3x3
+                const gridLayouts = {
+                  1: { columns: 1, rows: 1, maxPhotos: 1 },
+                  2: { columns: 2, rows: 1, maxPhotos: 2 },
+                  3: { columns: 3, rows: 1, maxPhotos: 3 },
+                  4: { columns: 2, rows: 2, maxPhotos: 4 },
+                  5: { columns: 3, rows: 2, maxPhotos: 6 },
+                  6: { columns: 3, rows: 2, maxPhotos: 6 },
+                };
+                const defaultLayout = { columns: 3, rows: 3, maxPhotos: 9 };
+                const { columns, rows, maxPhotos } = gridLayouts[photoCount] || defaultLayout;
+                
+                // Mosaic height based on number of rows
+                const mosaicHeights = { 1: '50px', 2: '100px', 3: '150px' };
+                const mosaicHeight = mosaicHeights[rows] || '150px';
                 
                 return (
                   <div style={{
                     width: '150px',
-                    height: rows === 1 ? '50px' : rows === 2 ? '100px' : '150px',
+                    height: mosaicHeight,
                     flexShrink: 0,
                     display: 'grid',
                     gridTemplateColumns: `repeat(${columns}, 1fr)`,
@@ -1012,7 +1023,7 @@ export function InquiryModal({
               })()}
               
               {/* Chalet Name and Description */}
-              <div style={{ flex: '1', overflow: 'hidden' }}>
+              <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{
                   fontSize: '18px',
                   fontWeight: '700',
@@ -1026,7 +1037,10 @@ export function InquiryModal({
                     fontSize: '14px',
                     color: '#6b7280',
                     margin: '0',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    overflow: 'visible',
                   }}>
                     {selectedUnit.short_description}
                   </p>
