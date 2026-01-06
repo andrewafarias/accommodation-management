@@ -765,43 +765,16 @@ export function InquiryModal({
           width: '100%',
           height: '100%',
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '20px',
+          padding: '24px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
         }}>
-          {/* Header with CONSULTA badge */}
-          <div style={{
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '12px',
-            padding: '12px 16px',
-            marginBottom: '12px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}>
-            <div style={{
-              backgroundColor: '#667eea',
-              color: 'white',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              lineHeight: '1',
-            }}>
-              CONSULTA
-            </div>
-          </div>
-
           {/* Main Content Section */}
           <div style={{
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '12px',
-            padding: '16px',
+            borderRadius: '16px',
+            padding: '24px',
             flex: '1',
             display: 'flex',
             flexDirection: 'column',
@@ -811,33 +784,33 @@ export function InquiryModal({
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '12px',
-              marginBottom: '12px',
+              gap: '16px',
+              marginBottom: '16px',
             }}>
               {/* Check-in */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '12px',
-                borderRadius: '10px',
+                padding: '18px',
+                borderRadius: '12px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{
                     backgroundColor: '#10b981',
-                    borderRadius: '6px',
-                    padding: '6px',
-                    marginRight: '8px',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    marginRight: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Calendar style={{ width: '14px', height: '14px', color: 'white' }} />
+                    <Calendar style={{ width: '20px', height: '20px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-IN</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-IN</span>
                 </div>
-                <p style={{ fontSize: '13px', fontWeight: '700', color: '#1f2937', margin: '0 0 2px 0' }}>
+                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
                   {formatDisplayDate(formData.check_in_date)}
                 </p>
-                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
                   às {formatDisplayTime(formData.check_in_time)}
                 </p>
               </div>
@@ -845,27 +818,27 @@ export function InquiryModal({
               {/* Check-out */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '12px',
-                borderRadius: '10px',
+                padding: '18px',
+                borderRadius: '12px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
                   <div style={{
                     backgroundColor: '#ef4444',
-                    borderRadius: '6px',
-                    padding: '6px',
-                    marginRight: '8px',
+                    borderRadius: '8px',
+                    padding: '10px',
+                    marginRight: '12px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Clock style={{ width: '14px', height: '14px', color: 'white' }} />
+                    <Clock style={{ width: '20px', height: '20px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-OUT</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-OUT</span>
                 </div>
-                <p style={{ fontSize: '13px', fontWeight: '700', color: '#1f2937', margin: '0 0 2px 0' }}>
+                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
                   {formatDisplayDate(formData.check_out_date)}
                 </p>
-                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
                   às {formatDisplayTime(formData.check_out_time)}
                 </p>
               </div>
@@ -876,45 +849,56 @@ export function InquiryModal({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '20px',
-              padding: '10px',
+              gap: '32px',
+              padding: '16px 20px',
               backgroundColor: '#fef3c7',
-              borderRadius: '8px',
-              marginBottom: '12px',
+              borderRadius: '10px',
+              marginBottom: '16px',
+              minHeight: '56px',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <User style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
-                <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
-                  {formData.guest_count_adults} Adulto{formData.guest_count_adults !== 1 ? 's' : ''}
-                </span>
-              </div>
-              {formData.guest_count_children > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Baby style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
-                    {formData.guest_count_children} Criança{formData.guest_count_children !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              )}
-              {formData.pet_count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <PawPrint style={{ width: '16px', height: '16px', color: '#d97706', flexShrink: 0 }} />
-                  <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400e', lineHeight: '16px' }}>
-                    {formData.pet_count} Pet{formData.pet_count !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              )}
+              {/* Guest count items - reusable styles */}
+              {(() => {
+                const guestItemStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
+                const iconStyle = { width: '22px', height: '22px', color: '#d97706', flexShrink: 0 };
+                const textStyle = { fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '1' };
+                return (
+                  <>
+                    <div style={guestItemStyle}>
+                      <User style={iconStyle} />
+                      <span style={textStyle}>
+                        {formData.guest_count_adults} Adulto{formData.guest_count_adults !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    {formData.guest_count_children > 0 && (
+                      <div style={guestItemStyle}>
+                        <Baby style={iconStyle} />
+                        <span style={textStyle}>
+                          {formData.guest_count_children} Criança{formData.guest_count_children !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                    {formData.pet_count > 0 && (
+                      <div style={guestItemStyle}>
+                        <PawPrint style={iconStyle} />
+                        <span style={textStyle}>
+                          {formData.pet_count} Pet{formData.pet_count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
 
             {/* Price Breakdown (conditional) */}
             {hasManualBreakdown && (
               <div style={{
                 backgroundColor: '#f9fafb',
-                borderRadius: '8px',
-                padding: '10px',
-                marginBottom: '10px',
+                borderRadius: '10px',
+                padding: '14px',
+                marginBottom: '14px',
               }}>
-                <p style={{ fontSize: '10px', fontWeight: '600', color: '#6b7280', margin: '0 0 8px 0' }}>
+                <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', margin: '0 0 10px 0' }}>
                   DISCRIMINAÇÃO DE VALORES
                 </p>
                 {formData.price_breakdown.filter(item => item.name && item.value).map((item, index) => {
@@ -923,13 +907,13 @@ export function InquiryModal({
                     <div key={index} style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      padding: '4px 0',
+                      padding: '6px 0',
                       borderBottom: index < formData.price_breakdown.filter(i => i.name && i.value).length - 1 ? '1px solid #e5e7eb' : 'none',
                     }}>
-                      <span style={{ fontSize: '11px', color: '#374151' }}>
+                      <span style={{ fontSize: '15px', color: '#374151' }}>
                         {item.name} {parseFloat(item.quantity) > 1 ? `(x${item.quantity})` : ''}
                       </span>
-                      <span style={{ fontSize: '11px', fontWeight: '600', color: '#374151' }}>
+                      <span style={{ fontSize: '15px', fontWeight: '600', color: '#374151' }}>
                         R$ {itemTotal.toFixed(2)}
                       </span>
                     </div>
@@ -943,22 +927,22 @@ export function InquiryModal({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-end',
-              paddingTop: '10px',
+              paddingTop: '14px',
               borderTop: '2px solid #e5e7eb',
-              marginBottom: '12px',
+              marginBottom: '16px',
             }}>
               <div>
-                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
                   {calculateTotalNights} noite{calculateTotalNights !== 1 ? 's' : ''}
                 </p>
-                <p style={{ fontSize: '12px', color: '#374151', margin: '2px 0 0 0' }}>
+                <p style={{ fontSize: '16px', color: '#374151', margin: '4px 0 0 0' }}>
                   Média: <span style={{ fontWeight: '600' }}>R$ {averagePerNight.toFixed(2)}</span> /noite
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '11px', color: '#6b7280', margin: '0' }}>TOTAL</p>
+                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>TOTAL</p>
                 <p style={{
-                  fontSize: '24px',
+                  fontSize: '32px',
                   fontWeight: '700',
                   color: '#059669',
                   margin: '0',
@@ -972,71 +956,91 @@ export function InquiryModal({
             <div style={{
               marginTop: 'auto',
               backgroundColor: '#f9fafb',
-              borderRadius: '10px',
-              padding: '12px',
+              borderRadius: '12px',
+              padding: '16px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
+              alignItems: 'flex-start',
+              gap: '16px',
             }}>
-              {/* Photo Mosaic - 1:1 square grid, Facebook style */}
-              {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (
-                <div style={{
-                  width: '100px',
-                  height: '100px',
-                  flexShrink: 0,
-                  display: 'grid',
-                  gridTemplateColumns: selectedUnit.album_photos.length === 1 ? '1fr' : '1fr 1fr',
-                  gridTemplateRows: selectedUnit.album_photos.length <= 2 ? '1fr' : '1fr 1fr',
-                  gap: '2px',
-                  borderRadius: '8px',
-                  overflow: 'hidden',
-                }}>
-                  {selectedUnit.album_photos.slice(0, 4).map((photo, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        overflow: 'hidden',
-                        position: 'relative',
-                      }}
-                    >
-                      <img
-                        src={photo}
-                        alt={`${selectedUnit.name} - Foto ${index + 1}`}
+              {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
+              {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (() => {
+                const photoCount = selectedUnit.album_photos.length;
+                // Determine grid layout based on photo count
+                // 1 photo: 1x1, 2 photos: 2x1, 3 photos: 3x1, 4 photos: 2x2
+                // Photo grid layout configuration based on photo count
+                // 1 photo: 1x1, 2 photos: 2x1, 3 photos: 3x1, 4 photos: 2x2, 5-6 photos: 3x2, 7-9 photos: 3x3
+                const gridLayouts = {
+                  1: { columns: 1, rows: 1, maxPhotos: 1 },
+                  2: { columns: 2, rows: 1, maxPhotos: 2 },
+                  3: { columns: 3, rows: 1, maxPhotos: 3 },
+                  4: { columns: 2, rows: 2, maxPhotos: 4 },
+                  5: { columns: 3, rows: 2, maxPhotos: 6 },
+                  6: { columns: 3, rows: 2, maxPhotos: 6 },
+                };
+                const defaultLayout = { columns: 3, rows: 3, maxPhotos: 9 };
+                const { columns, rows, maxPhotos } = gridLayouts[photoCount] || defaultLayout;
+                
+                // Mosaic height based on number of rows
+                const mosaicHeights = { 1: '50px', 2: '100px', 3: '150px' };
+                const mosaicHeight = mosaicHeights[rows] || '150px';
+                
+                return (
+                  <div style={{
+                    width: '150px',
+                    height: mosaicHeight,
+                    flexShrink: 0,
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                    gridTemplateRows: `repeat(${rows}, 1fr)`,
+                    gap: '3px',
+                    borderRadius: '10px',
+                    overflow: 'hidden',
+                  }}>
+                    {selectedUnit.album_photos.slice(0, maxPhotos).map((photo, index) => (
+                      <div
+                        key={index}
                         style={{
                           width: '100%',
                           height: '100%',
-                          objectFit: 'cover',
+                          overflow: 'hidden',
+                          position: 'relative',
                         }}
-                        crossOrigin="anonymous"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+                      >
+                        <img
+                          src={photo}
+                          alt={`${selectedUnit.name} - Foto ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
+                          crossOrigin="anonymous"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
               
               {/* Chalet Name and Description */}
-              <div style={{ flex: '1', overflow: 'hidden' }}>
+              <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{
-                  fontSize: '14px',
+                  fontSize: '18px',
                   fontWeight: '700',
                   color: '#1f2937',
-                  margin: '0 0 4px 0',
+                  margin: '0 0 6px 0',
                 }}>
                   {selectedUnit?.name || 'Acomodação'}
                 </h2>
                 {selectedUnit?.short_description && (
                   <p style={{
-                    fontSize: '11px',
+                    fontSize: '14px',
                     color: '#6b7280',
                     margin: '0',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: '2',
-                    WebkitBoxOrient: 'vertical',
-                    lineHeight: '1.4',
+                    lineHeight: '1.5',
+                    wordWrap: 'break-word',
+                    whiteSpace: 'pre-wrap',
+                    overflow: 'visible',
                   }}>
                     {selectedUnit.short_description}
                   </p>
