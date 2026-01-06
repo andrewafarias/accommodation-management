@@ -107,7 +107,7 @@ export function AccommodationModal({
         short_description: formData.short_description || '',
         long_description: formData.long_description || '',
         rules: formData.rules || '',
-        album_photos: formData.album_photos || [],
+        album_photos: (formData.album_photos || []).filter(url => url.trim() !== ''),
       };
 
       let response;
@@ -392,7 +392,7 @@ export function AccommodationModal({
               name="album_photos"
               value={formData.album_photos.join('\n')}
               onChange={(e) => {
-                const urls = e.target.value.split('\n').filter(url => url.trim() !== '');
+                const urls = e.target.value.split('\n');
                 setFormData(prev => ({ ...prev, album_photos: urls }));
               }}
               rows={3}
