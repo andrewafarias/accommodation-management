@@ -750,7 +750,7 @@ export function InquiryModal({
         ref={quoteTemplateRef}
         style={{
           width: '1080px',
-          minHeight: '710px',
+          minHeight: '100px',
           display: 'none',
           position: 'fixed',
           left: '-9999px',
