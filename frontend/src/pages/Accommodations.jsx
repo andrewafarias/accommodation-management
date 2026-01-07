@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { ImportExportButtons } from '../components/ui/ImportExportButtons';
 import { AccommodationList } from '../components/accommodations/AccommodationList';
 import { AccommodationModal } from '../components/accommodations/AccommodationModal';
+import { ImageManagementModal } from '../components/accommodations/ImageManagementModal';
 import { Home, Plus } from 'lucide-react';
 import api from '../services/api';
 
@@ -11,7 +12,9 @@ export function Accommodations() {
   const [accommodations, setAccommodations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [editingAccommodation, setEditingAccommodation] = useState(null);
+  const [managingImagesAccommodation, setManagingImagesAccommodation] = useState(null);
 
   // Fetch accommodations on mount
   useEffect(() => {
@@ -49,6 +52,12 @@ export function Accommodations() {
     await fetchAccommodations();
     setIsModalOpen(false);
     setEditingAccommodation(null);
+  };
+
+  // Handle manage images
+  const handleManageImages = (accommodation) => {
+    setManagingImagesAccommodation(accommodation);
+    setIsImageModalOpen(true);
   };
 
   // Handle delete
@@ -159,6 +168,7 @@ export function Accommodations() {
             accommodations={accommodations}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onManageImages={handleManageImages}
             onReorder={handleReorder}
             loading={loading}
           />
@@ -171,6 +181,17 @@ export function Accommodations() {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSave}
         accommodation={editingAccommodation}
+      />
+
+      {/* Image Management Modal */}
+      <ImageManagementModal
+        isOpen={isImageModalOpen}
+        onClose={() => {
+          setIsImageModalOpen(false);
+          setManagingImagesAccommodation(null);
+          fetchAccommodations(); // Refresh to get updated images
+        }}
+        accommodationUnit={managingImagesAccommodation}
       />
     </div>
   );

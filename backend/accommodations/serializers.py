@@ -1,5 +1,36 @@
 from rest_framework import serializers
-from .models import AccommodationUnit, DatePriceOverride, DatePackage
+from .models import AccommodationUnit, DatePriceOverride, DatePackage, UnitImage
+
+
+class UnitImageSerializer(serializers.ModelSerializer):
+    """
+    Serializer for UnitImage model.
+    Handles image file uploads.
+    """
+    image_url = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = UnitImage
+        fields = [
+            'id',
+            'accommodation_unit',
+            'image',
+            'image_url',
+            'order',
+            'caption',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'image_url']
+    
+    def get_image_url(self, obj):
+        """Return the full URL for the image."""
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
 
 
 class AccommodationUnitSerializer(serializers.ModelSerializer):
@@ -7,6 +38,7 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
     Serializador para modelo AccommodationUnit.
     Inclui todos os campos para operações de leitura e escrita.
     """
+    images = UnitImageSerializer(many=True, read_only=True)
     
     class Meta:
         model = AccommodationUnit
@@ -28,11 +60,12 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'long_description',
             'rules',
             'album_photos',
+            'images',
             'location',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'images']
 
 
 class DatePriceOverrideSerializer(serializers.ModelSerializer):
