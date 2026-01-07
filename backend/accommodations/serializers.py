@@ -61,6 +61,7 @@ class AccommodationUnitSerializer(serializers.ModelSerializer):
             'rules',
             'album_photos',
             'images',
+            'location',
             'created_at',
             'updated_at',
         ]

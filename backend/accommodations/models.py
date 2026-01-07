@@ -113,6 +113,13 @@ class AccommodationUnit(models.Model):
         verbose_name="Álbum de Fotos",
         help_text="Lista de URLs de fotos da unidade"
     )
+    location = models.CharField(
+        max_length=500,
+        blank=True,
+        default='',
+        verbose_name="Localização",
+        help_text="Endereço ou coordenadas da unidade para exibição no Google Maps"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
