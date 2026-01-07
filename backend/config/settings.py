@@ -187,9 +187,32 @@ REST_FRAMEWORK = {
 
 # Static files production settings
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# Add this line to prevent the build from failing on missing files
-WHITENOISE_MANIFEST_STRICT = False
+
+# Custom storage class to handle missing files gracefully during collectstatic
+from django.contrib.staticfiles.storage import ManifestStaticFilesStorage
+
+class NonStrictManifestStaticFilesStorage(ManifestStaticFilesStorage):
+    """
+    Custom storage backend that doesn't fail on missing files during post-processing.
+    This prevents collectstatic from failing when CSS files reference other files
+    that have already been hashed or don't exist.
+    """
+    manifest_strict = False
+    
+    def hashed_name(self, name, content=None, filename=None):
+        """
+        Override to prevent failures when files don't exist.
+        Catches ValueError and returns the original name if manifest_strict is False.
+        """
+        try:
+            return super().hashed_name(name, content, filename)
+        except ValueError as e:
+            # If the file could not be found and manifest_strict is False, return the original name
+            if "could not be found" in str(e) and not self.manifest_strict:
+                return name
+            raise
+
+STATICFILES_STORAGE = 'config.settings.NonStrictManifestStaticFilesStorage'
 
 
 # Security settings
