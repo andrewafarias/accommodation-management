@@ -18,10 +18,10 @@ class SettingsConfigurationTest(TestCase):
         frontend_dist_path = dirs[0]
         self.assertIsInstance(frontend_dist_path, Path, "DIRS path should be a Path object")
         
-        # Check that the path ends with frontend/dist
-        self.assertTrue(
-            str(frontend_dist_path).endswith('frontend/dist') or 
-            str(frontend_dist_path).endswith('frontend\\dist'),
+        # Check that the path ends with frontend/dist (cross-platform)
+        self.assertEqual(
+            frontend_dist_path.parts[-2:],
+            ('frontend', 'dist'),
             f"DIRS path should point to frontend/dist, got: {frontend_dist_path}"
         )
     
@@ -34,10 +34,10 @@ class SettingsConfigurationTest(TestCase):
         frontend_dist_path = staticfiles_dirs[0]
         self.assertIsInstance(frontend_dist_path, Path, "STATICFILES_DIRS path should be a Path object")
         
-        # Check that the path ends with frontend/dist
-        self.assertTrue(
-            str(frontend_dist_path).endswith('frontend/dist') or 
-            str(frontend_dist_path).endswith('frontend\\dist'),
+        # Check that the path ends with frontend/dist (cross-platform)
+        self.assertEqual(
+            frontend_dist_path.parts[-2:],
+            ('frontend', 'dist'),
             f"STATICFILES_DIRS path should point to frontend/dist, got: {frontend_dist_path}"
         )
     
