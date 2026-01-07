@@ -135,6 +135,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
+# Additional locations for static files
+STATICFILES_DIRS = [
+    BASE_DIR.parent / 'frontend' / 'dist',
+]
+
 # Media files (uploads)
 MEDIA_URL = '/media/'
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
