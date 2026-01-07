@@ -962,8 +962,15 @@ export function InquiryModal({
               gap: '20px',
             }}>
               {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
-              {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (() => {
-                const photoCount = selectedUnit.album_photos.length;
+              {(() => {
+                // Support both album_photos (URLs) and images (uploaded files)
+                const photos = selectedUnit?.images && selectedUnit.images.length > 0
+                  ? selectedUnit.images.map(img => img.image_url)
+                  : (selectedUnit?.album_photos || []);
+                
+                if (!photos || photos.length === 0) return null;
+                
+                const photoCount = photos.length;
                 // Determine grid layout based on photo count
                 // 1 photo: 1x1, 2 photos: 2x1, 3 photos: 3x1, 4 photos: 2x2
                 // Photo grid layout configuration based on photo count
@@ -995,7 +1002,7 @@ export function InquiryModal({
                     borderRadius: '10px',
                     overflow: 'hidden',
                   }}>
-                    {selectedUnit.album_photos.slice(0, maxPhotos).map((photo, index) => (
+                    {photos.slice(0, maxPhotos).map((photo, index) => (
                       <div
                         key={index}
                         style={{

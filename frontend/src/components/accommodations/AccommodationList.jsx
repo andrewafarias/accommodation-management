@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
-import { Search, Edit, Trash2, GripVertical } from 'lucide-react';
+import { Search, Edit, Trash2, GripVertical, Images } from 'lucide-react';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import { Button } from '../ui/Button';
@@ -13,7 +13,7 @@ const ItemType = {
  * 
  * A draggable table row for accommodations
  */
-function DraggableRow({ accommodation, index, moveRow, onEdit, onDelete, formatPrice, isSearching, onDragEnd }) {
+function DraggableRow({ accommodation, index, moveRow, onEdit, onDelete, onManageImages, formatPrice, isSearching, onDragEnd }) {
   const ref = useRef(null);
 
   const [{ isDragging }, drag, preview] = useDrag({
@@ -97,6 +97,15 @@ function DraggableRow({ accommodation, index, moveRow, onEdit, onDelete, formatP
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => onManageImages(accommodation)}
+            className="text-purple-600 hover:text-purple-900"
+            title="Gerenciar Imagens"
+          >
+            <Images className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => onEdit(accommodation)}
             className="text-blue-600 hover:text-blue-900"
           >
@@ -126,7 +135,7 @@ function DraggableRow({ accommodation, index, moveRow, onEdit, onDelete, formatP
  * - Drag-and-drop reordering (disabled during search)
  * - Edit and Delete actions
  */
-export function AccommodationList({ accommodations = [], onEdit, onDelete, onReorder, loading }) {
+export function AccommodationList({ accommodations = [], onEdit, onDelete, onManageImages, onReorder, loading }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [localAccommodations, setLocalAccommodations] = useState(accommodations);
 
@@ -241,6 +250,7 @@ export function AccommodationList({ accommodations = [], onEdit, onDelete, onReo
                     moveRow={moveRow}
                     onEdit={onEdit}
                     onDelete={onDelete}
+                    onManageImages={onManageImages}
                     formatPrice={formatPrice}
                     isSearching={!!searchTerm}
                     onDragEnd={handleDrop}
