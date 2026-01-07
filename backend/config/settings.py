@@ -170,7 +170,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # Add production origins from environment variable (comma separated)
 if os.environ.get('CORS_ALLOWED_ORIGINS'):
-    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in os.environ.get('CORS_ALLOWED_ORIGINS').split(',') if origin.strip()]
+    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if origin.strip()]
 
 # Django REST Framework settings
 REST_FRAMEWORK = {
