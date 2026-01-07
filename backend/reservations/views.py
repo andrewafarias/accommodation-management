@@ -9,6 +9,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 import json
 import csv
+import re
 from io import StringIO, BytesIO
 from urllib.parse import quote
 from datetime import datetime
@@ -734,13 +735,12 @@ class ReservationViewSet(viewsets.ModelViewSet):
             else:
                 # Regular text - process inline formatting
                 processed_line = stripped
-                # Bold: **text** or __text__
-                import re
+                # Bold: **text** or __text__ (process before italic to avoid conflicts)
                 processed_line = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', processed_line)
                 processed_line = re.sub(r'__(.+?)__', r'<b>\1</b>', processed_line)
-                # Italic: *text* or _text_
-                processed_line = re.sub(r'\*(.+?)\*', r'<i>\1</i>', processed_line)
-                processed_line = re.sub(r'_(.+?)_', r'<i>\1</i>', processed_line)
+                # Italic: *text* or _text_ (use negative lookbehind/lookahead to avoid matching bold markers)
+                processed_line = re.sub(r'(?<!\*)\*([^*]+)\*(?!\*)', r'<i>\1</i>', processed_line)
+                processed_line = re.sub(r'(?<!_)_([^_]+)_(?!_)', r'<i>\1</i>', processed_line)
                 
                 current_paragraph.append(processed_line)
         
