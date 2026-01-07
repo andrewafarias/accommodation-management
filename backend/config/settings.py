@@ -72,7 +72,10 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [
+            BASE_DIR / 'templates',
+            BASE_DIR.parent / 'frontend/dist',
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -136,6 +139,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 # Additional locations for static files
+# Directory will be created when the frontend is built
 STATICFILES_DIRS = [
     BASE_DIR.parent / 'frontend' / 'dist',
 ]
