@@ -325,6 +325,87 @@ print(f"Created reservation: {reservation['id']}")
 
 ---
 
+### 6. Unit Images API
+
+**Endpoint:** `/api/unit-images/`
+
+#### List images for a unit
+```bash
+GET /api/unit-images/?accommodation_unit=1
+```
+
+#### Upload images for a unit
+```bash
+POST /api/unit-images/bulk_upload/
+Content-Type: multipart/form-data
+
+Form data:
+- accommodation_unit: 1
+- images: [file1.jpg, file2.jpg, file3.jpg]
+- captions: "Photo 1, Photo 2, Photo 3" (optional, comma-separated)
+```
+
+Example using Python:
+```python
+import requests
+
+files = [
+    ('images', open('photo1.jpg', 'rb')),
+    ('images', open('photo2.jpg', 'rb')),
+]
+
+data = {
+    'accommodation_unit': 1,
+    'captions': 'Living room, Kitchen'
+}
+
+response = requests.post(
+    'http://localhost:8000/api/unit-images/bulk_upload/',
+    files=files,
+    data=data,
+    headers={'Authorization': f'Token {your_token}'}
+)
+
+images = response.json()
+print(f"Uploaded {images['created']} images")
+```
+
+#### Update image caption or order
+```bash
+PATCH /api/unit-images/1/
+Content-Type: application/json
+
+{
+  "caption": "Updated caption",
+  "order": 2
+}
+```
+
+#### Delete an image
+```bash
+DELETE /api/unit-images/1/
+```
+
+#### Reorder images
+```bash
+POST /api/unit-images/reorder/
+Content-Type: application/json
+
+{
+  "image_ids": [3, 1, 2]  // Order: image 3 first, then 1, then 2
+}
+```
+
+Example response:
+```json
+{
+  "updated": 3,
+  "message": "Successfully updated order for 3 images"
+}
+```
+
+---
+
 ## Error Handling
 
 The API returns appropriate HTTP status codes:
