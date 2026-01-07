@@ -15,7 +15,7 @@ The `start_server.sh` script automates the entire deployment process:
 The script performs the following steps in order:
 
 1. **Build Frontend** - Navigates to `frontend/` and runs:
-   - `npm install` - Installs all Node.js dependencies
+   - `npm ci` (or `npm install` if no package-lock.json) - Installs all Node.js dependencies
    - `npm run build` - Creates production build in `frontend/dist/`
 
 2. **Install Backend Dependencies** - Navigates to `backend/` and runs:
@@ -46,6 +46,13 @@ The script performs the following steps in order:
   USE_GUNICORN=false ./start_server.sh
   ```
 
+- **`GUNICORN_WORKERS`** (default: auto-calculated as `2 * CPU_CORES + 1`) - Number of Gunicorn worker processes
+  ```bash
+  GUNICORN_WORKERS=4 ./start_server.sh
+  ```
+
+- **`VIRTUAL_ENV`** - If set, indicates a virtual environment is active. The script will warn if not using a virtualenv.
+
 ### Other Environment Variables
 
 The application also respects these Django environment variables:
@@ -58,6 +65,24 @@ The application also respects these Django environment variables:
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` - Cloudinary configuration for media storage
 
 ## Examples
+
+### Using Virtual Environment (Recommended)
+
+Create and activate a virtual environment before running the script:
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate it (Linux/Mac)
+source venv/bin/activate
+
+# Activate it (Windows)
+# venv\Scripts\activate
+
+# Run the script
+./start_server.sh
+```
 
 ### Development Mode
 
@@ -97,9 +122,13 @@ Then run:
 If you prefer to run the steps manually:
 
 ```bash
+# 0. Set up virtual environment (recommended)
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
 # 1. Build frontend
 cd frontend
-npm install
+npm ci  # or npm install if no package-lock.json
 npm run build
 
 # 2. Install backend dependencies
@@ -113,8 +142,14 @@ python manage.py collectstatic --noinput
 python manage.py migrate
 
 # 5. Start server (choose one)
-# Production with Gunicorn:
-gunicorn config.wsgi:application --bind 0.0.0.0:8000
+# Production with Gunicorn (with optimized settings):
+gunicorn config.wsgi:application \
+  --bind 0.0.0.0:8000 \
+  --workers 4 \
+  --worker-class sync \
+  --timeout 120 \
+  --access-logfile - \
+  --error-logfile -
 
 # Development with Django:
 python manage.py runserver 0.0.0.0:8000
@@ -124,9 +159,10 @@ python manage.py runserver 0.0.0.0:8000
 
 Before running the script, ensure you have:
 
-- **Node.js** (v16+) and **npm** installed
-- **Python** (3.10+) and **pip** installed
+- **Node.js** (v18+) and **npm** installed
+- **Python** (3.11+) and **pip** installed (Python 3.8 reached EOL in 2024)
 - **Git** (if cloning from repository)
+- **Virtual Environment** (recommended): Create and activate a Python virtual environment before running the script
 
 ## Troubleshooting
 
