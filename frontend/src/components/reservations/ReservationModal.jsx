@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
 import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
@@ -617,6 +617,48 @@ export function ReservationModal({
     }
   };
 
+  // Generate and download reservation document (PDF)
+  const handleGenerateDocument = async () => {
+    if (!reservation) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Request PDF document from API
+      const response = await api.get(`reservations/${reservation.id}/generate_document/`, {
+        responseType: 'blob'
+      });
+      
+      // Create blob URL and trigger download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Extract filename from Content-Disposition header if available
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = `reserva_${reservation.id}.pdf`;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
+        if (filenameMatch) {
+          filename = filenameMatch[1];
+        }
+      }
+      
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error generating document:', err);
+      setError('Erro ao gerar documento. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -1140,17 +1182,29 @@ export function ReservationModal({
 
           {/* Actions */}
           <div className="flex justify-between pt-4">
-            {/* Delete button (only shown when editing) */}
+            {/* Left side buttons (only shown when editing) */}
             {reservation && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleDelete}
-                disabled={loading}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                Excluir
-              </Button>
+              <div className="flex space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleDelete}
+                  disabled={loading}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  Excluir
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleGenerateDocument}
+                  disabled={loading}
+                  className="flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Gerar Documento
+                </Button>
+              </div>
             )}
             
             <div className={`flex space-x-3 ${reservation ? 'ml-auto' : 'ml-auto'}`}>
