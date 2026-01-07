@@ -25,9 +25,11 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import mm, cm
 from reportlab.platypus import (
     SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, 
-    Image, HRFlowable, KeepTogether
+    Image, HRFlowable, KeepTogether, PageBreak
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
+from reportlab.pdfgen import canvas
+import base64
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -337,288 +339,349 @@ class ReservationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'])
     def generate_document(self, request, pk=None):
         """
-        Generate a professional PDF document for a reservation.
+        Generate a modern Airbnb-style PDF document for a reservation.
+        
+        Query parameters:
+        - preview=true: Returns JSON with base64-encoded PDF for preview
+        - preview=false or not set: Returns PDF file for download (default)
         
         The document includes:
-        - Reservation details (check-in/out dates and times, guests, price breakdown)
+        - Hero section with unit name and photos
+        - Reservation details (check-in/out, guests, pricing)
         - Client information
-        - Accommodation images
-        - Accommodation rules
-        - Long description (markdown formatted)
-        - Location with Google Maps link
-        
-        Note: Payment information is NOT included as per requirements.
+        - Location with maps link
+        - Accommodation description and rules
+        - Unit images displayed in grid
         """
         reservation = self.get_object()
         unit = reservation.accommodation_unit
         client = reservation.client
         
+        # Check if preview mode is requested
+        preview_mode = request.query_params.get('preview', 'false').lower() == 'true'
+        
         # Create buffer for PDF
         buffer = BytesIO()
         
-        # Create PDF document
+        # Create PDF document with narrower margins for more space
         doc = SimpleDocTemplate(
             buffer,
             pagesize=A4,
-            rightMargin=2*cm,
-            leftMargin=2*cm,
-            topMargin=2*cm,
-            bottomMargin=2*cm
+            rightMargin=1.5*cm,
+            leftMargin=1.5*cm,
+            topMargin=1.5*cm,
+            bottomMargin=1.5*cm
         )
         
-        # Define styles
+        # Define modern styles
         styles = getSampleStyleSheet()
         
-        # Custom styles
-        title_style = ParagraphStyle(
-            'CustomTitle',
+        # Hero title style (accommodation name)
+        hero_title = ParagraphStyle(
+            'HeroTitle',
             parent=styles['Heading1'],
-            fontSize=24,
-            spaceAfter=12,
+            fontSize=28,
+            leading=34,
+            spaceAfter=8,
             alignment=TA_CENTER,
-            textColor=colors.HexColor('#1a365d'),
+            textColor=colors.HexColor('#1a202c'),
             fontName='Helvetica-Bold'
         )
         
-        subtitle_style = ParagraphStyle(
-            'CustomSubtitle',
+        # Tagline style
+        tagline_style = ParagraphStyle(
+            'Tagline',
+            parent=styles['Normal'],
+            fontSize=12,
+            spaceAfter=16,
+            alignment=TA_CENTER,
+            textColor=colors.HexColor('#718096'),
+            fontName='Helvetica'
+        )
+        
+        # Section header style
+        section_header = ParagraphStyle(
+            'SectionHeader',
             parent=styles['Heading2'],
-            fontSize=14,
-            spaceAfter=8,
+            fontSize=16,
+            leading=20,
+            spaceAfter=10,
             spaceBefore=16,
             textColor=colors.HexColor('#2d3748'),
             fontName='Helvetica-Bold'
         )
         
-        section_style = ParagraphStyle(
-            'SectionStyle',
-            parent=styles['Heading3'],
-            fontSize=12,
+        # Body text style
+        body_text = ParagraphStyle(
+            'BodyText',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=15,
             spaceAfter=6,
-            spaceBefore=12,
-            textColor=colors.HexColor('#4a5568'),
-            fontName='Helvetica-Bold'
-        )
-        
-        body_style = ParagraphStyle(
-            'BodyStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            spaceAfter=4,
             alignment=TA_JUSTIFY,
-            leading=14
+            textColor=colors.HexColor('#4a5568')
         )
         
-        info_style = ParagraphStyle(
-            'InfoStyle',
+        # Highlight box style
+        highlight_style = ParagraphStyle(
+            'Highlight',
             parent=styles['Normal'],
-            fontSize=10,
-            spaceAfter=2,
-            leading=14
+            fontSize=11,
+            leading=16,
+            spaceAfter=4,
+            textColor=colors.HexColor('#2d3748'),
+            fontName='Helvetica'
         )
         
-        small_style = ParagraphStyle(
-            'SmallStyle',
+        # Price style
+        price_style = ParagraphStyle(
+            'PriceStyle',
+            parent=styles['Normal'],
+            fontSize=20,
+            leading=24,
+            textColor=colors.HexColor('#059669'),
+            fontName='Helvetica-Bold',
+            alignment=TA_RIGHT
+        )
+        
+        # Small text style
+        small_text = ParagraphStyle(
+            'SmallText',
             parent=styles['Normal'],
             fontSize=8,
-            textColor=colors.HexColor('#718096'),
+            textColor=colors.HexColor('#a0aec0'),
             alignment=TA_CENTER
-        )
-        
-        link_style = ParagraphStyle(
-            'LinkStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#3182ce'),
-            spaceAfter=4
         )
         
         # Build document content
         content = []
         
-        # Header with accommodation name
-        content.append(Paragraph(f"Comprovante de Reserva", title_style))
-        content.append(Paragraph(unit.name, subtitle_style))
-        content.append(Spacer(1, 8*mm))
+        # ============= HERO SECTION =============
+        # Accommodation name as hero
+        content.append(Paragraph(unit.name, hero_title))
         
-        # Horizontal line
-        content.append(HRFlowable(
-            width="100%",
-            thickness=1,
-            color=colors.HexColor('#e2e8f0'),
-            spaceBefore=4,
-            spaceAfter=12
-        ))
+        # Short description if available
+        if unit.short_description:
+            content.append(Paragraph(unit.short_description, tagline_style))
+        else:
+            content.append(Paragraph("Comprovante de Reserva", tagline_style))
         
-        # Reservation Information Section
-        content.append(Paragraph("📅 Informações da Reserva", section_style))
+        content.append(Spacer(1, 6*mm))
+        
+        # ============= IMAGES GRID =============
+        # Display unit images in a grid (prefer uploaded images over album_photos)
+        unit_images = []
+        if hasattr(unit, 'images') and unit.images.exists():
+            # Use uploaded images
+            for img in unit.images.all()[:6]:  # Limit to 6 images
+                try:
+                    # Get the absolute path to the image file
+                    image_path = img.image.path
+                    unit_images.append(image_path)
+                except Exception as e:
+                    # Skip if image not found or path issue
+                    continue
+        
+        # Create image grid if we have images
+        if unit_images:
+            # Calculate image dimensions for grid (2x3 or 3x2)
+            available_width = 17*cm  # A4 width minus margins
+            num_cols = min(3, len(unit_images))
+            num_rows = (len(unit_images) + num_cols - 1) // num_cols  # Ceiling division
+            
+            img_width = (available_width - (num_cols - 1) * 3) / num_cols
+            img_height = img_width * 0.67  # 3:2 aspect ratio
+            
+            # Create image grid
+            image_rows = []
+            for i in range(0, len(unit_images), num_cols):
+                row_images = []
+                for j in range(num_cols):
+                    idx = i + j
+                    if idx < len(unit_images):
+                        try:
+                            img = Image(unit_images[idx], width=img_width, height=img_height)
+                            row_images.append(img)
+                        except:
+                            # Skip if image can't be loaded
+                            pass
+                
+                if row_images:
+                    # Pad row with empty cells if needed
+                    while len(row_images) < num_cols:
+                        row_images.append('')
+                    image_rows.append(row_images)
+            
+            if image_rows:
+                image_table = Table(image_rows, colWidths=[img_width] * num_cols)
+                image_table.setStyle(TableStyle([
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('LEFTPADDING', (0, 0), (-1, -1), 1.5),
+                    ('RIGHTPADDING', (0, 0), (-1, -1), 1.5),
+                    ('TOPPADDING', (0, 0), (-1, -1), 1.5),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 1.5),
+                ]))
+                content.append(image_table)
+                content.append(Spacer(1, 8*mm))
+        
+        # ============= RESERVATION DETAILS BOX =============
+        content.append(Paragraph("Detalhes da Reserva", section_header))
         
         # Format dates
         check_in_date = reservation.check_in.strftime('%d/%m/%Y')
         check_in_time = reservation.check_in.strftime('%H:%M')
         check_out_date = reservation.check_out.strftime('%d/%m/%Y')
         check_out_time = reservation.check_out.strftime('%H:%M')
-        
-        # Calculate nights
         nights = (reservation.check_out.date() - reservation.check_in.date()).days
         
-        # Reservation details table
-        reservation_data = [
-            ['Check-in:', f'{check_in_date} às {check_in_time}'],
-            ['Check-out:', f'{check_out_date} às {check_out_time}'],
-            ['Noites:', f'{nights}'],
-            ['Adultos:', str(reservation.guest_count_adults)],
-            ['Crianças:', str(reservation.guest_count_children)],
-            ['Animais de estimação:', str(reservation.pet_count)],
+        # Create dates and guests info in a highlighted box
+        reservation_box_data = [
+            ['<b>Check-in</b>', '<b>Check-out</b>', '<b>Hóspedes</b>'],
+            [
+                f'{check_in_date}<br/>{check_in_time}',
+                f'{check_out_date}<br/>{check_out_time}',
+                f'{reservation.guest_count_adults} adulto(s)<br/>{reservation.guest_count_children} criança(s)'
+            ]
         ]
         
-        # Calculate average price per night if total_price is set
-        if reservation.total_price and nights > 0:
-            avg_price = reservation.total_price / nights
-            reservation_data.append(['Preço médio/noite:', f'R$ {avg_price:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')])
-            reservation_data.append(['Valor Total:', f'R$ {reservation.total_price:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')])
+        if reservation.pet_count > 0:
+            reservation_box_data[0].append('<b>Pets</b>')
+            reservation_box_data[1].append(f'{reservation.pet_count}')
         
-        res_table = Table(reservation_data, colWidths=[4*cm, 10*cm])
-        res_table.setStyle(TableStyle([
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        res_box_table = Table(reservation_box_data, colWidths=[4.5*cm] * len(reservation_box_data[0]))
+        res_box_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f7fafc')),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor('#ffffff')),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#4a5568')),
-            ('TEXTCOLOR', (1, 0), (1, -1), colors.HexColor('#2d3748')),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
-        content.append(res_table)
-        
-        # Price breakdown (if available)
-        if reservation.price_breakdown:
-            content.append(Spacer(1, 4*mm))
-            content.append(Paragraph("Discriminação de Valores:", section_style))
-            
-            breakdown_data = [['Item', 'Qtd', 'Valor Unit.', 'Total']]
-            total_calculated = 0
-            
-            for item in reservation.price_breakdown:
-                name = item.get('name', '')
-                value = float(item.get('value', 0))
-                quantity = float(item.get('quantity', 1))
-                item_total = value * quantity
-                total_calculated += item_total
-                
-                breakdown_data.append([
-                    name,
-                    str(int(quantity)) if quantity == int(quantity) else str(quantity),
-                    f'R$ {value:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'),
-                    f'R$ {item_total:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
-                ])
-            
-            # Add total row
-            breakdown_data.append(['', '', 'Total:', f'R$ {total_calculated:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')])
-            
-            breakdown_table = Table(breakdown_data, colWidths=[6*cm, 2*cm, 3*cm, 3*cm])
-            breakdown_table.setStyle(TableStyle([
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
-                ('FONTNAME', (2, -1), (-1, -1), 'Helvetica-Bold'),
-                ('FONTSIZE', (0, 0), (-1, -1), 9),
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f7fafc')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#4a5568')),
-                ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-                ('ALIGN', (2, 0), (-1, -1), 'RIGHT'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('GRID', (0, 0), (-1, -2), 0.5, colors.HexColor('#e2e8f0')),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-                ('TOPPADDING', (0, 0), (-1, -1), 6),
-                ('LINEABOVE', (0, -1), (-1, -1), 1, colors.HexColor('#4a5568')),
-            ]))
-            content.append(breakdown_table)
-        
+        content.append(res_box_table)
         content.append(Spacer(1, 6*mm))
         
-        # Client Information Section
-        content.append(Paragraph("👤 Dados do Cliente", section_style))
+        # ============= PRICING SECTION =============
+        if reservation.total_price:
+            content.append(Paragraph("Valores", section_header))
+            
+            # Price breakdown if available
+            if reservation.price_breakdown:
+                breakdown_data = []
+                total_calculated = 0
+                
+                for item in reservation.price_breakdown:
+                    name = item.get('name', '')
+                    value = float(item.get('value', 0))
+                    quantity = float(item.get('quantity', 1))
+                    item_total = value * quantity
+                    total_calculated += item_total
+                    
+                    qty_display = f"x{int(quantity)}" if quantity > 1 else ""
+                    breakdown_data.append([
+                        name,
+                        qty_display,
+                        f'R$ {item_total:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
+                    ])
+                
+                breakdown_table = Table(breakdown_data, colWidths=[10*cm, 2*cm, 5*cm])
+                breakdown_table.setStyle(TableStyle([
+                    ('FONTSIZE', (0, 0), (-1, -1), 10),
+                    ('ALIGN', (0, 0), (1, -1), 'LEFT'),
+                    ('ALIGN', (2, 0), (2, -1), 'RIGHT'),
+                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                    ('TOPPADDING', (0, 0), (-1, -1), 4),
+                    ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                    ('LINEBELOW', (0, -1), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+                ]))
+                content.append(breakdown_table)
+            
+            # Total price display
+            avg_price = reservation.total_price / nights if nights > 0 else reservation.total_price
+            price_data = [
+                ['', f'{nights} noite(s) • Média R$ {avg_price:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'), ''],
+                ['', '<b>Total</b>', f'<b>R$ {reservation.total_price:,.2f}</b>'.replace(',', 'X').replace('.', ',').replace('X', '.')]
+            ]
+            
+            price_table = Table(price_data, colWidths=[10*cm, 3*cm, 4*cm])
+            price_table.setStyle(TableStyle([
+                ('FONTSIZE', (0, 0), (-1, 0), 9),
+                ('FONTSIZE', (0, 1), (-1, 1), 14),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#718096')),
+                ('TEXTCOLOR', (2, 1), (2, 1), colors.HexColor('#059669')),
+                ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ]))
+            content.append(price_table)
+            content.append(Spacer(1, 8*mm))
         
-        client_data = [
+        # ============= CLIENT INFORMATION =============
+        content.append(Paragraph("Informações do Hóspede", section_header))
+        
+        client_info = [
             ['Nome:', client.full_name],
         ]
         if client.cpf:
-            client_data.append(['CPF:', client.cpf])
-        client_data.append(['Telefone:', client.phone])
+            client_info.append(['CPF:', client.cpf])
+        if client.phone:
+            client_info.append(['Telefone:', client.phone])
         if client.email:
-            client_data.append(['E-mail:', client.email])
+            client_info.append(['E-mail:', client.email])
         if client.address:
-            client_data.append(['Endereço:', client.address])
+            client_info.append(['Endereço:', client.address])
         
-        client_table = Table(client_data, colWidths=[4*cm, 10*cm])
+        client_table = Table(client_info, colWidths=[4*cm, 13*cm])
         client_table.setStyle(TableStyle([
             ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
-            ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('TEXTCOLOR', (0, 0), (0, -1), colors.HexColor('#4a5568')),
-            ('TEXTCOLOR', (1, 0), (1, -1), colors.HexColor('#2d3748')),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#4a5568')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ]))
         content.append(client_table)
+        content.append(Spacer(1, 8*mm))
         
-        content.append(Spacer(1, 6*mm))
-        
-        # Location Section (with Google Maps link)
+        # ============= LOCATION =============
         if unit.location:
-            content.append(Paragraph("📍 Localização", section_style))
-            content.append(Paragraph(unit.location, info_style))
+            content.append(Paragraph("Localização", section_header))
+            content.append(Paragraph(unit.location, body_text))
             
-            # Create Google Maps link
+            # Google Maps link
             encoded_location = quote(unit.location)
             maps_url = f"https://www.google.com/maps/search/?api=1&query={encoded_location}"
-            content.append(Paragraph(
-                f'<link href="{maps_url}">Ver no Google Maps</link>',
-                link_style
-            ))
-            content.append(Spacer(1, 6*mm))
+            link_para = Paragraph(
+                f'<a href="{maps_url}" color="#3182ce">📍 Abrir no Google Maps</a>',
+                body_text
+            )
+            content.append(link_para)
+            content.append(Spacer(1, 8*mm))
         
-        # Accommodation Rules Section
-        if unit.rules:
-            content.append(Paragraph("📋 Regras da Acomodação", section_style))
-            
-            # Process markdown-style rules (basic processing)
-            rules_text = self._process_markdown_to_reportlab(unit.rules, body_style)
-            content.extend(rules_text)
-            content.append(Spacer(1, 6*mm))
-        
-        # Long Description Section
+        # ============= ABOUT THE ACCOMMODATION =============
         if unit.long_description:
-            content.append(Paragraph("📖 Sobre a Acomodação", section_style))
-            
-            # Process markdown-style description (basic processing)
-            desc_text = self._process_markdown_to_reportlab(unit.long_description, body_style)
-            content.extend(desc_text)
-            content.append(Spacer(1, 6*mm))
+            content.append(Paragraph("Sobre a Acomodação", section_header))
+            desc_paragraphs = self._process_markdown_to_reportlab(unit.long_description, body_text)
+            content.extend(desc_paragraphs)
+            content.append(Spacer(1, 8*mm))
         
-        # Accommodation Images Section
-        if unit.album_photos:
-            content.append(Paragraph("🖼️ Fotos da Acomodação", section_style))
-            content.append(Spacer(1, 2*mm))
-            
-            # Add note about images (since images from URLs might not load in PDF)
-            content.append(Paragraph(
-                "As fotos da acomodação estão disponíveis nos seguintes links:",
-                info_style
-            ))
-            for idx, photo_url in enumerate(unit.album_photos[:6]):  # Limit to 6 photos
-                content.append(Paragraph(
-                    f'<link href="{photo_url}">Foto {idx + 1}</link>',
-                    link_style
-                ))
-            content.append(Spacer(1, 6*mm))
+        # ============= RULES =============
+        if unit.rules:
+            content.append(Paragraph("Regras da Acomodação", section_header))
+            rules_paragraphs = self._process_markdown_to_reportlab(unit.rules, body_text)
+            content.extend(rules_paragraphs)
+            content.append(Spacer(1, 8*mm))
         
-        # Footer
-        content.append(Spacer(1, 10*mm))
+        # ============= FOOTER =============
+        content.append(Spacer(1, 8*mm))
         content.append(HRFlowable(
             width="100%",
-            thickness=1,
+            thickness=0.5,
             color=colors.HexColor('#e2e8f0'),
             spaceBefore=4,
             spaceAfter=8
@@ -627,26 +690,37 @@ class ReservationViewSet(viewsets.ModelViewSet):
         generated_date = timezone.now().strftime('%d/%m/%Y às %H:%M')
         content.append(Paragraph(
             f"Documento gerado em {generated_date}",
-            small_style
+            small_text
         ))
         content.append(Paragraph(
-            "Este documento é um comprovante de reserva. Apresente-o no check-in.",
-            small_style
+            "Este é o seu comprovante de reserva. Apresente-o no check-in.",
+            small_text
         ))
         
         # Build PDF
         doc.build(content)
         
         # Get PDF value from buffer
-        pdf = buffer.getvalue()
+        pdf_bytes = buffer.getvalue()
         buffer.close()
         
-        # Create response
-        response = HttpResponse(pdf, content_type='application/pdf')
-        filename = f"reserva_{reservation.id}_{client.full_name.replace(' ', '_')}.pdf"
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        
-        return response
+        # Return based on mode
+        if preview_mode:
+            # Preview mode: return JSON with base64-encoded PDF
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            filename = f"reserva_{reservation.id}_{client.full_name.replace(' ', '_')}.pdf"
+            
+            return Response({
+                'pdf_base64': pdf_base64,
+                'filename': filename,
+                'content_type': 'application/pdf'
+            })
+        else:
+            # Download mode: return PDF file
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            filename = f"reserva_{reservation.id}_{client.full_name.replace(' ', '_')}.pdf"
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
     
     def _process_markdown_to_reportlab(self, text, base_style):
         """

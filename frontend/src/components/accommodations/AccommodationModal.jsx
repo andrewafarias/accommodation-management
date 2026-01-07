@@ -29,7 +29,7 @@ export function AccommodationModal({
     short_description: '',
     long_description: '',
     rules: '',
-    album_photos: [],
+    location: '',
   });
   
   const [loading, setLoading] = useState(false);
@@ -55,7 +55,7 @@ export function AccommodationModal({
           short_description: accommodation.short_description || '',
           long_description: accommodation.long_description || '',
           rules: accommodation.rules || '',
-          album_photos: accommodation.album_photos || [],
+          location: accommodation.location || '',
         });
       } else {
         // Create mode
@@ -72,7 +72,7 @@ export function AccommodationModal({
           short_description: '',
           long_description: '',
           rules: '',
-          album_photos: [],
+          location: '',
         });
       }
       setError(null);
@@ -107,7 +107,7 @@ export function AccommodationModal({
         short_description: formData.short_description || '',
         long_description: formData.long_description || '',
         rules: formData.rules || '',
-        album_photos: (formData.album_photos || []).filter(url => url.trim() !== ''),
+        location: formData.location || '',
       };
 
       let response;
@@ -382,27 +382,22 @@ export function AccommodationModal({
             </p>
           </div>
 
-          {/* Album Photos */}
+          {/* Location */}
           <div>
-            <label htmlFor="album_photos" className="block text-sm font-medium text-gray-700 mb-1">
-              URLs das Fotos (Álbum)
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+              Localização
             </label>
-            <textarea
-              id="album_photos"
-              name="album_photos"
-              value={formData.album_photos.join('\n')}
-              onChange={(e) => {
-                const urls = e.target.value.split('\n');
-                setFormData(prev => ({ ...prev, album_photos: urls }));
-              }}
-              rows={3}
+            <input
+              type="text"
+              id="location"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Uma URL por linha
-https://example.com/foto1.jpg
-https://example.com/foto2.jpg"
+              placeholder="Ex: Rua das Flores, 123 - Centro - Cidade/UF"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Digite uma URL por linha
+              Endereço completo da unidade para exibição
             </p>
           </div>
 
