@@ -21,7 +21,7 @@ from django.urls import path, include, re_path
 from django.shortcuts import render
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.routers import DefaultRouter
-from accommodations.views import AccommodationUnitViewSet, DatePriceOverrideViewSet, DatePackageViewSet
+from accommodations.views import AccommodationUnitViewSet, DatePriceOverrideViewSet, DatePackageViewSet, UnitImageViewSet
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
@@ -41,6 +41,7 @@ router = DefaultRouter()
 router.register(r'accommodations', AccommodationUnitViewSet, basename='accommodationunit')
 router.register(r'date-price-overrides', DatePriceOverrideViewSet, basename='datepriceoverride')
 router.register(r'date-packages', DatePackageViewSet, basename='datepackage')
+router.register(r'unit-images', UnitImageViewSet, basename='unitimage')
 router.register(r'clients', ClientViewSet, basename='client')
 router.register(r'reservations', ReservationViewSet, basename='reservation')
 router.register(r'financials', TransactionViewSet, basename='transaction')

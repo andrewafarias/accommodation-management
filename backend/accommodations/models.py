@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
+import os
 
 
 class AccommodationUnit(models.Model):
@@ -123,6 +124,59 @@ class AccommodationUnit(models.Model):
     
     def __str__(self):
         return self.name
+
+
+def unit_image_upload_path(instance, filename):
+    """
+    Generate upload path for unit images.
+    Format: unit_images/<unit_id>/<filename>
+    """
+    ext = filename.split('.')[-1]
+    filename = f"{instance.accommodation_unit.id}_{instance.order}_{filename}"
+    return os.path.join('unit_images', str(instance.accommodation_unit.id), filename)
+
+
+class UnitImage(models.Model):
+    """
+    Model for storing individual images for accommodation units.
+    Supports local file upload instead of URLs.
+    """
+    accommodation_unit = models.ForeignKey(
+        AccommodationUnit,
+        on_delete=models.CASCADE,
+        related_name='images',
+        verbose_name="Unidade de Acomodação"
+    )
+    image = models.ImageField(
+        upload_to=unit_image_upload_path,
+        verbose_name="Imagem",
+        help_text="Imagem da unidade"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        verbose_name="Ordem",
+        help_text="Ordem de exibição da imagem"
+    )
+    caption = models.CharField(
+        max_length=200,
+        blank=True,
+        default='',
+        verbose_name="Legenda",
+        help_text="Legenda opcional da imagem"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Imagem da Unidade"
+        verbose_name_plural = "Imagens das Unidades"
+        ordering = ['accommodation_unit', 'order', 'id']
+        indexes = [
+            models.Index(fields=['accommodation_unit', 'order']),
+        ]
+    
+    def __str__(self):
+        return f"{self.accommodation_unit.name} - Image {self.order}"
 
 
 class DatePriceOverride(models.Model):

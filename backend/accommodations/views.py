@@ -6,12 +6,13 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.http import HttpResponse
+from django.db import models
 from datetime import timedelta, datetime
 import json
 import csv
 from io import StringIO
-from .models import AccommodationUnit, DatePriceOverride, DatePackage
-from .serializers import AccommodationUnitSerializer, DatePriceOverrideSerializer, DatePackageSerializer
+from .models import AccommodationUnit, DatePriceOverride, DatePackage, UnitImage
+from .serializers import AccommodationUnitSerializer, DatePriceOverrideSerializer, DatePackageSerializer, UnitImageSerializer
 
 
 class AccommodationUnitViewSet(viewsets.ModelViewSet):
@@ -536,3 +537,122 @@ class DatePackageViewSet(viewsets.ModelViewSet):
             'deleted': deleted_count,
             'message': f'Successfully deleted {deleted_count} packages'
         }, status=status.HTTP_200_OK)
+
+
+class UnitImageViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing UnitImage resources.
+    Supports image upload and management for accommodation units.
+    """
+    queryset = UnitImage.objects.select_related('accommodation_unit').all()
+    serializer_class = UnitImageSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    filter_backends = [DjangoFilterBackend, OrderingFilter]
+    filterset_fields = ['accommodation_unit']
+    ordering_fields = ['order', 'created_at']
+    ordering = ['accommodation_unit', 'order', 'id']
+    
+    def get_queryset(self):
+        """Filter by accommodation unit if provided."""
+        queryset = super().get_queryset()
+        unit_id = self.request.query_params.get('accommodation_unit')
+        if unit_id:
+            queryset = queryset.filter(accommodation_unit_id=unit_id)
+        return queryset
+    
+    @action(detail=False, methods=['post'], parser_classes=[MultiPartParser, FormParser])
+    def bulk_upload(self, request):
+        """
+        Bulk upload multiple images for an accommodation unit.
+        
+        Form data:
+        - accommodation_unit: unit ID
+        - images: multiple image files
+        - captions: optional captions (comma-separated)
+        """
+        unit_id = request.data.get('accommodation_unit')
+        if not unit_id:
+            return Response(
+                {'error': 'accommodation_unit is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            unit = AccommodationUnit.objects.get(id=unit_id)
+        except AccommodationUnit.DoesNotExist:
+            return Response(
+                {'error': 'Accommodation unit not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Get all uploaded images
+        images = request.FILES.getlist('images')
+        if not images:
+            return Response(
+                {'error': 'No images provided'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Get captions if provided
+        captions_str = request.data.get('captions', '')
+        captions = [c.strip() for c in captions_str.split(',')] if captions_str else []
+        
+        # Get the current max order for this unit
+        max_order = UnitImage.objects.filter(accommodation_unit=unit).aggregate(
+            models.Max('order')
+        )['order__max'] or -1
+        
+        # Create image records
+        created_images = []
+        for idx, image_file in enumerate(images):
+            caption = captions[idx] if idx < len(captions) else ''
+            unit_image = UnitImage.objects.create(
+                accommodation_unit=unit,
+                image=image_file,
+                order=max_order + idx + 1,
+                caption=caption
+            )
+            created_images.append(unit_image)
+        
+        serializer = self.get_serializer(created_images, many=True)
+        return Response({
+            'created': len(created_images),
+            'images': serializer.data
+        }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['post'])
+    def reorder(self, request):
+        """
+        Reorder images by updating their order field.
+        Expects a list of image IDs in the desired order.
+        
+        Body: { "image_ids": [3, 1, 2] }
+        """
+        image_ids = request.data.get('image_ids', [])
+        
+        if not isinstance(image_ids, list):
+            return Response(
+                {'error': 'image_ids must be a list'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Update order for each image
+        images_to_update = []
+        for index, image_id in enumerate(image_ids):
+            try:
+                image = UnitImage.objects.get(id=image_id)
+                image.order = index
+                images_to_update.append(image)
+            except UnitImage.DoesNotExist:
+                pass  # Skip non-existent images
+        
+        # Bulk update all images
+        if images_to_update:
+            UnitImage.objects.bulk_update(images_to_update, ['order'])
+        updated_count = len(images_to_update)
+        
+        return Response({
+            'updated': updated_count,
+            'message': f'Successfully updated order for {updated_count} images'
+        }, status=status.HTTP_200_OK)
+
