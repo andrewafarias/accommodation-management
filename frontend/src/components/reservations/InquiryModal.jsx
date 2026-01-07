@@ -52,6 +52,22 @@ const calculateEaster = (year) => {
 };
 
 /**
+ * Helper function to get unit photos from either images or album_photos
+ * @param {Object} unit - The accommodation unit object
+ * @returns {Array} - Array of photo URLs
+ */
+const getUnitPhotos = (unit) => {
+  if (!unit) return [];
+  
+  // Prefer uploaded images over URL-based album_photos
+  if (unit.images && unit.images.length > 0) {
+    return unit.images.map(img => img.image_url);
+  }
+  
+  return unit.album_photos || [];
+};
+
+/**
  * InquiryModal Component
  * 
  * Modal dialog for creating reservation quotes/inquiries.
@@ -963,10 +979,7 @@ export function InquiryModal({
             }}>
               {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
               {(() => {
-                // Support both album_photos (URLs) and images (uploaded files)
-                const photos = selectedUnit?.images && selectedUnit.images.length > 0
-                  ? selectedUnit.images.map(img => img.image_url)
-                  : (selectedUnit?.album_photos || []);
+                const photos = getUnitPhotos(selectedUnit);
                 
                 if (!photos || photos.length === 0) return null;
                 

@@ -129,11 +129,13 @@ class AccommodationUnit(models.Model):
 def unit_image_upload_path(instance, filename):
     """
     Generate upload path for unit images.
-    Format: unit_images/<unit_id>/<filename>
+    Format: unit_images/<unit_id>/<timestamp>_<filename>
     """
+    import time
     ext = filename.split('.')[-1]
-    filename = f"{instance.accommodation_unit.id}_{instance.order}_{filename}"
-    return os.path.join('unit_images', str(instance.accommodation_unit.id), filename)
+    timestamp = int(time.time() * 1000)  # milliseconds
+    safe_filename = f"{timestamp}_{filename}"
+    return os.path.join('unit_images', str(instance.accommodation_unit.id), safe_filename)
 
 
 class UnitImage(models.Model):

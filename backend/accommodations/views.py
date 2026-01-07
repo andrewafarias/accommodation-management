@@ -638,21 +638,28 @@ class UnitImageViewSet(viewsets.ModelViewSet):
         
         # Update order for each image
         images_to_update = []
+        skipped_ids = []
         for index, image_id in enumerate(image_ids):
             try:
                 image = UnitImage.objects.get(id=image_id)
                 image.order = index
                 images_to_update.append(image)
             except UnitImage.DoesNotExist:
-                pass  # Skip non-existent images
+                skipped_ids.append(image_id)
         
         # Bulk update all images
         if images_to_update:
             UnitImage.objects.bulk_update(images_to_update, ['order'])
         updated_count = len(images_to_update)
         
-        return Response({
+        response_data = {
             'updated': updated_count,
             'message': f'Successfully updated order for {updated_count} images'
-        }, status=status.HTTP_200_OK)
+        }
+        
+        if skipped_ids:
+            response_data['skipped_ids'] = skipped_ids
+            response_data['message'] += f', skipped {len(skipped_ids)} non-existent images'
+        
+        return Response(response_data, status=status.HTTP_200_OK)
 
