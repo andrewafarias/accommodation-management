@@ -188,7 +188,6 @@ REST_FRAMEWORK = {
 # Static files production settings
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # Add this line to prevent the build from failing on missing files
 WHITENOISE_MANIFEST_STRICT = False
 
