@@ -280,4 +280,103 @@ class AccommodationUnitAPITest(TestCase):
         self.assertIn('long_description', response.data)
         self.assertIn('rules', response.data)
         self.assertIn('album_photos', response.data)
+        self.assertIn('images', response.data)
+
+
+class UnitImageAPITest(TestCase):
+    """
+    Test suite for UnitImage API endpoints.
+    """
+    
+    def setUp(self):
+        """Set up test client and sample data."""
+        self.client = APIClient()
+        
+        # Create a test user and authenticate
+        self.user = User.objects.create_user(
+            username='testuser',
+            password='testpass123'
+        )
+        self.token = Token.objects.create(user=self.user)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
+        
+        self.unit = AccommodationUnit.objects.create(
+            name="Test Chalet",
+            max_capacity=4,
+            base_price=250.00,
+            color_hex="#FF5733",
+            status=AccommodationUnit.CLEAN
+        )
+    
+    def test_list_images_for_unit(self):
+        """Test listing images for a specific accommodation unit."""
+        from .models import UnitImage
+        
+        # Create some test images
+        image1 = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=0,
+            caption="Test Image 1"
+        )
+        image2 = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=1,
+            caption="Test Image 2"
+        )
+        
+        response = self.client.get(f'/api/unit-images/?accommodation_unit={self.unit.id}')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data.get('results', response.data)
+        self.assertEqual(len(results), 2)
+    
+    def test_delete_image(self):
+        """Test deleting an image."""
+        from .models import UnitImage
+        
+        image = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=0,
+            caption="Test Image"
+        )
+        
+        response = self.client.delete(f'/api/unit-images/{image.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        
+        # Verify image was deleted
+        self.assertFalse(UnitImage.objects.filter(id=image.id).exists())
+    
+    def test_reorder_images(self):
+        """Test reordering images."""
+        from .models import UnitImage
+        
+        image1 = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=0
+        )
+        image2 = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=1
+        )
+        image3 = UnitImage.objects.create(
+            accommodation_unit=self.unit,
+            order=2
+        )
+        
+        # Reorder: swap image1 and image3
+        response = self.client.post('/api/unit-images/reorder/', {
+            'image_ids': [image3.id, image2.id, image1.id]
+        }, format='json')
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['updated'], 3)
+        
+        # Verify order was updated
+        image1.refresh_from_db()
+        image2.refresh_from_db()
+        image3.refresh_from_db()
+        
+        self.assertEqual(image3.order, 0)
+        self.assertEqual(image2.order, 1)
+        self.assertEqual(image1.order, 2)
+
 
