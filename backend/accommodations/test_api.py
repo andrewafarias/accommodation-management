@@ -281,6 +281,7 @@ class AccommodationUnitAPITest(TestCase):
         self.assertIn('rules', response.data)
         self.assertIn('album_photos', response.data)
         self.assertIn('images', response.data)
+        self.assertIn('location', response.data)
 
 
 class UnitImageAPITest(TestCase):
