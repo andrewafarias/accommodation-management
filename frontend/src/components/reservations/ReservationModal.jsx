@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { X, Trash2, FileText } from 'lucide-react';
+import { X, Trash2, FileText, Download, Copy } from 'lucide-react';
 import { Button } from '../ui/Button';
 import api from '../../services/api';
 import { differenceInDays, parseISO, addDays, isWeekend, isFriday, format } from 'date-fns';
@@ -102,6 +102,9 @@ export function ReservationModal({
   });
   const [newPayment, setNewPayment] = useState('');
   const [newPaymentDate, setNewPaymentDate] = useState(() => getLocalDateString());
+  const [showPreview, setShowPreview] = useState(false);
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState(null);
+  const [pdfFilename, setPdfFilename] = useState('');
   
   // Use refs to track if we've already initialized the form
   const initializedRef = useRef(false);
@@ -617,7 +620,7 @@ export function ReservationModal({
     }
   };
 
-  // Generate and download reservation document (PDF)
+  // Generate and show PDF preview
   const handleGenerateDocument = async () => {
     if (!reservation) return;
     
@@ -625,37 +628,72 @@ export function ReservationModal({
       setLoading(true);
       setError(null);
       
-      // Request PDF document from API
-      const response = await api.get(`reservations/${reservation.id}/generate_document/`, {
-        responseType: 'blob'
-      });
+      // Request PDF document from API with preview=true
+      const response = await api.get(`reservations/${reservation.id}/generate_document/?preview=true`);
       
-      // Create blob URL and trigger download
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      
-      // Extract filename from Content-Disposition header if available
-      const contentDisposition = response.headers['content-disposition'];
-      let filename = `reserva_${reservation.id}.pdf`;
-      if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?([^";\n]+)"?/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-        }
+      // Convert base64 to blob URL for preview
+      const pdfBase64 = response.data.pdf_base64;
+      const pdfBinary = atob(pdfBase64);
+      const pdfArray = new Uint8Array(pdfBinary.length);
+      for (let i = 0; i < pdfBinary.length; i++) {
+        pdfArray[i] = pdfBinary.charCodeAt(i);
       }
+      const blob = new Blob([pdfArray], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
       
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      setPdfPreviewUrl(url);
+      setPdfFilename(response.data.filename || `reserva_${reservation.id}.pdf`);
+      setShowPreview(true);
     } catch (err) {
       console.error('Error generating document:', err);
       setError('Erro ao gerar documento. Tente novamente.');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Close preview and cleanup
+  const handleClosePreview = () => {
+    if (pdfPreviewUrl) {
+      window.URL.revokeObjectURL(pdfPreviewUrl);
+    }
+    setPdfPreviewUrl(null);
+    setPdfFilename('');
+    setShowPreview(false);
+  };
+  
+  // Download PDF from preview
+  const handleDownloadPdf = () => {
+    if (!pdfPreviewUrl) return;
+    
+    const link = document.createElement('a');
+    link.href = pdfPreviewUrl;
+    link.setAttribute('download', pdfFilename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // Copy PDF to clipboard (by downloading and copying)
+  const handleCopyPdf = async () => {
+    try {
+      // Fetch the blob from the preview URL
+      const response = await fetch(pdfPreviewUrl);
+      const blob = await response.blob();
+      
+      // Copy to clipboard
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'application/pdf': blob
+        })
+      ]);
+      
+      // Close preview after successful copy
+      handleClosePreview();
+    } catch (err) {
+      console.error('Error copying to clipboard:', err);
+      setError('Erro ao copiar documento. Tente fazer o download.');
+      setTimeout(() => setError(null), 5000);
     }
   };
 
@@ -1226,6 +1264,64 @@ export function ReservationModal({
           </div>
         </form>
       </div>
+
+      {/* PDF Preview Modal */}
+      {showPreview && pdfPreviewUrl && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-70"
+            onClick={handleClosePreview}
+          />
+          
+          {/* Preview Content */}
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto p-6">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 border-b pb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Prévia do Documento de Reserva
+              </h2>
+              <button
+                onClick={handleClosePreview}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* PDF Preview */}
+            <div className="mb-4 bg-gray-100 rounded-lg p-4 flex justify-center">
+              <iframe
+                src={pdfPreviewUrl}
+                className="w-full rounded shadow-lg"
+                style={{ height: '60vh' }}
+                title="PDF Preview"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-center gap-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCopyPdf}
+                className="flex items-center gap-2"
+              >
+                <Copy className="w-5 h-5" />
+                Copiar para Área de Transferência
+              </Button>
+              <Button
+                type="button"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-2 bg-gradient-to-r from-primary-500 to-secondary-500 hover:from-primary-600 hover:to-secondary-600"
+              >
+                <Download className="w-5 h-5" />
+                Baixar PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
