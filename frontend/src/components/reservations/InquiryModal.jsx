@@ -299,14 +299,13 @@ export function InquiryModal({
         )
       );
       
-      // Generate canvas
+      // Generate canvas - let height be determined by content
       const canvas = await html2canvas(templateEl, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 1080,
-        height: 810,
       });
       
       // Hide template again
@@ -751,7 +750,7 @@ export function InquiryModal({
         ref={quoteTemplateRef}
         style={{
           width: '1080px',
-          height: '810px',
+          minHeight: '710px',
           display: 'none',
           position: 'fixed',
           left: '-9999px',
@@ -952,15 +951,15 @@ export function InquiryModal({
               </div>
             </div>
 
-            {/* Chalet Info Section with Photo Mosaic - Small footer */}
+            {/* Chalet Info Section with Photo Mosaic - Larger footer for better visibility */}
             <div style={{
               marginTop: 'auto',
               backgroundColor: '#f9fafb',
               borderRadius: '12px',
-              padding: '16px',
+              padding: '20px',
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '16px',
+              gap: '20px',
             }}>
               {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
               {selectedUnit?.album_photos && selectedUnit.album_photos.length > 0 && (() => {
@@ -980,19 +979,19 @@ export function InquiryModal({
                 const defaultLayout = { columns: 3, rows: 3, maxPhotos: 9 };
                 const { columns, rows, maxPhotos } = gridLayouts[photoCount] || defaultLayout;
                 
-                // Mosaic height based on number of rows
-                const mosaicHeights = { 1: '50px', 2: '100px', 3: '150px' };
-                const mosaicHeight = mosaicHeights[rows] || '150px';
+                // Larger mosaic height based on number of rows - increased for better visibility
+                const mosaicHeights = { 1: '80px', 2: '160px', 3: '240px' };
+                const mosaicHeight = mosaicHeights[rows] || '240px';
                 
                 return (
                   <div style={{
-                    width: '150px',
+                    width: '240px',
                     height: mosaicHeight,
                     flexShrink: 0,
                     display: 'grid',
                     gridTemplateColumns: `repeat(${columns}, 1fr)`,
                     gridTemplateRows: `repeat(${rows}, 1fr)`,
-                    gap: '3px',
+                    gap: '4px',
                     borderRadius: '10px',
                     overflow: 'hidden',
                   }}>
@@ -1022,22 +1021,22 @@ export function InquiryModal({
                 );
               })()}
               
-              {/* Chalet Name and Description */}
+              {/* Chalet Name and Description - larger text for better visibility */}
               <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{
-                  fontSize: '18px',
+                  fontSize: '22px',
                   fontWeight: '700',
                   color: '#1f2937',
-                  margin: '0 0 6px 0',
+                  margin: '0 0 8px 0',
                 }}>
                   {selectedUnit?.name || 'Acomodação'}
                 </h2>
                 {selectedUnit?.short_description && (
                   <p style={{
-                    fontSize: '14px',
+                    fontSize: '16px',
                     color: '#6b7280',
                     margin: '0',
-                    lineHeight: '1.5',
+                    lineHeight: '1.6',
                     wordWrap: 'break-word',
                     whiteSpace: 'pre-wrap',
                     overflow: 'visible',
