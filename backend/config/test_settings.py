@@ -13,16 +13,24 @@ class SettingsConfigurationTest(TestCase):
         templates_config = settings.TEMPLATES[0]
         dirs = templates_config['DIRS']
         
-        self.assertEqual(len(dirs), 1, "TEMPLATES DIRS should contain exactly one directory")
+        self.assertEqual(len(dirs), 2, "TEMPLATES DIRS should contain exactly two directories")
         
-        frontend_dist_path = dirs[0]
-        self.assertIsInstance(frontend_dist_path, Path, "DIRS path should be a Path object")
+        # Check that one of the paths is the templates directory
+        templates_path = dirs[0]
+        self.assertIsInstance(templates_path, Path, "Templates path should be a Path object")
+        self.assertEqual(
+            templates_path.parts[-1],
+            'templates',
+            f"First DIRS path should point to templates, got: {templates_path}"
+        )
         
-        # Check that the path ends with frontend/dist (cross-platform)
+        # Check that the second path is the frontend dist directory
+        frontend_dist_path = dirs[1]
+        self.assertIsInstance(frontend_dist_path, Path, "Frontend dist path should be a Path object")
         self.assertEqual(
             frontend_dist_path.parts[-2:],
             ('frontend', 'dist'),
-            f"DIRS path should point to frontend/dist, got: {frontend_dist_path}"
+            f"Second DIRS path should point to frontend/dist, got: {frontend_dist_path}"
         )
     
     def test_staticfiles_dirs_includes_frontend_dist(self):
@@ -42,14 +50,21 @@ class SettingsConfigurationTest(TestCase):
         )
     
     def test_templates_and_staticfiles_point_to_same_location(self):
-        """Test that both TEMPLATES and STATICFILES_DIRS point to the same frontend dist location."""
-        templates_path = settings.TEMPLATES[0]['DIRS'][0]
+        """Test that TEMPLATES frontend/dist and STATICFILES_DIRS point to the same location."""
+        # Get the frontend/dist path from TEMPLATES (second directory)
+        templates_frontend_path = settings.TEMPLATES[0]['DIRS'][1]
         staticfiles_path = settings.STATICFILES_DIRS[0]
         
+        # Both should point to frontend/dist
         self.assertEqual(
-            templates_path, 
-            staticfiles_path,
-            "TEMPLATES DIRS and STATICFILES_DIRS should point to the same frontend/dist location"
+            templates_frontend_path.parts[-2:],
+            ('frontend', 'dist'),
+            "TEMPLATES should include frontend/dist"
+        )
+        self.assertEqual(
+            staticfiles_path.parts[-2:],
+            ('frontend', 'dist'),
+            "STATICFILES_DIRS should point to frontend/dist"
         )
     
     def test_cors_settings_for_development(self):
