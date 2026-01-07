@@ -17,13 +17,24 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.shortcuts import render
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.routers import DefaultRouter
 from accommodations.views import AccommodationUnitViewSet, DatePriceOverrideViewSet, DatePackageViewSet
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
 from core.views import export_all_data, import_all_data, login_view, logout_view, user_info_view
+
+
+@ensure_csrf_cookie
+def spa_view(request):
+    """
+    Catch-all view to serve the React SPA.
+    This allows the React Router to handle client-side routing.
+    """
+    return render(request, 'index.html')
 
 # Create a router and register our viewsets
 router = DefaultRouter()
@@ -47,3 +58,8 @@ urlpatterns = [
 # Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Catch-all pattern for SPA routing - must be last
+urlpatterns += [
+    re_path(r'^.*$', spa_view, name='spa'),
+]
