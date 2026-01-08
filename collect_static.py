@@ -31,25 +31,49 @@ def collect_static():
     print(f"Collecting static files to {static_root}")
     
     count = 0
+    skipped = 0
     for finder in finders.get_finders():
         for path, storage in finder.list([]):
             try:
-                source = storage.path(path)
+                # Get source file path - some storage backends don't support path()
+                try:
+                    source = storage.path(path)
+                except (NotImplementedError, AttributeError):
+                    # Storage backend doesn't support local file paths (e.g., cloud storage)
+                    print(f"  Skipped: {path} (storage backend doesn't support local paths)")
+                    skipped += 1
+                    continue
+                
                 dest = static_root / path
                 
                 # Create parent directories
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 
                 # Copy file if it doesn't exist or is newer
-                if not dest.exists() or os.path.getmtime(source) > os.path.getmtime(str(dest)):
-                    shutil.copy2(source, dest)
-                    count += 1
-                    if count <= 10 or count % 50 == 0:
-                        print(f"  Copied: {path}")
+                # Wrap mtime checks in try-except to handle race conditions
+                try:
+                    should_copy = not dest.exists()
+                    if not should_copy and os.path.exists(source):
+                        source_mtime = os.path.getmtime(source)
+                        dest_mtime = os.path.getmtime(str(dest))
+                        should_copy = source_mtime > dest_mtime
+                    
+                    if should_copy and os.path.exists(source):
+                        shutil.copy2(source, dest)
+                        count += 1
+                        if count <= 10 or count % 50 == 0:
+                            print(f"  Copied: {path}")
+                except (OSError, IOError) as e:
+                    print(f"  Warning: Could not check/copy {path}: {e}")
+                    skipped += 1
+                    
             except Exception as e:
-                print(f"  Error copying {path}: {e}")
+                print(f"  Error processing {path}: {e}")
+                skipped += 1
     
     print(f"\n{count} static files collected to '{static_root}'.")
+    if skipped > 0:
+        print(f"{skipped} files skipped or had errors.")
     return count
 
 if __name__ == '__main__':
