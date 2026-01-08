@@ -8,6 +8,10 @@ import sys
 import shutil
 from pathlib import Path
 
+# Logging configuration
+LOG_FIRST_N_FILES = 10  # Log the first N files
+LOG_EVERY_N_FILES = 50  # Then log every Nth file
+
 # Add backend to Python path
 backend_dir = Path(__file__).parent / 'backend'
 sys.path.insert(0, str(backend_dir))
@@ -44,6 +48,12 @@ def collect_static():
                     skipped += 1
                     continue
                 
+                # Check if source file exists before proceeding
+                if not os.path.exists(source):
+                    print(f"  Skipped: {path} (source file not found)")
+                    skipped += 1
+                    continue
+                
                 dest = static_root / path
                 
                 # Create parent directories
@@ -53,15 +63,15 @@ def collect_static():
                 # Wrap mtime checks in try-except to handle race conditions
                 try:
                     should_copy = not dest.exists()
-                    if not should_copy and os.path.exists(source):
+                    if not should_copy:
                         source_mtime = os.path.getmtime(source)
                         dest_mtime = os.path.getmtime(str(dest))
                         should_copy = source_mtime > dest_mtime
                     
-                    if should_copy and os.path.exists(source):
+                    if should_copy:
                         shutil.copy2(source, dest)
                         count += 1
-                        if count <= 10 or count % 50 == 0:
+                        if count <= LOG_FIRST_N_FILES or count % LOG_EVERY_N_FILES == 0:
                             print(f"  Copied: {path}")
                 except (OSError, IOError) as e:
                     print(f"  Warning: Could not check/copy {path}: {e}")
