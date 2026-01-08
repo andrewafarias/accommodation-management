@@ -1,10 +1,7 @@
 """
 Tests for robots.txt and search engine indexing prevention.
 """
-from django.test import TestCase, Client, override_settings
-from django.contrib.auth.models import User
-from rest_framework.authtoken.models import Token
-import os
+from django.test import TestCase, Client
 
 
 class RobotsTxtTestCase(TestCase):
