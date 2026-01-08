@@ -186,7 +186,6 @@ REST_FRAMEWORK = {
 
 # Static files production settings
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 
 # Security settings
