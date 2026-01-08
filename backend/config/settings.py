@@ -147,6 +147,7 @@ STATICFILES_DIRS = [
 # Media files (uploads)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
     'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
@@ -185,16 +186,6 @@ REST_FRAMEWORK = {
 
 # Static files production settings
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# Configure storage backends using STORAGES (Django 4.2+)
-# Use Django's default static files storage, WhiteNoise middleware handles serving with compression
-STORAGES = {
-    "default": {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
-    },
-}
 
 
 # Security settings
