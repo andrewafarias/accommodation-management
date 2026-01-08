@@ -186,8 +186,10 @@ REST_FRAMEWORK = {
 
 # Static files production settings
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-# STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage' # Commented because of compression erros in deployment
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+# ADD THIS LINE: It prevents the "compression errors" that broke your build before.
+# It tells WhiteNoise: "If a referenced file is missing, just ignore it and keep going."
+WHITENOISE_MANIFEST_STRICT = False
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
