@@ -66,8 +66,6 @@ WhiteNoise middleware (already configured) serves static files in production wit
 - Fixed regex pattern for SPA catch-all route
 - Changed from `^(?!static/)(?!media/).*$` to `^(?!/(static|media)/).*$`
 - Correctly excludes `/static/` and `/media/` paths to allow WhiteNoise to serve them
-- Removed problematic STORAGES configuration
-- Uses Django's default StaticFilesStorage with WhiteNoise middleware
 
 ### `.gitignore`
 - Added build artifacts and generated directories:
