@@ -25,7 +25,7 @@ from accommodations.views import AccommodationUnitViewSet, DatePriceOverrideView
 from clients.views import ClientViewSet
 from reservations.views import ReservationViewSet
 from financials.views import TransactionViewSet
-from core.views import export_all_data, import_all_data, login_view, logout_view, user_info_view
+from core.views import export_all_data, import_all_data, login_view, logout_view, user_info_view, robots_txt_view
 
 
 @ensure_csrf_cookie
@@ -48,6 +48,7 @@ router.register(r'financials', TransactionViewSet, basename='transaction')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('robots.txt', robots_txt_view, name='robots-txt'),
     path('api/', include(router.urls)),
     path('api/auth/login/', login_view, name='login'),
     path('api/auth/logout/', logout_view, name='logout'),

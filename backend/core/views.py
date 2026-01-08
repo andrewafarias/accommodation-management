@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.contrib.auth import authenticate
+from django.views.decorators.http import require_GET
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
@@ -396,4 +397,13 @@ def user_info_view(request):
         'first_name': user.first_name,
         'last_name': user.last_name,
     }, status=status.HTTP_200_OK)
+
+
+@require_GET
+def robots_txt_view(request):
+    """
+    Serve robots.txt to prevent search engine indexing.
+    """
+    content = "User-agent: *\nDisallow: /\n"
+    return HttpResponse(content, content_type="text/plain")
 
