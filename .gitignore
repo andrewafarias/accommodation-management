@@ -1,2 +1,11 @@
 screenshots/
 backend/media/
+backend/staticfiles/
+frontend/dist/
+frontend/node_modules/
+node_modules/
+*.pyc
+__pycache__/
+*.sqlite3
+.env
+.DS_Store
