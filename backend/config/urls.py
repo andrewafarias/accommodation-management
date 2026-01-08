@@ -62,7 +62,6 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Catch-all pattern for SPA routing - must be last
-# Exclude /static/ and /media/ paths to allow WhiteNoise to serve static files
 urlpatterns += [
-    re_path(r'^(?!static/)(?!media/).*$', spa_view, name='spa'),
+    re_path(r'^.*$', spa_view, name='spa'),
 ]
