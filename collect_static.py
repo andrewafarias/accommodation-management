@@ -65,7 +65,7 @@ def collect_static():
                     should_copy = not dest.exists()
                     if not should_copy:
                         source_mtime = os.path.getmtime(source)
-                        dest_mtime = os.path.getmtime(str(dest))
+                        dest_mtime = os.path.getmtime(dest)
                         should_copy = source_mtime > dest_mtime
                     
                     if should_copy:
