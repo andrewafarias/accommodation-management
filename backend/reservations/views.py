@@ -29,7 +29,13 @@ from reportlab.platypus import (
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
 from reportlab.pdfgen import canvas
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.utils import simpleSplit
 import base64
+
+# HTML escape utility for ReportLab
+from html import escape as html_escape
 
 
 class ReservationViewSet(viewsets.ModelViewSet):
@@ -353,6 +359,14 @@ class ReservationViewSet(viewsets.ModelViewSet):
         - Accommodation description and rules
         - Unit images displayed in grid
         """
+        
+        def safe_text(text):
+            """Helper to safely escape text for ReportLab Paragraphs"""
+            if not text:
+                return ''
+            # Escape HTML entities to prevent XML parsing issues
+            return html_escape(str(text), quote=False)
+        
         reservation = self.get_object()
         unit = reservation.accommodation_unit
         client = reservation.client
@@ -458,13 +472,13 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # ============= HERO SECTION =============
         # Accommodation name as hero
-        content.append(Paragraph(unit.name, hero_title))
+        content.append(Paragraph(safe_text(unit.name), hero_title))
         
         # Short description if available
         if unit.short_description:
-            content.append(Paragraph(unit.short_description, tagline_style))
+            content.append(Paragraph(safe_text(unit.short_description), tagline_style))
         else:
-            content.append(Paragraph("Comprovante de Reserva", tagline_style))
+            content.append(Paragraph(safe_text("Comprovante de Reserva"), tagline_style))
         
         content.append(Spacer(1, 6*mm))
         
