@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import clipboardLogo from '../../../public/images/clipboard.svg';
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -74,9 +75,11 @@ export function Layout({ children }) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-20 border-b border-primary-100 bg-gradient-to-r from-primary-50 to-secondary-50">
-            <h1 className="text-2xl lg:text-3xl font-cursive text-primary-600 tracking-wide">
-              Chalés Jasmim
-            </h1>
+            <img 
+              src={clipboardLogo} 
+              alt="Chalés Jasmim" 
+              className="h-16 w-auto"
+            />
           </div>
 
           {/* Navigation */}

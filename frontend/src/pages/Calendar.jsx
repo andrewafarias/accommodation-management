@@ -599,7 +599,7 @@ export function Calendar() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <CardTitle className="flex items-center">
               <CalendarIcon className="w-6 h-6 mr-2" />
               {(() => {
@@ -608,8 +608,8 @@ export function Calendar() {
               })()}
             </CardTitle>
             
-            {/* Selection Actions */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Selection Actions - Reserved space on mobile */}
+            <div className="min-h-[40px] sm:min-h-0 flex flex-wrap items-center gap-2">
               {dateSelection.selections.length > 0 || dateSelection.isSelecting ? (
                 <>
                   <span className="text-xs sm:text-sm text-gray-600 w-full sm:w-auto">

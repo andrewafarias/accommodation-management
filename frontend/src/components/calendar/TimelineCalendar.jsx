@@ -306,16 +306,24 @@ export function TimelineCalendar({
     }
   }, [onVisibleDateChange, dates, cellWidth]);
 
+  // Mobile-responsive sizing
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const responsiveSidebarWidth = isMobile ? 70 : sidebarWidth;
+  const responsiveCellWidth = isMobile ? 80 : cellWidth;
+  const responsiveUnitRowHeight = 'h-20';
+  const responsiveHeaderHeight = isMobile ? 'h-10' : 'h-12';
+
   return (
     <div className="border rounded-lg bg-white overflow-hidden">
+      <div className="max-w-full overflow-x-auto">
       <div className="flex">
         {/* Fixed Sidebar - Unit Names */}
         <div 
           className="flex-shrink-0 border-r bg-gray-50" 
-          style={{ width: `${sidebarWidth}px` }}
+          style={{ width: `${responsiveSidebarWidth}px` }}
         >
           {/* Header */}
-          <div className="h-12 border-b bg-gray-100 flex items-center px-4 font-semibold text-gray-700">
+          <div className={cn("border-b bg-gray-100 flex items-center px-4 font-semibold text-gray-700", responsiveHeaderHeight)}>
             Acomodações
           </div>
           
@@ -328,14 +336,17 @@ export function TimelineCalendar({
               <div
                 key={unit.id}
                 className={cn(
-                  "h-20 border-b flex items-center px-4 space-x-3 transition-opacity",
+                  "border-b flex items-center transition-opacity",
+                  responsiveUnitRowHeight,
+                  isMobile ? "px-1 space-x-1" : "px-4 space-x-3",
                   isDimmed && "opacity-50"
                 )}
               >
                 {/* Color Indicator - Clickable for focus mode */}
                 <div
                   className={cn(
-                    "w-4 h-4 rounded-full flex-shrink-0 border-2 cursor-pointer transition-all",
+                    "flex-shrink-0 border-2 cursor-pointer transition-all rounded-full",
+                    isMobile ? "w-2.5 h-2.5" : "w-4 h-4",
                     isFocused ? "border-primary-500 ring-2 ring-primary-300 scale-125" : "border-gray-300 hover:border-primary-400"
                   )}
                   style={{ backgroundColor: unit.color_hex }}
@@ -350,23 +361,40 @@ export function TimelineCalendar({
                 
                 {/* Unit Details */}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 truncate">
+                  <div className={cn("font-medium text-gray-900 truncate", isMobile ? "text-[9px] leading-tight" : "text-sm")}>
                     {unit.name}
                   </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {unit.type} • {unit.max_capacity} hóspedes
-                  </div>
-                  <div className="text-xs">
-                    <span 
-                      className={cn(
-                        'inline-block px-1.5 py-0.5 rounded text-white text-[10px]',
-                        unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
-                      )}
-                      title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                    >
-                      {unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                    </span>
-                  </div>
+                  {!isMobile && (
+                    <>
+                      <div className="text-xs text-gray-500 truncate">
+                        {unit.type} • {unit.max_capacity} hóspedes
+                      </div>
+                      <div className="text-xs">
+                        <span 
+                          className={cn(
+                            'inline-block px-1.5 py-0.5 rounded text-white text-[10px]',
+                            unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
+                          )}
+                          title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
+                        >
+                          {unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {isMobile && (
+                    <div className="text-[8px]">
+                      <span 
+                        className={cn(
+                          'inline-block px-0.5 py-0.5 rounded text-white text-[7px]',
+                          unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
+                        )}
+                        title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
+                      >
+                        {unit.status === 'CLEAN' ? 'L' : 'S'}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -379,26 +407,27 @@ export function TimelineCalendar({
           ref={scrollRef}
           onScroll={handleScroll}
         >
-          <div style={{ minWidth: `${dates.length * cellWidth}px` }}>
+          <div style={{ minWidth: `${dates.length * responsiveCellWidth}px` }}>
             {/* Date Header */}
-            <div className="h-12 border-b bg-gray-100 flex">
+            <div className={cn("border-b bg-gray-100 flex", responsiveHeaderHeight)}>
               {dates.map((date, index) => {
                 const holidayName = isHoliday(date);
                 return (
                   <div
                     key={index}
                     className={cn(
-                      'border-r flex flex-col items-center justify-center text-xs',
+                      'border-r flex flex-col items-center justify-center',
+                      isMobile ? 'text-[10px]' : 'text-xs',
                       isSameDay(date, new Date()) && 'bg-primary-50 border-primary-300'
                     )}
-                    style={{ width: `${cellWidth}px` }}
+                    style={{ width: `${responsiveCellWidth}px` }}
                     title={holidayName || undefined}
                   >
                     <div className={cn(
                       'font-semibold text-gray-700',
                       holidayName && 'text-red-700'
                     )}>
-                      {format(date, 'EEE', { locale: ptBR })}
+                      {isMobile ? format(date, 'EEE', { locale: ptBR }).slice(0, 1).toUpperCase() : format(date, 'EEE', { locale: ptBR })}
                     </div>
                     <div className={cn(
                       'text-gray-600',
@@ -451,7 +480,7 @@ export function TimelineCalendar({
                           isSelectionEdge(date, unit.id) === 'end' && 'ring-2 ring-accent-600'
                         )}
                         style={{ 
-                          width: `${cellWidth}px`,
+                          width: `${responsiveCellWidth}px`,
                           backgroundColor: isSelected 
                             ? 'rgba(34, 197, 94, 0.2)'
                             : undefined,
@@ -614,6 +643,7 @@ export function TimelineCalendar({
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );
