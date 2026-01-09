@@ -5,6 +5,74 @@ from decimal import Decimal
 import json
 
 
+class FlexibleTagsField(serializers.ListField):
+    """
+    Custom field that accepts tags as a list, JSON string, or comma-separated string.
+    """
+    def __init__(self, **kwargs):
+        kwargs.setdefault('child', serializers.CharField(allow_blank=True))
+        kwargs.setdefault('required', False)
+        kwargs.setdefault('allow_empty', True)
+        super().__init__(**kwargs)
+    
+    def to_internal_value(self, data):
+        """Convert various tag formats to a list."""
+        # Handle string input (JSON or comma-separated)
+        if isinstance(data, str):
+            return self._parse_string_tags(data)
+        # Handle list input
+        elif isinstance(data, list):
+            # Check if it's a list with a single element that is a string
+            if len(data) == 1 and isinstance(data[0], str):
+                # Try to parse as JSON first
+                try:
+                    parsed = json.loads(data[0])
+                    if isinstance(parsed, list):
+                        return self._validate_tag_list(parsed)
+                except (json.JSONDecodeError, ValueError):
+                    pass
+                
+                # Check if it contains commas (comma-separated tags)
+                if ',' in data[0]:
+                    return [tag.strip() for tag in data[0].split(',') if tag.strip()]
+            
+            # Validate each item in the list
+            return self._validate_tag_list(data)
+        # Handle None or missing
+        elif data is None:
+            return []
+        # Handle other types
+        else:
+            return []
+    
+    def _parse_string_tags(self, tags_str):
+        """Parse a string as JSON array or comma-separated tags."""
+        tags_str = tags_str.strip()
+        if not tags_str:
+            return []
+        
+        # Try to parse as JSON first (for FormData with JSON.stringify)
+        try:
+            parsed_tags = json.loads(tags_str)
+            if isinstance(parsed_tags, list):
+                return self._validate_tag_list(parsed_tags)
+            else:
+                return []
+        except (json.JSONDecodeError, ValueError):
+            # Fall back to comma-separated parsing
+            return [tag.strip() for tag in tags_str.split(',') if tag.strip()]
+    
+    def _validate_tag_list(self, tags):
+        """Validate and clean a list of tags."""
+        validated_tags = []
+        for tag in tags:
+            if tag is not None:
+                tag_str = str(tag).strip()
+                if tag_str:
+                    validated_tags.append(tag_str)
+        return validated_tags
+
+
 class DocumentAttachmentSerializer(serializers.ModelSerializer):
     """
     Serializador para modelo DocumentAttachment.
@@ -24,12 +92,7 @@ class ClientSerializer(serializers.ModelSerializer):
     CPF é opcional.
     """
     document_attachments = DocumentAttachmentSerializer(many=True, read_only=True)
-    tags = serializers.ListField(
-        child=serializers.CharField(allow_blank=True),
-        required=False,
-        allow_empty=True,
-        help_text="Lista de etiquetas"
-    )
+    tags = FlexibleTagsField(help_text="Lista de etiquetas")
     
     def to_representation(self, instance):
         """Customize representation to conditionally include statistics."""
@@ -70,28 +133,6 @@ class ClientSerializer(serializers.ModelSerializer):
                 pass
         
         return data
-    
-    def to_internal_value(self, data):
-        """Convert tags from comma-separated string or JSON string to list if necessary."""
-        if 'tags' in data:
-            if isinstance(data['tags'], str):
-                tags_str = data['tags'].strip()
-                if tags_str:
-                    # Try to parse as JSON first (for FormData with JSON.stringify)
-                    try:
-                        parsed_tags = json.loads(tags_str)
-                        if isinstance(parsed_tags, list):
-                            data['tags'] = [str(tag).strip() for tag in parsed_tags if str(tag).strip()]
-                        else:
-                            data['tags'] = []
-                    except (json.JSONDecodeError, ValueError):
-                        # Fall back to comma-separated parsing
-                        data['tags'] = [tag.strip() for tag in tags_str.split(',') if tag.strip()]
-                else:
-                    data['tags'] = []  # Empty list, not None
-            elif not isinstance(data['tags'], list):
-                data['tags'] = []
-        return super().to_internal_value(data)
     
     def get_default_field_value(self, field_name):
         """Provide default value for tags if not provided."""
