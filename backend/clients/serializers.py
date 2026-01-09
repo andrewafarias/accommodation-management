@@ -70,18 +70,23 @@ class ClientSerializer(serializers.ModelSerializer):
                 pass
         
         return data
-        total_paid = self.get_total_amount_paid(obj)
-        
-        if total_days > 0:
-            return round(total_paid / total_days, 2)
-        return 0.0
     
     def to_internal_value(self, data):
-        """Convert tags from comma-separated string to list if necessary."""
+        """Convert tags from comma-separated string or JSON string to list if necessary."""
         if 'tags' in data:
             if isinstance(data['tags'], str):
-                if data['tags'].strip():
-                    data['tags'] = [tag.strip() for tag in data['tags'].split(',') if tag.strip()]
+                tags_str = data['tags'].strip()
+                if tags_str:
+                    # Try to parse as JSON first (for FormData with JSON.stringify)
+                    try:
+                        parsed_tags = json.loads(tags_str)
+                        if isinstance(parsed_tags, list):
+                            data['tags'] = [str(tag).strip() for tag in parsed_tags if str(tag).strip()]
+                        else:
+                            data['tags'] = []
+                    except (json.JSONDecodeError, ValueError):
+                        # Fall back to comma-separated parsing
+                        data['tags'] = [tag.strip() for tag in tags_str.split(',') if tag.strip()]
                 else:
                     data['tags'] = []  # Empty list, not None
             elif not isinstance(data['tags'], list):

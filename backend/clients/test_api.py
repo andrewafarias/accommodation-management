@@ -154,4 +154,40 @@ class ClientAPITest(TestCase):
         self.assertIsNotNone(response.data['profile_picture'])
         self.client1.refresh_from_db()
         self.assertTrue(self.client1.profile_picture)
+    
+    def test_create_client_with_json_stringified_tags(self):
+        """Test creating a client with tags as JSON string (from FormData)."""
+        data = {
+            'full_name': 'Test User with JSON Tags',
+            'tags': '["VIP", "Frequent Guest"]'
+        }
+        response = self.client.post('/api/clients/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['full_name'], 'Test User with JSON Tags')
+        self.assertEqual(response.data['tags'], ['VIP', 'Frequent Guest'])
+        self.assertEqual(Client.objects.count(), 3)
+    
+    def test_create_client_with_comma_separated_tags(self):
+        """Test creating a client with tags as comma-separated string."""
+        data = {
+            'full_name': 'Test User with CSV Tags',
+            'tags': 'VIP, Frequent Guest, Premium'
+        }
+        response = self.client.post('/api/clients/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['full_name'], 'Test User with CSV Tags')
+        self.assertEqual(response.data['tags'], ['VIP', 'Frequent Guest', 'Premium'])
+        self.assertEqual(Client.objects.count(), 3)
+    
+    def test_create_client_with_empty_tags(self):
+        """Test creating a client with empty tags."""
+        data = {
+            'full_name': 'Test User with Empty Tags',
+            'tags': ''
+        }
+        response = self.client.post('/api/clients/', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['full_name'], 'Test User with Empty Tags')
+        self.assertEqual(response.data['tags'], [])
+        self.assertEqual(Client.objects.count(), 3)
 
