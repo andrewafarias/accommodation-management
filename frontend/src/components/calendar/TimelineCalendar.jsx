@@ -286,6 +286,67 @@ export function TimelineCalendar({
     return grouped;
   }, [units, reservations]);
   
+  // Calculate layout tracks for overlapping reservations
+  // This assigns a vertical position (track) to each reservation to avoid overlaps
+  const reservationTracks = useMemo(() => {
+    const tracks = {};
+    
+    units.forEach(unit => {
+      const unitReservations = reservationsByUnit[unit.id] || [];
+      
+      // Sort reservations by check-in date, then by check-out date
+      const sortedReservations = [...unitReservations].sort((a, b) => {
+        const aCheckIn = new Date(a.check_in);
+        const bCheckIn = new Date(b.check_in);
+        if (aCheckIn.getTime() !== bCheckIn.getTime()) {
+          return aCheckIn - bCheckIn;
+        }
+        return new Date(a.check_out) - new Date(b.check_out);
+      });
+      
+      // Track assignment: for each reservation, find the first available track
+      const assignedTracks = [];
+      const trackEndDates = []; // Keep track of when each track becomes free
+      
+      sortedReservations.forEach(reservation => {
+        const checkIn = startOfDay(parseISO(reservation.check_in));
+        const checkOut = startOfDay(parseISO(reservation.check_out));
+        
+        // Find the first track where this reservation can fit
+        let trackIndex = 0;
+        while (trackIndex < trackEndDates.length) {
+          // A reservation can use this track if it starts on or after the track's end date
+          // This allows check-out and check-in on the same day to NOT overlap
+          if (checkIn >= trackEndDates[trackIndex]) {
+            break;
+          }
+          trackIndex++;
+        }
+        
+        // Assign this reservation to the track
+        assignedTracks.push({
+          reservationId: reservation.id,
+          track: trackIndex
+        });
+        
+        // Update or add the track's end date
+        if (trackIndex < trackEndDates.length) {
+          trackEndDates[trackIndex] = checkOut;
+        } else {
+          trackEndDates.push(checkOut);
+        }
+      });
+      
+      // Store track assignments and total tracks needed
+      tracks[unit.id] = {
+        assignments: assignedTracks,
+        totalTracks: trackEndDates.length
+      };
+    });
+    
+    return tracks;
+  }, [units, reservationsByUnit]);
+  
   // Handle scroll to update visible date
   const handleScroll = useCallback((e) => {
     if (onVisibleDateChange && dates.length > 0) {
@@ -494,6 +555,22 @@ export function TimelineCalendar({
                   const barConfig = calculateReservationBar(reservation, dates);
                   if (!barConfig) return null;
 
+                  // Get track information for this reservation
+                  const unitTracks = reservationTracks[unit.id];
+                  const trackInfo = unitTracks?.assignments.find(a => a.reservationId === reservation.id);
+                  const totalTracks = unitTracks?.totalTracks || 1;
+                  const trackIndex = trackInfo?.track || 0;
+                  
+                  // Calculate height and vertical position based on track
+                  // Row height is 80px (h-20 = 5rem = 80px)
+                  const rowHeight = 80;
+                  const topPadding = 2; // top-2 = 0.5rem = 8px in original, but we'll use 2px
+                  const availableHeight = rowHeight - topPadding * 2; // 76px available
+                  
+                  // Calculate individual bar height and position
+                  const barHeight = Math.floor((availableHeight - (totalTracks - 1) * 2) / totalTracks); // -2px gap between bars
+                  const topPosition = topPadding + trackIndex * (barHeight + 2); // 2px gap between tracks
+
                   // Build the tooltip text
                   const tooltipText = barConfig.isSameDayCheckInOut
                     ? `${reservation.client.full_name} - Check-in e Check-out no mesmo dia (${format(parseISO(reservation.check_in), 'dd/MM/yyyy')})`
@@ -503,7 +580,7 @@ export function TimelineCalendar({
                     <div
                       key={reservation.id}
                       className={cn(
-                        'absolute top-2 h-16 rounded border-2 shadow-sm',
+                        'absolute rounded border-2 shadow-sm',
                         'flex items-center px-2 overflow-hidden cursor-pointer',
                         'transition-all hover:shadow-md hover:z-10',
                         'relative',
@@ -513,6 +590,8 @@ export function TimelineCalendar({
                       style={{
                         left: `${barConfig.left}px`,
                         width: `${barConfig.width}px`,
+                        top: `${topPosition}px`,
+                        height: `${barHeight}px`,
                       }}
                       title={tooltipText}
                       onClick={(e) => {
