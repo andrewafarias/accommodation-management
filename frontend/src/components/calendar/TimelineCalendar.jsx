@@ -315,9 +315,10 @@ export function TimelineCalendar({
         // Find the first track where this reservation can fit
         let trackIndex = 0;
         while (trackIndex < trackEndDates.length) {
-          // A reservation can use this track if it starts on or after the track's end date
-          // This allows check-out and check-in on the same day to NOT overlap
-          if (checkIn >= trackEndDates[trackIndex]) {
+          // A reservation can use this track if it starts AFTER the track's end date
+          // This ensures check-in on same day as check-out requires different tracks
+          // so both reservations are visible on that overlapping day
+          if (checkIn > trackEndDates[trackIndex]) {
             break;
           }
           trackIndex++;
