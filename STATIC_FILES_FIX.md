@@ -10,7 +10,7 @@ Refused to apply style from '...' because its MIME type ('text/html') is not a s
 ## Root Cause
 1. **Frontend not built**: The Vite/React frontend was not being built during Heroku deployment
 2. **Missing static files**: Without the frontend build, `collectstatic` couldn't find the compiled JS/CSS assets
-3. **Django catch-all route**: The SPA catch-all route was intercepting static file requests
+3. **Django catch-all route**: The SPA catch-all route was intercepting static file requests due to incorrect regex pattern
 4. **Django collectstatic issue**: Django's built-in collectstatic command was not functioning correctly (possible version-specific bug)
 
 ## Solution
@@ -28,7 +28,23 @@ Created `collect_static.py` to reliably collect static files from all finders to
 - Handles directory creation and file timestamps
 - Provides detailed output for debugging
 
-### 3. WhiteNoise Configuration
+### 3. Fixed SPA Catch-All Route Regex
+Updated the regex pattern in `backend/config/urls.py` to correctly exclude static and media paths:
+
+**Before (INCORRECT):**
+```python
+re_path(r'^(?!static/)(?!media/).*$', spa_view, name='spa')
+```
+This pattern failed because Django URLs start with `/` (e.g., `/static/assets/index.css`).
+The negative lookahead `(?!static/)` only prevents `static/...` but allows `/static/...`.
+
+**After (CORRECT):**
+```python
+re_path(r'^(?!/(static|media)/).*$', spa_view, name='spa')
+```
+This pattern uses proper negative lookahead to prevent URLs starting with `/static/` or `/media/`.
+
+### 4. WhiteNoise Configuration
 WhiteNoise middleware (already configured) serves static files in production with:
 - Correct MIME types
 - Compression
@@ -46,10 +62,10 @@ WhiteNoise middleware (already configured) serves static files in production wit
 - Workaround for Django collectstatic issues
 - More reliable and provides better debugging output
 
-### `backend/config/settings.py`
-- Simplified static files configuration
-- Removed problematic STORAGES configuration
-- Uses Django's default StaticFilesStorage with WhiteNoise middleware
+### `backend/config/urls.py` (UPDATED)
+- Fixed regex pattern for SPA catch-all route
+- Changed from `^(?!static/)(?!media/).*$` to `^(?!/(static|media)/).*$`
+- Correctly excludes `/static/` and `/media/` paths to allow WhiteNoise to serve them
 
 ### `.gitignore`
 - Added build artifacts and generated directories:
