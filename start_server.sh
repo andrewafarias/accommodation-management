@@ -8,7 +8,11 @@ echo "Starting Accommodation Management System"
 echo "============================================"
 
 # Get the script directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ -n "${BASH_SOURCE[0]}" ]; then
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+else
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+fi
 cd "$SCRIPT_DIR"
 
 # Step 1: Build Frontend
