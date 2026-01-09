@@ -565,12 +565,14 @@ export function TimelineCalendar({
                   // Calculate height and vertical position based on track
                   // Row height is 80px (h-20 = 5rem = 80px)
                   const rowHeight = 80;
-                  const topPadding = 2; // top-2 = 0.5rem = 8px in original, but we'll use 2px
-                  const availableHeight = rowHeight - topPadding * 2; // 76px available
+                  const topPadding = 2; // Small padding from top and bottom edges
+                  const trackGap = 2; // Gap between stacked reservation tracks
+                  const availableHeight = rowHeight - topPadding * 2; // Total space for reservations
                   
                   // Calculate individual bar height and position
-                  const barHeight = Math.floor((availableHeight - (totalTracks - 1) * 2) / totalTracks); // -2px gap between bars
-                  const topPosition = topPadding + trackIndex * (barHeight + 2); // 2px gap between tracks
+                  // Divide available space by number of tracks, accounting for gaps between them
+                  const barHeight = Math.floor((availableHeight - (totalTracks - 1) * trackGap) / totalTracks);
+                  const topPosition = topPadding + trackIndex * (barHeight + trackGap);
 
                   // Build the tooltip text
                   const tooltipText = barConfig.isSameDayCheckInOut
