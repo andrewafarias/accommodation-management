@@ -79,6 +79,47 @@ class ClientViewSet(viewsets.ModelViewSet):
     ordering_fields = ['full_name', 'created_at']
     ordering = ['full_name']
     
+    def get_serializer_context(self):
+        """Add context to serializer - include stats only for detail view"""
+        context = super().get_serializer_context()
+        # Only include stats for retrieve (single client) or when explicitly requested
+        context['include_stats'] = self.action == 'retrieve' or self.request.query_params.get('include_stats') == 'true'
+        return context
+    
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new client and handle document attachments.
+        Expects: full_name, cpf, phone, email, address, tags, notes, profile_pic, documents (optional)
+        """
+        # Get the documents from request.FILES before serialization
+        documents = request.FILES.getlist('documents', [])
+        
+        # Create the client using the standard create method
+        response = super().create(request, *args, **kwargs)
+        
+        # If documents were provided, create DocumentAttachment records
+        if response.status_code == 201 and documents:
+            try:
+                client_id = response.data.get('id')
+                client = Client.objects.get(id=client_id)
+                
+                with transaction.atomic():
+                    for document_file in documents:
+                        DocumentAttachment.objects.create(
+                            client=client,
+                            file=document_file,
+                            filename=document_file.name
+                        )
+                
+                # Re-serialize the client to include the newly created documents
+                updated_client = Client.objects.get(id=client_id)
+                serializer = self.get_serializer(updated_client)
+                response.data = serializer.data
+            except Client.DoesNotExist:
+                pass
+        
+        return response
+    
     @action(detail=True, methods=['post'], parser_classes=[MultiPartParser, FormParser])
     def add_document(self, request, pk=None):
         """
@@ -129,6 +170,106 @@ class ClientViewSet(viewsets.ModelViewSet):
                 {'error': 'Document not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
+    
+    @action(detail=False, methods=['get'])
+    def rankings(self, request):
+        """
+        Get client rankings by various metrics.
+        Returns clients ranked by reservations count, days stayed, total paid, and average per night.
+        """
+        from django.db.models import Count, Sum
+        from decimal import Decimal
+        
+        clients = Client.objects.all()
+        
+        # Calculate statistics for each client
+        client_stats = []
+        errors = []
+        for client in clients:
+            try:
+                reservations = client.reservations.all()
+                reservations_count = reservations.count()
+                
+                # Calculate total days
+                total_days = 0
+                for res in reservations:
+                    if res.check_in and res.check_out:
+                        # Convert datetime to date for calculation
+                        check_in_date = res.check_in.date() if hasattr(res.check_in, 'date') else res.check_in
+                        check_out_date = res.check_out.date() if hasattr(res.check_out, 'date') else res.check_out
+                        delta = check_out_date - check_in_date
+                        total_days += delta.days
+                
+                # Calculate total paid
+                total_paid = float(reservations.aggregate(
+                    total=Sum('transactions__amount')
+                )['total'] or Decimal('0.00'))
+                
+                # Calculate average per night
+                avg_per_night = round(total_paid / total_days, 2) if total_days > 0 else 0.0
+                
+                client_stats.append({
+                    'id': client.id,
+                    'full_name': client.full_name,
+                    'cpf': client.cpf or '',
+                    'phone': client.phone or '',
+                    'email': client.email or '',
+                    'reservations_count': reservations_count,
+                    'total_days_stayed': total_days,
+                    'total_amount_paid': total_paid,
+                    'average_price_per_night': avg_per_night,
+                })
+            except Exception as e:
+                # Log error but continue
+                errors.append(f"Error with client {client.id}: {str(e)}")
+                continue
+        
+        # Create rankings
+        rankings = {
+            'by_reservations': sorted(
+                [c for c in client_stats if c['reservations_count'] > 0],
+                key=lambda x: x['reservations_count'],
+                reverse=True
+            ),
+            'by_days_stayed': sorted(
+                [c for c in client_stats if c['total_days_stayed'] > 0],
+                key=lambda x: x['total_days_stayed'],
+                reverse=True
+            ),
+            'by_total_paid': sorted(
+                [c for c in client_stats if c['total_amount_paid'] > 0],
+                key=lambda x: x['total_amount_paid'],
+                reverse=True
+            ),
+            'by_avg_per_night': sorted(
+                [c for c in client_stats if c['average_price_per_night'] > 0],
+                key=lambda x: x['average_price_per_night'],
+                reverse=True
+            ),
+        }
+        
+        # Add rank to each client in each category
+        for category, clients_list in rankings.items():
+            for rank, client in enumerate(clients_list, 1):
+                client['rank'] = rank
+        
+        # Calculate general statistics
+        total_reservations = sum(c['reservations_count'] for c in client_stats)
+        total_days = sum(c['total_days_stayed'] for c in client_stats)
+        total_paid = sum(c['total_amount_paid'] for c in client_stats)
+        avg_per_night = round(total_paid / total_days, 2) if total_days > 0 else 0.0
+        
+        general_stats = {
+            'total_reservations': total_reservations,
+            'total_days_stayed': total_days,
+            'total_amount_paid': total_paid,
+            'average_price_per_night': avg_per_night,
+        }
+        
+        return Response({
+            **rankings,
+            'general_stats': general_stats,
+        })
     
     @action(detail=False, methods=['get'])
     def export_data(self, request):

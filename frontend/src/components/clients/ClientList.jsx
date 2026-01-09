@@ -102,6 +102,18 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                 <th className="hidden lg:table-cell px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Etiquetas
                 </th>
+                <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Reservas
+                </th>
+                <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Dias
+                </th>
+                <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Total Pago
+                </th>
+                <th className="hidden xl:table-cell px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Média/Noite
+                </th>
                 <th className="px-3 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
                 </th>
@@ -162,6 +174,26 @@ export function ClientList({ clients = [], onEdit, onDelete, loading }) {
                       ) : (
                         <span className="text-sm text-gray-400">-</span>
                       )}
+                    </div>
+                  </td>
+                  <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-center">
+                    <div className="text-sm font-medium text-gray-900">
+                      {client.reservations_count !== undefined ? client.reservations_count : '-'}
+                    </div>
+                  </td>
+                  <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-center">
+                    <div className="text-sm text-gray-900">
+                      {client.total_days_stayed !== undefined ? client.total_days_stayed : '-'}
+                    </div>
+                  </td>
+                  <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm font-medium text-green-600">
+                      {client.total_amount_paid !== undefined ? `R$ ${client.total_amount_paid.toFixed(2)}` : '-'}
+                    </div>
+                  </td>
+                  <td className="hidden xl:table-cell px-3 sm:px-6 py-4 whitespace-nowrap text-right">
+                    <div className="text-sm text-gray-700">
+                      {client.average_price_per_night !== undefined && client.average_price_per_night > 0 ? `R$ ${client.average_price_per_night.toFixed(2)}` : '-'}
                     </div>
                   </td>
                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

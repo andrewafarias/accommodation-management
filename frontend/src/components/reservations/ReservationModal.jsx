@@ -74,6 +74,7 @@ export function ReservationModal({
 }) {
   const [formData, setFormData] = useState({
     client_name: '',
+    selected_client_id: null,
     check_in_date: '',
     check_in_time: '14:00',
     check_out_date: '',
@@ -440,7 +441,8 @@ export function ReservationModal({
       setClientSearchTerm(newClient.full_name);
       setFormData(prev => ({
         ...prev,
-        client_name: newClient.id
+        client_name: newClient.id,
+        selected_client_id: newClient.id
       }));
       
       // Hide the new client form
@@ -455,14 +457,39 @@ export function ReservationModal({
       });
     } catch (err) {
       console.error('Error creating client:', err);
+      console.error('Response data:', err.response?.data);
+      console.error('Full error response:', JSON.stringify(err.response?.data, null, 2));
       let errorMessage = 'Erro ao criar cliente.';
       
       if (err.response?.data) {
         const data = err.response.data;
+        // Try to find any error field
         if (data.cpf) {
           errorMessage = `CPF: ${Array.isArray(data.cpf) ? data.cpf[0] : data.cpf}`;
+        } else if (data.full_name) {
+          errorMessage = `Nome: ${Array.isArray(data.full_name) ? data.full_name[0] : data.full_name}`;
+        } else if (data.email) {
+          errorMessage = `Email: ${Array.isArray(data.email) ? data.email[0] : data.email}`;
+        } else if (data.tags) {
+          errorMessage = `Tags: ${Array.isArray(data.tags) ? data.tags[0] : data.tags}`;
+        } else if (data.address) {
+          errorMessage = `Endereço: ${Array.isArray(data.address) ? data.address[0] : data.address}`;
+        } else if (data.notes) {
+          errorMessage = `Notas: ${Array.isArray(data.notes) ? data.notes[0] : data.notes}`;
+        } else if (data.phone) {
+          errorMessage = `Telefone: ${Array.isArray(data.phone) ? data.phone[0] : data.phone}`;
         } else if (data.detail) {
           errorMessage = data.detail;
+        } else if (Array.isArray(data)) {
+          errorMessage = data[0] || 'Erro ao criar cliente.';
+        } else if (typeof data === 'object') {
+          // Show the first error from the response
+          for (const [key, value] of Object.entries(data)) {
+            if (key && value) {
+              errorMessage = `${key}: ${Array.isArray(value) ? value[0] : value}`;
+              break;
+            }
+          }
         }
       }
       
@@ -741,34 +768,64 @@ export function ReservationModal({
             
             {!showNewClientForm ? (
               <>
-                <input
-                  type="text"
-                  id="client_name"
-                  name="client_name"
-                  list="clients-list"
-                  value={clientSearchTerm}
-                  onChange={handleClientSearch}
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Digite o nome do cliente"
-                />
-                <datalist id="clients-list">
-                  {clients.map(client => (
-                    <option key={client.id} value={client.full_name}>
-                      {client.cpf} - {client.phone}
-                    </option>
-                  ))}
-                </datalist>
-                <button
-                  type="button"
-                  onClick={() => setShowNewClientForm(true)}
-                  className="mt-1 text-xs text-blue-600 hover:text-blue-800"
-                >
-                  + Criar novo cliente
-                </button>
+                {/* Initial button choice - show only when no client is selected */}
+                {!formData.selected_client_id && clientSearchTerm === '' ? (
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowNewClientForm(true)}
+                      className="flex-1 px-4 py-2 bg-accent-600 text-white rounded-md hover:bg-accent-700 font-medium"
+                    >
+                      Novo cliente
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setClientSearchTerm('__show_list__')}
+                      className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 font-medium"
+                    >
+                      Selecionar cliente
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      id="client_name"
+                      name="client_name"
+                      list="clients-list"
+                      value={clientSearchTerm === '__show_list__' ? '' : clientSearchTerm}
+                      onChange={handleClientSearch}
+                      required
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Digite o nome do cliente"
+                    />
+                    <datalist id="clients-list">
+                      {clients.map(client => (
+                        <option key={client.id} value={client.full_name}>
+                          {client.cpf} - {client.phone}
+                        </option>
+                      ))}
+                    </datalist>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewClientForm(false);
+                        setClientSearchTerm('');
+                        setFormData(prev => ({
+                          ...prev,
+                          client_name: '',
+                          selected_client_id: null
+                        }));
+                      }}
+                      className="mt-1 text-xs text-gray-600 hover:text-gray-800"
+                    >
+                      ← Voltar
+                    </button>
+                  </>
+                )}
               </>
             ) : (
-              <div className="space-y-2 p-3 border border-gray-200 rounded-md bg-gray-50">
+              <div className="space-y-2 p-3 border border-gray-200 rounded-md bg-gray-50 max-h-96 overflow-y-auto">
                 <p className="text-xs font-medium text-gray-700">Novo Cliente</p>
                 <input
                   type="text"
