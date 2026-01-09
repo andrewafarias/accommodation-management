@@ -203,6 +203,15 @@ export function TimelineCalendar({
     return colors[status] || 'bg-gray-300 border-gray-400';
   };
 
+  // Helper to format times as HH:mm
+  const formatTimeHM = (isoString) => {
+    try {
+      return format(parseISO(isoString), 'HH:mm');
+    } catch (e) {
+      return '';
+    }
+  };
+
   // Helper function to calculate reservation bar position and width
   // Rule: Bar starts at 30% into check-in cell (70% on right) and ends at 20% into check-out cell
   const calculateReservationBar = (reservation, dates) => {
@@ -518,19 +527,36 @@ export function TimelineCalendar({
                       }}
                     >
                       {/* Main reservation bar content */}
-                      <div className="absolute inset-0 flex items-center px-2 overflow-hidden">
-                        <div className="text-white font-medium text-sm truncate z-10">
-                          {reservation.client.full_name}
-                        </div>
-                        {barConfig.isSameDayCheckInOut ? (
-                          <div className="ml-auto text-white text-[10px] font-bold z-10">
-                            IN/OUT
-                          </div>
-                        ) : barConfig.totalDays >= 2 && (
-                          <div className="ml-auto text-white text-xs font-semibold z-10">
-                            {barConfig.totalDays}d
-                          </div>
-                        )}
+                      <div className="absolute inset-0 flex items-center justify-center px-8 overflow-hidden">
+                        {(() => {
+                          const isCompact = barConfig.width < 180;
+                          const hideTimeStamps = barConfig.isSameDayCheckInOut || barConfig.totalDays <= 1;
+                          return (
+                            <>
+                              {/* Check-in time at left tip (hidden for 1-day or same-day reservations) */}
+                              {!hideTimeStamps && (
+                                <div className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white z-20 pointer-events-none">
+                                  {formatTimeHM(reservation.check_in)}
+                                </div>
+                              )}
+                              {/* Centered content: client name + days */}
+                              <div className="flex items-center gap-2 text-white z-10">
+                                <span className={cn('font-medium text-sm', isCompact ? 'truncate max-w-[55%]' : 'whitespace-nowrap')}>
+                                  {reservation.client.full_name}
+                                </span>
+                                {barConfig.totalDays >= 2 && (
+                                  <span className="text-xs font-semibold">{barConfig.totalDays}d</span>
+                                )}
+                              </div>
+                              {/* Check-out time at right tip (hidden for 1-day or same-day reservations) */}
+                              {!hideTimeStamps && (
+                                <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white z-20 pointer-events-none">
+                                  {formatTimeHM(reservation.check_out)}
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   );

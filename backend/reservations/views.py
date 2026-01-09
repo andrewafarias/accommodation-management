@@ -540,7 +540,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                 content.append(Spacer(1, 8*mm))
         
         # ============= RESERVATION DETAILS BOX =============
-        content.append(Paragraph("Detalhes da Reserva", section_header))
+        content.append(Paragraph(safe_text("Detalhes da Reserva"), section_header))
         
         # Format dates
         check_in_date = reservation.check_in.strftime('%d/%m/%Y')
@@ -551,11 +551,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # Create dates and guests info in a highlighted box
         reservation_box_data = [
-            ['<b>Check-in</b>', '<b>Check-out</b>', '<b>Hóspedes</b>'],
+            [f'<b>{safe_text("Check-in")}</b>', f'<b>{safe_text("Check-out")}</b>', f'<b>{safe_text("Hóspedes")}</b>'],
             [
                 f'{check_in_date}<br/>{check_in_time}',
                 f'{check_out_date}<br/>{check_out_time}',
-                f'{reservation.guest_count_adults} adulto(s)<br/>{reservation.guest_count_children} criança(s)'
+                f'{reservation.guest_count_adults} {safe_text("adulto(s)")}<br/>{reservation.guest_count_children} {safe_text("criança(s)")}'
             ]
         ]
         
@@ -581,7 +581,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # ============= PRICING SECTION =============
         if reservation.total_price:
-            content.append(Paragraph("Valores", section_header))
+            content.append(Paragraph(safe_text("Valores"), section_header))
             
             # Price breakdown if available
             if reservation.price_breakdown:
@@ -597,7 +597,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     
                     qty_display = f"x{int(quantity)}" if quantity > 1 else ""
                     breakdown_data.append([
-                        name,
+                        safe_text(name),
                         qty_display,
                         f'R$ {item_total:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.')
                     ])
@@ -617,8 +617,8 @@ class ReservationViewSet(viewsets.ModelViewSet):
             # Total price display
             avg_price = reservation.total_price / nights if nights > 0 else reservation.total_price
             price_data = [
-                ['', f'{nights} noite(s) • Média R$ {avg_price:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'), ''],
-                ['', '<b>Total</b>', f'<b>R$ {reservation.total_price:,.2f}</b>'.replace(',', 'X').replace('.', ',').replace('X', '.')]
+                ['', f'{nights} {safe_text("noite(s)")} • {safe_text("Média")} R$ {avg_price:,.2f}'.replace(',', 'X').replace('.', ',').replace('X', '.'), ''],
+                ['', f'<b>{safe_text("Total")}</b>', f'<b>R$ {reservation.total_price:,.2f}</b>'.replace(',', 'X').replace('.', ',').replace('X', '.')]
             ]
             
             price_table = Table(price_data, colWidths=[10*cm, 3*cm, 4*cm])
@@ -636,19 +636,19 @@ class ReservationViewSet(viewsets.ModelViewSet):
             content.append(Spacer(1, 8*mm))
         
         # ============= CLIENT INFORMATION =============
-        content.append(Paragraph("Informações do Hóspede", section_header))
+        content.append(Paragraph(safe_text("Informações do Hóspede"), section_header))
         
         client_info = [
-            ['Nome:', client.full_name],
+            [safe_text('Nome:'), safe_text(client.full_name)],
         ]
         if client.cpf:
-            client_info.append(['CPF:', client.cpf])
+            client_info.append([safe_text('CPF:'), safe_text(client.cpf)])
         if client.phone:
-            client_info.append(['Telefone:', client.phone])
+            client_info.append([safe_text('Telefone:'), safe_text(client.phone)])
         if client.email:
-            client_info.append(['E-mail:', client.email])
+            client_info.append([safe_text('E-mail:'), safe_text(client.email)])
         if client.address:
-            client_info.append(['Endereço:', client.address])
+            client_info.append([safe_text('Endereço:'), safe_text(client.address)])
         
         client_table = Table(client_info, colWidths=[4*cm, 13*cm])
         client_table.setStyle(TableStyle([
@@ -664,8 +664,8 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # ============= LOCATION =============
         if unit.location:
-            content.append(Paragraph("Localização", section_header))
-            content.append(Paragraph(unit.location, body_text))
+            content.append(Paragraph(safe_text("Localização"), section_header))
+            content.append(Paragraph(safe_text(unit.location), body_text))
             
             # Google Maps link
             encoded_location = quote(unit.location)
@@ -679,14 +679,14 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # ============= ABOUT THE ACCOMMODATION =============
         if unit.long_description:
-            content.append(Paragraph("Sobre a Acomodação", section_header))
+            content.append(Paragraph(safe_text("Sobre a Acomodação"), section_header))
             desc_paragraphs = self._process_markdown_to_reportlab(unit.long_description, body_text)
             content.extend(desc_paragraphs)
             content.append(Spacer(1, 8*mm))
         
         # ============= RULES =============
         if unit.rules:
-            content.append(Paragraph("Regras da Acomodação", section_header))
+            content.append(Paragraph(safe_text("Regras da Acomodação"), section_header))
             rules_paragraphs = self._process_markdown_to_reportlab(unit.rules, body_text)
             content.extend(rules_paragraphs)
             content.append(Spacer(1, 8*mm))
@@ -703,11 +703,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         generated_date = timezone.now().strftime('%d/%m/%Y às %H:%M')
         content.append(Paragraph(
-            f"Documento gerado em {generated_date}",
+            safe_text(f"Documento gerado em {generated_date}"),
             small_text
         ))
         content.append(Paragraph(
-            "Este é o seu comprovante de reserva. Apresente-o no check-in.",
+            safe_text("Este é o seu comprovante de reserva. Apresente-o no check-in."),
             small_text
         ))
         
@@ -741,6 +741,14 @@ class ReservationViewSet(viewsets.ModelViewSet):
         Basic markdown processing for ReportLab.
         Converts common markdown patterns to ReportLab paragraphs.
         """
+        from html import escape as html_escape
+        
+        def safe_text(text):
+            """Helper to safely escape text for ReportLab Paragraphs"""
+            if not text:
+                return ''
+            return html_escape(str(text), quote=False)
+        
         content = []
         lines = text.split('\n')
         
@@ -752,14 +760,14 @@ class ReservationViewSet(viewsets.ModelViewSet):
             # Skip empty lines but flush current paragraph
             if not stripped:
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 continue
             
             # Headers
             if stripped.startswith('### '):
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 header_style = ParagraphStyle(
                     'H3Style',
@@ -769,10 +777,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     spaceAfter=4,
                     spaceBefore=8
                 )
-                content.append(Paragraph(stripped[4:], header_style))
+                content.append(Paragraph(safe_text(stripped[4:]), header_style))
             elif stripped.startswith('## '):
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 header_style = ParagraphStyle(
                     'H2Style',
@@ -782,10 +790,10 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     spaceAfter=4,
                     spaceBefore=10
                 )
-                content.append(Paragraph(stripped[3:], header_style))
+                content.append(Paragraph(safe_text(stripped[3:]), header_style))
             elif stripped.startswith('# '):
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 header_style = ParagraphStyle(
                     'H1Style',
@@ -795,11 +803,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     spaceAfter=6,
                     spaceBefore=12
                 )
-                content.append(Paragraph(stripped[2:], header_style))
+                content.append(Paragraph(safe_text(stripped[2:]), header_style))
             # List items
             elif stripped.startswith('- ') or stripped.startswith('* '):
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 list_style = ParagraphStyle(
                     'ListStyle',
@@ -807,11 +815,11 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     leftIndent=10,
                     bulletIndent=0
                 )
-                content.append(Paragraph(f"• {stripped[2:]}", list_style))
+                content.append(Paragraph(safe_text(f"• {stripped[2:]}"), list_style))
             # Numbered list items
             elif len(stripped) > 2 and stripped[0].isdigit() and stripped[1] in '.):':
                 if current_paragraph:
-                    content.append(Paragraph(' '.join(current_paragraph), base_style))
+                    content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
                     current_paragraph = []
                 list_style = ParagraphStyle(
                     'ListStyle',
@@ -819,7 +827,7 @@ class ReservationViewSet(viewsets.ModelViewSet):
                     leftIndent=10,
                     bulletIndent=0
                 )
-                content.append(Paragraph(stripped, list_style))
+                content.append(Paragraph(safe_text(stripped), list_style))
             else:
                 # Regular text - process inline formatting
                 processed_line = stripped
@@ -834,6 +842,6 @@ class ReservationViewSet(viewsets.ModelViewSet):
         
         # Flush remaining paragraph
         if current_paragraph:
-            content.append(Paragraph(' '.join(current_paragraph), base_style))
+            content.append(Paragraph(safe_text(' '.join(current_paragraph)), base_style))
         
         return content
