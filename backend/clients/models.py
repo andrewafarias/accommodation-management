@@ -17,6 +17,8 @@ class Client(models.Model):
     )
     phone = models.CharField(
         max_length=20,
+        blank=True,
+        null=True,
         verbose_name="Telefone",
         help_text="Formato: +55 (XX) XXXXX-XXXX"
     )

@@ -792,9 +792,8 @@ export function ReservationModal({
                   name="phone"
                   value={newClientData.phone}
                   onChange={handleNewClientChange}
-                  placeholder="Telefone *"
+                  placeholder="Telefone"
                   className="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
                 />
                 <input
                   type="email"
@@ -808,7 +807,7 @@ export function ReservationModal({
                   <button
                     type="button"
                     onClick={handleCreateClient}
-                    disabled={loading || !newClientData.full_name || !newClientData.phone}
+                    disabled={loading || !newClientData.full_name}
                     className="flex-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Criar

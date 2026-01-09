@@ -222,9 +222,8 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
       }
     }
 
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Telefone é obrigatório';
-    } else if (!isValidPhone(formData.phone)) {
+    // Phone is now optional, but if provided, must be valid
+    if (formData.phone.trim() && !isValidPhone(formData.phone)) {
       newErrors.phone = 'Número inválido';
     }
 
@@ -426,7 +425,7 @@ export function ClientModal({ isOpen, onClose, onSave, client, existingCpfs = []
               {/* Phone */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Telefone <span className="text-red-500">*</span>
+                  Telefone
                 </label>
                 <input
                   type="text"
