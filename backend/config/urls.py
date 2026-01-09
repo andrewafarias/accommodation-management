@@ -57,8 +57,9 @@ urlpatterns = [
     path('api/import-all/', import_all_data, name='import-all'),
 ]
 
-# Serve media files in development
-if settings.DEBUG:
+# Serve media files in development and when using local storage
+# When Cloudinary is not configured, we need to serve files locally
+if settings.DEBUG or settings.DEFAULT_FILE_STORAGE == 'django.core.files.storage.FileSystemStorage':
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Catch-all pattern for SPA routing - must be last
