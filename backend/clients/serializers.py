@@ -24,19 +24,25 @@ class FlexibleTagsField(serializers.ListField):
         elif isinstance(data, list):
             # Check if it's a list with a single element that is a string
             if len(data) == 1 and isinstance(data[0], str):
-                # Try to parse as JSON first
-                try:
-                    parsed = json.loads(data[0])
-                    if isinstance(parsed, list):
-                        return self._validate_tag_list(parsed)
-                except (json.JSONDecodeError, ValueError):
-                    pass
+                # Try to parse as JSON array first (must start with '[')
+                if data[0].strip().startswith('['):
+                    try:
+                        parsed = json.loads(data[0])
+                        if isinstance(parsed, list):
+                            return self._validate_tag_list(parsed)
+                    except (json.JSONDecodeError, ValueError):
+                        # Not valid JSON, treat as regular string
+                        pass
                 
                 # Check if it contains commas (comma-separated tags)
                 if ',' in data[0]:
                     return [tag.strip() for tag in data[0].split(',') if tag.strip()]
+                # Single tag without commas, treat as a single-element list
+                else:
+                    tag_str = data[0].strip()
+                    return [tag_str] if tag_str else []
             
-            # Validate each item in the list
+            # Validate each item in the list (multiple elements or non-string element)
             return self._validate_tag_list(data)
         # Handle None or missing
         elif data is None:
