@@ -78,7 +78,12 @@ export function TimelineCalendar({
   onVisibleDateChange = null,
   onNavigate = null,
   focusedUnitId = null,
-  onUnitFocus = null
+  onUnitFocus = null,
+  desktopCellWidth = 120,
+  mobileCellWidth = 80,
+  sidebarWidth = 200,
+  mobileSidebarWidth = 70,
+  isMobileView = null
 }) {
   // Generate array of dates to display
   const dates = useMemo(() => {
@@ -152,9 +157,14 @@ export function TimelineCalendar({
     return null;
   };
 
-  // Calculate cell width for responsive design
-  const cellWidth = 120; // pixels per day cell
-  const sidebarWidth = 200; // pixels for the sidebar
+  // Calculate cell width for responsive design (shared by bars and grid)
+  const isMobile = typeof isMobileView === 'boolean'
+    ? isMobileView
+    : (typeof window !== 'undefined' && window.innerWidth < 768);
+  const responsiveCellWidth = isMobile ? mobileCellWidth : desktopCellWidth;
+  const responsiveSidebarWidth = isMobile ? mobileSidebarWidth : sidebarWidth;
+  const responsiveUnitRowHeight = 'h-20';
+  const responsiveHeaderHeight = isMobile ? 'h-10' : 'h-12';
 
   // Helper to get a light tint color from a hex color
   const getLightTint = (hexColor, opacity = 0.1) => {
@@ -214,7 +224,7 @@ export function TimelineCalendar({
 
   // Helper function to calculate reservation bar position and width
   // Rule: Bar starts at 30% into check-in cell (70% on right) and ends at 20% into check-out cell
-  const calculateReservationBar = (reservation, dates) => {
+  const calculateReservationBar = (reservation, dates, dayWidth) => {
     const checkIn = startOfDay(parseISO(reservation.check_in));
     const checkOut = startOfDay(parseISO(reservation.check_out));
     
@@ -251,8 +261,8 @@ export function TimelineCalendar({
       if (checkInIndex === -1) return null;
       
       return {
-        left: checkInIndex * cellWidth + cellWidth * 0.3, // Offset 30% from left
-        width: cellWidth * 0.7 - 4, // 70% width (the check-in portion only)
+        left: checkInIndex * dayWidth + dayWidth * 0.3, // Offset 30% from left
+        width: dayWidth * 0.7 - 4, // 70% width (the check-in portion only)
         totalDays: 0,
         isSameDayCheckInOut: true,
       };
@@ -265,11 +275,11 @@ export function TimelineCalendar({
     // End: 20% into the check-out cell
     const startLeft = checkInBeforeVisible 
       ? 0 
-      : checkInIndex * cellWidth + cellWidth * 0.3;
+      : checkInIndex * dayWidth + dayWidth * 0.3;
     
     const endRight = checkOutAfterVisible
-      ? dates.length * cellWidth
-      : checkOutIndex * cellWidth + cellWidth * 0.2;
+      ? dates.length * dayWidth
+      : checkOutIndex * dayWidth + dayWidth * 0.2;
     
     const width = endRight - startLeft - 4; // -4 for padding
     
@@ -298,20 +308,16 @@ export function TimelineCalendar({
   const handleScroll = useCallback((e) => {
     if (onVisibleDateChange && dates.length > 0) {
       const scrollLeft = e.target.scrollLeft;
-      const visibleDateIndex = Math.floor(scrollLeft / cellWidth);
-      const centeredIndex = Math.min(visibleDateIndex + Math.floor(e.target.clientWidth / cellWidth / 2), dates.length - 1);
+      const visibleDateIndex = Math.floor(scrollLeft / responsiveCellWidth);
+      const centeredIndex = Math.min(
+        visibleDateIndex + Math.floor(e.target.clientWidth / responsiveCellWidth / 2),
+        dates.length - 1
+      );
       if (centeredIndex >= 0 && centeredIndex < dates.length) {
         onVisibleDateChange(dates[centeredIndex]);
       }
     }
-  }, [onVisibleDateChange, dates, cellWidth]);
-
-  // Mobile-responsive sizing
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
-  const responsiveSidebarWidth = isMobile ? 70 : sidebarWidth;
-  const responsiveCellWidth = isMobile ? 80 : cellWidth;
-  const responsiveUnitRowHeight = 'h-20';
-  const responsiveHeaderHeight = isMobile ? 'h-10' : 'h-12';
+  }, [onVisibleDateChange, dates, responsiveCellWidth]);
 
   return (
     <div className="border rounded-lg bg-white overflow-hidden">
@@ -339,7 +345,7 @@ export function TimelineCalendar({
                   "border-b flex items-center transition-opacity",
                   responsiveUnitRowHeight,
                   isMobile ? "px-1 space-x-1" : "px-4 space-x-3",
-                  isDimmed && "opacity-50"
+                  isDimmed && "opacity-30"
                 )}
               >
                 {/* Color Indicator - Clickable for focus mode */}
@@ -412,11 +418,14 @@ export function TimelineCalendar({
             <div className={cn("border-b bg-gray-100 flex", responsiveHeaderHeight)}>
               {dates.map((date, index) => {
                 const holidayName = isHoliday(date);
+                const isMonthBoundary = date.getDate() === 1;
+                const monthBoundaryClasses = isMonthBoundary ? 'border-l-2 border-l-gray-500' : '';
                 return (
                   <div
                     key={index}
                     className={cn(
-                      'border-r flex flex-col items-center justify-center',
+                      'border-r border-gray-200 flex flex-col items-center justify-center',
+                      monthBoundaryClasses,
                       isMobile ? 'text-[10px]' : 'text-xs',
                       isSameDay(date, new Date()) && 'bg-primary-50 border-primary-300'
                     )}
@@ -456,7 +465,7 @@ export function TimelineCalendar({
                   key={unit.id} 
                   className={cn(
                     "relative h-20 border-b transition-opacity",
-                    isDimmed && "opacity-50"
+                    isDimmed && "opacity-30"
                   )}
                   style={{
                     pointerEvents: isDimmed ? 'none' : 'auto'
@@ -468,12 +477,15 @@ export function TimelineCalendar({
                     // Unit color is only shown on hover now
                     const hoverBgColor = getLightTint(unit.color_hex || '#4A90E2', 0.25);
                     const isSelected = isDateInSelection(date, unit.id);
+                    const isMonthBoundary = date.getDate() === 1;
+                    const monthBoundaryClasses = isMonthBoundary ? 'border-l-2 border-l-gray-500' : '';
                     return (
                       <div
                         key={index}
                         data-selected={isSelected || undefined}
                         className={cn(
-                          'calendar-cell border-r cursor-pointer transition-colors relative group',
+                          'calendar-cell border-r border-gray-200 cursor-pointer transition-colors relative group',
+                          monthBoundaryClasses,
                           isSameDay(date, new Date()) && 'ring-2 ring-inset ring-primary-400',
                           isSelected && 'ring-2 ring-inset ring-accent-500 bg-accent-100',
                           isSelectionEdge(date, unit.id) === 'start' && 'ring-2 ring-accent-600',
@@ -528,7 +540,7 @@ export function TimelineCalendar({
 
                 {/* Reservation Bars */}
                 {reservationsByUnit[unit.id]?.map(reservation => {
-                  const barConfig = calculateReservationBar(reservation, dates);
+                  const barConfig = calculateReservationBar(reservation, dates, responsiveCellWidth);
                   if (!barConfig) return null;
 
                   // Build the tooltip text

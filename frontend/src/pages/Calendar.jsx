@@ -48,12 +48,31 @@ export function Calendar() {
     currentUnitId: null,
     currentStartDate: null
   });
-  
-  // Cell width constant (must match TimelineCalendar)
-  const cellWidth = 120;
+
+  // Responsive sizing shared with TimelineCalendar
+  const MOBILE_BREAKPOINT = 768;
+  const DESKTOP_CELL_WIDTH = 120;
+  const MOBILE_CELL_WIDTH = 80;
+  const MOBILE_SIDEBAR_WIDTH = 70;
+  const [isMobileView, setIsMobileView] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < MOBILE_BREAKPOINT : false
+  );
+  const cellWidth = isMobileView ? MOBILE_CELL_WIDTH : DESKTOP_CELL_WIDTH;
+
+  // Direct date jump input
+  const [jumpDateInput, setJumpDateInput] = useState(() => format(new Date(), 'yyyy-MM-dd'));
   
   // Focus mode state
   const [focusedUnitId, setFocusedUnitId] = useState(null);
+
+  // Track viewport changes to keep grid sizing and bars aligned on resize
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleResize = () => setIsMobileView(window.innerWidth < MOBILE_BREAKPOINT);
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [MOBILE_BREAKPOINT]);
 
   useEffect(() => {
     fetchCalendarData();
@@ -199,6 +218,20 @@ export function Calendar() {
     setVisibleDate(new Date());
     // Scroll to today instantly
     scrollToToday(true);
+  };
+
+  const handleGoToDate = (event) => {
+    event.preventDefault();
+    if (!jumpDateInput) return;
+
+    try {
+      const targetDate = startOfDay(parseISO(jumpDateInput));
+      const dateStr = format(targetDate, 'yyyy-MM-dd');
+      setVisibleDate(startOfMonth(targetDate));
+      scrollToDate(dateStr, false);
+    } catch (err) {
+      console.error('Invalid date input', err);
+    }
   };
   
   // Calculate days to show: from 3 months back to 2 years forward
@@ -590,10 +623,23 @@ export function Calendar() {
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
-          
-          <div className="text-sm font-medium text-gray-700 bg-gray-100 px-4 py-2 rounded-lg text-center">
-            {format(visibleDate, 'MMMM yyyy', { locale: ptBR })}
-          </div>
+
+          <form onSubmit={handleGoToDate} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <label className="text-xs text-gray-600 sm:hidden" htmlFor="jump-date-input">
+              Ir para data específica
+            </label>
+            <input
+              id="jump-date-input"
+              type="date"
+              value={jumpDateInput}
+              onChange={(e) => setJumpDateInput(e.target.value)}
+              aria-label="Ir para data específica"
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 w-full sm:w-auto"
+            />
+            <Button type="submit" size="sm" variant="outline" className="sm:whitespace-nowrap">
+              Ir para data
+            </Button>
+          </form>
         </div>
       </div>
 
@@ -712,6 +758,10 @@ export function Calendar() {
               onNavigate={handleNavigate}
               focusedUnitId={focusedUnitId}
               onUnitFocus={handleUnitFocus}
+              desktopCellWidth={DESKTOP_CELL_WIDTH}
+              mobileCellWidth={MOBILE_CELL_WIDTH}
+              mobileSidebarWidth={MOBILE_SIDEBAR_WIDTH}
+              isMobileView={isMobileView}
             />
           )}
         </CardContent>
