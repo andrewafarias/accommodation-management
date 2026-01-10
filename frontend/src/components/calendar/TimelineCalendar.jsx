@@ -205,7 +205,7 @@ export function TimelineCalendar({
   const getStatusColor = (status) => {
     const colors = {
       CONFIRMED: 'bg-accent-500 border-accent-600',
-      PENDING: 'bg-yellow-400 border-yellow-500',
+      PENDING: 'bg-orange-400 border-orange-500',
       CHECKED_IN: 'bg-primary-500 border-primary-600',
       CHECKED_OUT: 'bg-gray-400 border-gray-500',
       CANCELLED: 'bg-red-400 border-red-500',
@@ -543,10 +543,14 @@ export function TimelineCalendar({
                   const barConfig = calculateReservationBar(reservation, dates, responsiveCellWidth);
                   if (!barConfig) return null;
 
-                  // Build the tooltip text
+                  // Build the tooltip text with dates and times
+                  const ciDate = format(parseISO(reservation.check_in), 'dd/MM/yyyy');
+                  const coDate = format(parseISO(reservation.check_out), 'dd/MM/yyyy');
+                  const ciTime = formatTimeHM(reservation.check_in);
+                  const coTime = formatTimeHM(reservation.check_out);
                   const tooltipText = barConfig.isSameDayCheckInOut
-                    ? `${reservation.client.full_name} - Check-in e Check-out no mesmo dia (${format(parseISO(reservation.check_in), 'dd/MM/yyyy')})`
-                    : `${reservation.client.full_name} - ${format(parseISO(reservation.check_in), 'dd/MM/yyyy')} até ${format(parseISO(reservation.check_out), 'dd/MM/yyyy')}`;
+                    ? `${reservation.client.full_name} — ${ciDate} • Check-in ${ciTime} • Check-out ${coTime}`
+                    : `${reservation.client.full_name} — ${ciDate} ${ciTime} até ${coDate} ${coTime}`;
 
                   return (
                     <div
@@ -572,27 +576,130 @@ export function TimelineCalendar({
                         {(() => {
                           const isCompact = barConfig.width < 180;
                           const hideTimeStamps = barConfig.isSameDayCheckInOut || barConfig.totalDays <= 1;
+                          // Compute tag sizing and collision handling
+                          const size = barConfig.width < 120 ? 'xs' : (barConfig.width < 160 ? 'sm' : 'md');
+                          // Character width estimates & padding
+                          const nameCharPx = size === 'md' ? 7 : size === 'sm' ? 6 : 5;
+                          const namePadPx = size === 'md' ? 14 : size === 'sm' ? 10 : 8; // horizontal padding
+                          let timeSizeIn = size;
+                          let timeSizeOut = size;
+                          const timeCharPx = (s) => (s === 'md' ? 7 : s === 'sm' ? 6 : 5);
+                          const timePadPx = (s) => (s === 'md' ? 12 : s === 'sm' ? 10 : 8);
+                          const minTimeTagWidth = 32; // minimum viable px before considering omission
+                          const gapPx = 6; // space between tags
+                          const inTime = formatTimeHM(reservation.check_in);
+                          const outTime = formatTimeHM(reservation.check_out);
+                          const fullName = reservation.client.full_name || '';
+                          const nameParts = fullName.trim().split(/\s+/);
+                          const displayName = nameParts.length <= 1
+                            ? (nameParts[0] || '')
+                            : `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+                          const daysStr = barConfig.totalDays >= 2 ? `${barConfig.totalDays}d` : '';
+                          const nameWidth = displayName.length * nameCharPx + namePadPx;
+                          const timeWidth = (str, s) => (hideTimeStamps ? 0 : (str.length * timeCharPx(s) + timePadPx(s)));
+                          let inWidth = timeWidth(inTime, timeSizeIn);
+                          let outWidth = timeWidth(outTime, timeSizeOut);
+                          const daysWidth = daysStr ? (daysStr.length * timeCharPx(size) + timePadPx(size)) : 0;
+                          let showName = true;
+                          let showOut = !hideTimeStamps;
+                          let showIn = !hideTimeStamps;
+                          let showDays = !!daysStr;
+                          const tagCount = [showName, showOut, showIn, showDays].filter(Boolean).length;
+                          const totalGaps = Math.max(0, tagCount - 1) * gapPx;
+                          const totalWidth = nameWidth + outWidth + inWidth + daysWidth + totalGaps;
+                          const marginAllowance = 16; // inner edges allowance
+                          let available = barConfig.width - marginAllowance;
+                          // Removal priority when collision (remove least important first):
+                          // 1) days, 2) check-in time, 3) check-out time, 4) client name
+                          const fits = () => {
+                            const count = [showName, showOut, showIn, showDays].filter(Boolean).length;
+                            const gaps = Math.max(0, count - 1) * gapPx;
+                            // Allow name to truncate to the available space rather than being removed
+                            const nameCandidateWidth = showName ? Math.min(nameWidth, available) : 0;
+                            const width = nameCandidateWidth + (showOut ? outWidth : 0) + (showIn ? inWidth : 0) + (showDays ? daysWidth : 0) + gaps;
+                            return width <= available;
+                          };
+                          let guard = 0;
+                          const initialWantedIn = !hideTimeStamps;
+                          const initialWantedOut = !hideTimeStamps;
+                          const initialWantedDays = !!daysStr;
+                          while (!fits() && guard < 20) {
+                            // First, progressively shrink time tags before omitting
+                            if (showIn) {
+                              if (timeSizeIn === 'md') { timeSizeIn = 'sm'; inWidth = timeWidth(inTime, timeSizeIn); guard++; if (fits()) break; }
+                              else if (timeSizeIn === 'sm') { timeSizeIn = 'xs'; inWidth = timeWidth(inTime, timeSizeIn); guard++; if (fits()) break; }
+                            }
+                            if (!fits() && showOut) {
+                              if (timeSizeOut === 'md') { timeSizeOut = 'sm'; outWidth = timeWidth(outTime, timeSizeOut); guard++; if (fits()) break; }
+                              else if (timeSizeOut === 'sm') { timeSizeOut = 'xs'; outWidth = timeWidth(outTime, timeSizeOut); guard++; if (fits()) break; }
+                            }
+                            // If still not fitting at smallest sizes, remove lowest priority first
+                            if (showDays) { showDays = false; guard++; continue; }
+                            // Only omit check-in if its tag would have to be smaller than minimum viable width
+                            if (showIn) {
+                              const canFitInMin = timeWidth(inTime, 'xs') >= minTimeTagWidth;
+                              if (!canFitInMin) { showIn = false; guard++; continue; }
+                            }
+                            // Only omit check-out if its tag would have to be smaller than minimum viable width
+                            if (showOut) {
+                              const canFitOutMin = timeWidth(outTime, 'xs') >= minTimeTagWidth;
+                              if (!canFitOutMin) { showOut = false; guard++; continue; }
+                            }
+                            if (showName) { showName = false; guard++; continue; }
+                            break;
+                          }
+                          // After deciding visibility, compute if name must be truncated based on remaining space
+                          const otherWidths = (showOut ? outWidth : 0) + (showIn ? inWidth : 0) + (showDays ? daysWidth : 0);
+                          const otherCount = [showOut, showIn, showDays].filter(Boolean).length;
+                          const remainingGaps = Math.max(0, (showName ? otherCount : Math.max(0, otherCount - 1))) * gapPx;
+                          const availableForName = Math.max(0, available - otherWidths - remainingGaps);
+                          const omittedByFit = (initialWantedIn && !showIn) || (initialWantedOut && !showOut) || (initialWantedDays && !showDays);
+                          const fullNameWidth = fullName.length * nameCharPx + namePadPx;
+                          const canUseFullName = showName && !omittedByFit && fullNameWidth <= availableForName;
+                          const chosenName = canUseFullName ? fullName : displayName;
+                          const chosenNameWidth = (canUseFullName ? fullNameWidth : nameWidth);
+                          const shouldTruncateName = showName && chosenNameWidth > availableForName;
+                          const nameClass = size === 'md'
+                            ? 'font-medium text-sm px-2 py-[2px]'
+                            : size === 'sm'
+                              ? 'font-medium text-[11px] px-2 py-[2px]'
+                              : 'font-medium text-[10px] px-1.5 py-[1px]';
+                          const sizeCls = (s) => s === 'md' ? 'text-[10px] px-2 py-[2px]' : s === 'sm' ? 'text-[9px] px-1.5 py-[1px]' : 'text-[8px] px-1 py-[1px]';
+                          const timeClassIn = sizeCls(timeSizeIn);
+                          const timeClassOut = sizeCls(timeSizeOut);
+                          const pillBg = 'rounded-full backdrop-blur-sm border border-white/20 shadow-sm';
                           return (
                             <>
                               {/* Check-in time at left tip (hidden for 1-day or same-day reservations) */}
-                              {!hideTimeStamps && (
-                                <div className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white z-20 pointer-events-none">
-                                  {formatTimeHM(reservation.check_in)}
+                              {showIn && (
+                                <div className={cn('absolute left-1 top-1/2 -translate-y-1/2 font-semibold text-white z-20 pointer-events-none bg-black/30', timeClassIn, pillBg)}>
+                                  {inTime}
                                 </div>
                               )}
                               {/* Centered content: client name + days */}
                               <div className="flex items-center gap-2 text-white z-10">
-                                <span className={cn('font-medium text-sm', isCompact ? 'truncate max-w-[55%]' : 'whitespace-nowrap')}>
-                                  {reservation.client.full_name}
-                                </span>
-                                {barConfig.totalDays >= 2 && (
-                                  <span className="text-xs font-semibold">{barConfig.totalDays}d</span>
+                                {showName && (
+                                  <span
+                                    className={cn(
+                                      `${nameClass} rounded-full bg-white/20 ${pillBg}`,
+                                      shouldTruncateName ? 'truncate' : 'whitespace-nowrap'
+                                    )}
+                                    style={shouldTruncateName ? { maxWidth: `${availableForName}px` } : undefined}
+                                    title={fullName}
+                                  >
+                                    {chosenName}
+                                  </span>
+                                )}
+                                {showDays && (
+                                  <span className={cn('text-xs font-semibold rounded-full bg-black/20 border border-white/20 shadow-sm', size === 'md' ? 'px-2 py-[2px]' : size === 'sm' ? 'px-2 py-[2px]' : 'px-1.5 py-[1px]')}>
+                                    {daysStr}
+                                  </span>
                                 )}
                               </div>
                               {/* Check-out time at right tip (hidden for 1-day or same-day reservations) */}
-                              {!hideTimeStamps && (
-                                <div className="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-white z-20 pointer-events-none">
-                                  {formatTimeHM(reservation.check_out)}
+                              {showOut && (
+                                <div className={cn('absolute right-1 top-1/2 -translate-y-1/2 font-semibold text-white z-20 pointer-events-none bg-black/30', timeClassOut, pillBg)}>
+                                  {outTime}
                                 </div>
                               )}
                             </>
@@ -618,7 +725,7 @@ export function TimelineCalendar({
             <span className="text-gray-700">Confirmado</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-4 h-4 bg-yellow-400 border-2 border-yellow-500 rounded"></div>
+            <div className="w-4 h-4 bg-orange-400 border-2 border-orange-500 rounded"></div>
             <span className="text-gray-700">Pendente</span>
           </div>
           <div className="flex items-center space-x-2">
