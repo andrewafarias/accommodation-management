@@ -30,6 +30,16 @@ export function Calendar() {
   // Reference to the timeline scroll container
   const timelineScrollRef = useRef(null);
   
+  // Store scroll position before opening modal
+  const [scrollPositionBeforeModal, setScrollPositionBeforeModal] = useState(null);
+
+  // Save current timeline scroll position
+  const saveScrollPosition = useCallback(() => {
+    if (timelineScrollRef.current) {
+      setScrollPositionBeforeModal(timelineScrollRef.current.scrollLeft);
+    }
+  }, []);
+  
   // Price override modal state
   const [priceModalOpen, setPriceModalOpen] = useState(false);
   const [customPrices, setCustomPrices] = useState({}); // { 'unitId-date': price }
@@ -312,6 +322,8 @@ export function Calendar() {
   // Create reservation from selected date range (use first selection)
   const handleCreateReservationFromSelection = () => {
     if (dateSelection.selections.length > 0) {
+      // Save current scroll position
+      saveScrollPosition();
       const firstSelection = dateSelection.selections[0];
       setSelectedReservation(null);
       setPrefilledData({
@@ -365,6 +377,8 @@ export function Calendar() {
   };
 
   const handleReservationClick = (reservation) => {
+    // Save current scroll position
+    saveScrollPosition();
     setSelectedReservation(reservation);
     setPrefilledData({});
     setModalOpen(true);
@@ -375,6 +389,28 @@ export function Calendar() {
     setSelectedReservation(null);
     setPrefilledData({});
     handleClearSelection();
+    // Restore scroll position if modal was closed without saving
+    restoreScrollPosition();
+  };
+
+  const restoreScrollPosition = (initialDelay = 150) => {
+    if (scrollPositionBeforeModal !== null) {
+      // Use a longer delay and more attempts to ensure ref is available after refreshes
+      let attempts = 0;
+      const maxAttempts = 15;
+      const tryRestore = () => {
+        if (timelineScrollRef.current) {
+          timelineScrollRef.current.scrollTo({ left: scrollPositionBeforeModal, behavior: 'instant' });
+          setScrollPositionBeforeModal(null);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryRestore, 80);
+        } else {
+          setScrollPositionBeforeModal(null);
+        }
+      };
+      setTimeout(tryRestore, initialDelay);
+    }
   };
 
   const handleReservationSave = async (data) => {
@@ -384,27 +420,36 @@ export function Calendar() {
     setModalOpen(false);
     setSelectedReservation(null);
     setPrefilledData({});
-    
-    // Scroll instantly to the reservation date after modal closes
-    if (data && data.check_in) {
-      // Use setTimeout to ensure the DOM has updated after fetchCalendarData
-      setTimeout(() => scrollToDate(data.check_in, true), 0);
-    }
+    // Restore scroll position
+    restoreScrollPosition();
   };
 
   const handleReservationDelete = async () => {
     // Refresh calendar data after deleting
     await fetchCalendarData();
+    // Restore scroll position after deletion
+    restoreScrollPosition();
   };
 
   // Handle setting custom prices for all selected date ranges
   const handleSetPrices = async () => {
     if (dateSelection.selections.length === 0) return;
+    saveScrollPosition();
     
     const price = parseFloat(newPriceData.price);
     if (isNaN(price) || price <= 0) return;
     
     try {
+      // First clear any existing overrides in the selected ranges to avoid duplicate errors
+      const deletePromises = dateSelection.selections.map(selection =>
+        datePriceOverrides.bulkDelete({
+          unit_ids: [selection.unitId],
+          start_date: selection.startDate,
+          end_date: selection.endDate
+        })
+      );
+      await Promise.all(deletePromises);
+
       // Collect all unit-date combinations from selections
       const items = [];
       dateSelection.selections.forEach(selection => {
@@ -431,6 +476,7 @@ export function Calendar() {
       setPriceModalOpen(false);
       setNewPriceData({ price: '' });
       handleClearSelection();
+      restoreScrollPosition();
     } catch (error) {
       console.error('Error setting prices:', error);
       alert('Erro ao definir preços. Tente novamente.');
@@ -440,6 +486,7 @@ export function Calendar() {
   // Handle creating or applying a package for all selected date ranges
   const handleCreatePackage = async () => {
     if (dateSelection.selections.length === 0) return;
+    saveScrollPosition();
     
     try {
       // If a recent package is selected, apply it to all selections
@@ -461,6 +508,7 @@ export function Calendar() {
           setSelectedPackageId(null);
           setNewPackageData({ name: '', color: '#4A90E2' });
           handleClearSelection();
+          restoreScrollPosition();
           return;
         }
       }
@@ -483,6 +531,7 @@ export function Calendar() {
       setNewPackageData({ name: '', color: '#4A90E2' });
       setSelectedPackageId(null);
       handleClearSelection();
+      restoreScrollPosition();
     } catch (error) {
       console.error('Error creating package:', error);
       alert('Erro ao criar pacote. Tente novamente.');
@@ -492,6 +541,7 @@ export function Calendar() {
   // Handle clearing packages from all selected date ranges
   const handleClearPackages = async () => {
     if (dateSelection.selections.length === 0) return;
+    saveScrollPosition();
     
     try {
       // Group selections by unit for bulk delete
@@ -508,6 +558,7 @@ export function Calendar() {
       
       setPackageModalOpen(false);
       handleClearSelection();
+      restoreScrollPosition();
     } catch (error) {
       console.error('Error clearing packages:', error);
       alert('Erro ao limpar pacotes. Tente novamente.');
@@ -693,7 +744,7 @@ export function Calendar() {
                         </>
                       )}
                       <Button
-                        onClick={() => setPriceModalOpen(true)}
+                        onClick={() => { saveScrollPosition(); setPriceModalOpen(true); }}
                         size="sm"
                         variant="outline"
                         className="border-secondary-500 text-secondary-600 hover:bg-secondary-50"
@@ -702,7 +753,7 @@ export function Calendar() {
                         <span className="hidden sm:inline">Definir Preços</span>
                       </Button>
                       <Button
-                        onClick={() => setPackageModalOpen(true)}
+                        onClick={() => { saveScrollPosition(); setPackageModalOpen(true); }}
                         size="sm"
                         variant="outline"
                         className="border-primary-500 text-primary-600 hover:bg-primary-50"
@@ -774,6 +825,7 @@ export function Calendar() {
         reservation={selectedReservation}
         units={accommodations}
         prefilledData={prefilledData}
+        customPrices={customPrices}
         onSave={handleReservationSave}
         onDelete={handleReservationDelete}
       />
@@ -784,6 +836,7 @@ export function Calendar() {
         onClose={handleInquiryModalClose}
         units={accommodations}
         prefilledData={inquiryPrefilledData}
+        customPrices={customPrices}
       />
 
       {/* Price Override Modal */}

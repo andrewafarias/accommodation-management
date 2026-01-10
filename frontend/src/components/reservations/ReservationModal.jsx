@@ -69,6 +69,7 @@ export function ReservationModal({
   reservation = null, 
   units = [],
   prefilledData = {},
+  customPrices = {},
   onSave,
   onDelete
 }) {
@@ -140,6 +141,11 @@ export function ReservationModal({
     return (dateStr) => holidayMap[dateStr] || null;
   }, [formData.check_in_date, formData.check_out_date]);
 
+  // Helpers to avoid floating-point drift: work in integer cents
+  const toCents = (value) => Math.round((parseFloat(value) || 0) * 100);
+  const fromCents = (cents) => cents / 100;
+  const roundMoney = (value) => fromCents(toCents(value));
+
   // Calculate suggested price based on dates and unit pricing
   const calculateSuggestedPrice = useMemo(() => {
     if (!formData.check_in_date || !formData.check_out_date || !formData.accommodation_unit) {
@@ -149,7 +155,7 @@ export function ReservationModal({
     const selectedUnit = units.find(u => u.id === parseInt(formData.accommodation_unit));
     if (!selectedUnit) return 0;
     
-    let total = 0;
+    let totalCents = 0;
     const checkIn = parseISO(formData.check_in_date);
     const checkOut = parseISO(formData.check_out_date);
     const nights = differenceInDays(checkOut, checkIn);
@@ -162,10 +168,16 @@ export function ReservationModal({
       
       let priceForNight = 0;
       
-      // Holiday price takes precedence
-      if (holidayName && selectedUnit.holiday_price) {
+      // Custom override price takes absolute precedence
+      const overrideKey = `${selectedUnit.id}-${dateStr}`;
+      if (customPrices && typeof customPrices[overrideKey] !== 'undefined') {
+        priceForNight = parseFloat(customPrices[overrideKey]);
+      }
+      // Holiday price
+      else if (holidayName && selectedUnit.holiday_price) {
         priceForNight = parseFloat(selectedUnit.holiday_price);
       }
+      // Holiday price takes precedence
       // Weekend price (Friday, Saturday, Sunday)
       else if ((isWeekend(currentDate) || isFriday(currentDate)) && selectedUnit.weekend_price) {
         priceForNight = parseFloat(selectedUnit.weekend_price);
@@ -175,11 +187,13 @@ export function ReservationModal({
         priceForNight = parseFloat(selectedUnit.base_price || 0);
       }
       
-      total += priceForNight;
+      // Normalize nightly value to cents before sum to avoid float drift
+      const nightCents = toCents(priceForNight);
+      totalCents += nightCents;
     }
-    
-    return total;
-  }, [formData.check_in_date, formData.check_out_date, formData.accommodation_unit, units, isHoliday]);
+
+    return fromCents(totalCents);
+  }, [formData.check_in_date, formData.check_out_date, formData.accommodation_unit, units, isHoliday, customPrices]);
 
   // Load clients on mount
   useEffect(() => {
@@ -406,6 +420,17 @@ export function ReservationModal({
     const nights = differenceInDays(checkOut, checkIn);
     return nights > 0 ? nights : 0;
   }, [formData.check_in_date, formData.check_out_date]);
+
+  const averagePerNight = useMemo(() => {
+    const total = parseFloat(formData.total_price) || calculateSuggestedPrice;
+    const nights = calculateTotalNights;
+    if (nights <= 0 || total <= 0) return 0;
+    return roundMoney(total / nights);
+  }, [formData.total_price, calculateSuggestedPrice, calculateTotalNights]);
+
+  const displayTotal = useMemo(() => {
+    return roundMoney(parseFloat(formData.total_price) || calculateSuggestedPrice);
+  }, [formData.total_price, calculateSuggestedPrice]);
 
   // Remove payment from pool with status reset logic
   const handleRemovePayment = (index) => {

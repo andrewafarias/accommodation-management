@@ -73,11 +73,12 @@ const getUnitPhotos = (unit) => {
  * Modal dialog for creating reservation quotes/inquiries.
  * Does NOT save to the database - generates a shareable image instead.
  */
-export function InquiryModal({ 
-  isOpen, 
-  onClose, 
+export function InquiryModal({
+  isOpen,
+  onClose,
   units = [],
   prefilledData = {},
+  customPrices = {},
 }) {
   const [formData, setFormData] = useState({
     check_in_date: '',
@@ -99,6 +100,11 @@ export function InquiryModal({
   const initializedRef = useRef(false);
   const prefilledDataRef = useRef(prefilledData);
   const quoteTemplateRef = useRef(null);
+
+  // Helpers for precise currency math (integer cents)
+  const toCents = (value) => Math.round((parseFloat(value) || 0) * 100);
+  const fromCents = (cents) => cents / 100;
+  const roundMoney = (value) => fromCents(toCents(value));
 
   // Helper function to check if a date is a Brazilian holiday
   const isHoliday = useMemo(() => {
@@ -126,7 +132,7 @@ export function InquiryModal({
     const selectedUnit = units.find(u => u.id === parseInt(formData.accommodation_unit));
     if (!selectedUnit) return 0;
     
-    let total = 0;
+    let totalCents = 0;
     const checkIn = parseISO(formData.check_in_date);
     const checkOut = parseISO(formData.check_out_date);
     const nights = differenceInDays(checkOut, checkIn);
@@ -138,7 +144,12 @@ export function InquiryModal({
       
       let priceForNight = 0;
       
-      if (holidayName && selectedUnit.holiday_price) {
+      // Custom override price takes absolute precedence
+      const overrideKey = `${selectedUnit.id}-${dateStr}`;
+      if (customPrices && typeof customPrices[overrideKey] !== 'undefined') {
+        priceForNight = parseFloat(customPrices[overrideKey]);
+      }
+      else if (holidayName && selectedUnit.holiday_price) {
         priceForNight = parseFloat(selectedUnit.holiday_price);
       }
       else if ((isWeekend(currentDate) || isFriday(currentDate)) && selectedUnit.weekend_price) {
@@ -148,11 +159,13 @@ export function InquiryModal({
         priceForNight = parseFloat(selectedUnit.base_price || 0);
       }
       
-      total += priceForNight;
+      // Normalize nightly value to cents before sum to avoid float drift (e.g., 349.999999)
+      const nightCents = toCents(priceForNight);
+      totalCents += nightCents;
     }
     
-    return total;
-  }, [formData.check_in_date, formData.check_out_date, formData.accommodation_unit, units, isHoliday]);
+    return fromCents(totalCents);
+  }, [formData.check_in_date, formData.check_out_date, formData.accommodation_unit, units, isHoliday, customPrices]);
 
   // Initialize form data when modal opens
   useEffect(() => {
@@ -270,12 +283,12 @@ export function InquiryModal({
     const total = parseFloat(formData.total_price) || calculateSuggestedPrice;
     const nights = calculateTotalNights;
     if (nights <= 0 || total <= 0) return 0;
-    return total / nights;
+    return roundMoney(total / nights);
   }, [formData.total_price, calculateSuggestedPrice, calculateTotalNights]);
 
   // Get total value to display
   const displayTotal = useMemo(() => {
-    return parseFloat(formData.total_price) || calculateSuggestedPrice;
+    return roundMoney(parseFloat(formData.total_price) || calculateSuggestedPrice);
   }, [formData.total_price, calculateSuggestedPrice]);
 
   // Check if has manual breakdown
@@ -779,8 +792,8 @@ export function InquiryModal({
         <div style={{
           width: '100%',
           height: '100%',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          padding: '24px',
+          background: '#e5e7eb',
+          padding: '16px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
@@ -788,8 +801,8 @@ export function InquiryModal({
           {/* Main Content Section */}
           <div style={{
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '16px',
-            padding: '24px',
+            borderRadius: '28px',
+            padding: '48px',
             flex: '1',
             display: 'flex',
             flexDirection: 'column',
@@ -799,33 +812,33 @@ export function InquiryModal({
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
-              gap: '16px',
-              marginBottom: '16px',
+              gap: '28px',
+              marginBottom: '28px',
             }}>
               {/* Check-in */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '18px',
-                borderRadius: '12px',
+                padding: '32px',
+                borderRadius: '18px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '18px' }}>
                   <div style={{
                     backgroundColor: '#10b981',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    marginRight: '12px',
+                    borderRadius: '14px',
+                    padding: '18px',
+                    marginRight: '18px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Calendar style={{ width: '20px', height: '20px', color: 'white' }} />
+                    <Calendar style={{ width: '34px', height: '34px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-IN</span>
+                  <span style={{ fontSize: '24px', fontWeight: '700', color: '#374151', lineHeight: '1' }}>CHECK-IN</span>
                 </div>
-                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
+                <p style={{ fontSize: '32px', fontWeight: '700', color: '#1f2937', margin: '0 0 6px 0' }}>
                   {formatDisplayDate(formData.check_in_date)}
                 </p>
-                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0' }}>
                   às {formatDisplayTime(formData.check_in_time)}
                 </p>
               </div>
@@ -833,27 +846,27 @@ export function InquiryModal({
               {/* Check-out */}
               <div style={{
                 backgroundColor: '#f3f4f6',
-                padding: '18px',
-                borderRadius: '12px',
+                padding: '32px',
+                borderRadius: '18px',
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '18px' }}>
                   <div style={{
                     backgroundColor: '#ef4444',
-                    borderRadius: '8px',
-                    padding: '10px',
-                    marginRight: '12px',
+                    borderRadius: '14px',
+                    padding: '18px',
+                    marginRight: '18px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>
-                    <Clock style={{ width: '20px', height: '20px', color: 'white' }} />
+                    <Clock style={{ width: '34px', height: '34px', color: 'white' }} />
                   </div>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151', lineHeight: '1' }}>CHECK-OUT</span>
+                  <span style={{ fontSize: '24px', fontWeight: '700', color: '#374151', lineHeight: '1' }}>CHECK-OUT</span>
                 </div>
-                <p style={{ fontSize: '18px', fontWeight: '700', color: '#1f2937', margin: '0 0 4px 0' }}>
+                <p style={{ fontSize: '32px', fontWeight: '700', color: '#1f2937', margin: '0 0 6px 0' }}>
                   {formatDisplayDate(formData.check_out_date)}
                 </p>
-                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '28px', fontWeight: '700', color: '#1f2937', margin: '0' }}>
                   às {formatDisplayTime(formData.check_out_time)}
                 </p>
               </div>
@@ -864,18 +877,18 @@ export function InquiryModal({
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              gap: '32px',
-              padding: '16px 20px',
+              gap: '44px',
+              padding: '26px 32px',
               backgroundColor: '#fef3c7',
-              borderRadius: '10px',
-              marginBottom: '16px',
-              minHeight: '56px',
+              borderRadius: '16px',
+              marginBottom: '28px',
+              minHeight: '76px',
             }}>
               {/* Guest count items - reusable styles */}
               {(() => {
-                const guestItemStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' };
-                const iconStyle = { width: '22px', height: '22px', color: '#d97706', flexShrink: 0 };
-                const textStyle = { fontSize: '16px', fontWeight: '600', color: '#92400e', lineHeight: '1' };
+                const guestItemStyle = { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' };
+                const iconStyle = { width: '32px', height: '32px', color: '#d97706', flexShrink: 0 };
+                const textStyle = { display: 'flex', alignItems: 'center', fontSize: '22px', fontWeight: '700', color: '#92400e', lineHeight: '1' };
                 return (
                   <>
                     <div style={guestItemStyle}>
@@ -909,11 +922,11 @@ export function InquiryModal({
             {hasManualBreakdown && (
               <div style={{
                 backgroundColor: '#f9fafb',
-                borderRadius: '10px',
-                padding: '14px',
-                marginBottom: '14px',
+                borderRadius: '14px',
+                padding: '20px',
+                marginBottom: '20px',
               }}>
-                <p style={{ fontSize: '14px', fontWeight: '600', color: '#6b7280', margin: '0 0 10px 0' }}>
+                <p style={{ fontSize: '18px', fontWeight: '700', color: '#6b7280', margin: '0 0 14px 0' }}>
                   DISCRIMINAÇÃO DE VALORES
                 </p>
                 {formData.price_breakdown.filter(item => item.name && item.value).map((item, index) => {
@@ -922,13 +935,13 @@ export function InquiryModal({
                     <div key={index} style={{
                       display: 'flex',
                       justifyContent: 'space-between',
-                      padding: '6px 0',
+                      padding: '10px 0',
                       borderBottom: index < formData.price_breakdown.filter(i => i.name && i.value).length - 1 ? '1px solid #e5e7eb' : 'none',
                     }}>
-                      <span style={{ fontSize: '15px', color: '#374151' }}>
+                      <span style={{ fontSize: '20px', color: '#374151' }}>
                         {item.name} {parseFloat(item.quantity) > 1 ? `(x${item.quantity})` : ''}
                       </span>
-                      <span style={{ fontSize: '15px', fontWeight: '600', color: '#374151' }}>
+                      <span style={{ fontSize: '20px', fontWeight: '700', color: '#374151' }}>
                         R$ {itemTotal.toFixed(2)}
                       </span>
                     </div>
@@ -942,22 +955,22 @@ export function InquiryModal({
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'flex-end',
-              paddingTop: '14px',
-              borderTop: '2px solid #e5e7eb',
-              marginBottom: '16px',
+              paddingTop: '20px',
+              borderTop: '3px solid #e5e7eb',
+              marginBottom: '24px',
             }}>
               <div>
-                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>
+                <p style={{ fontSize: '26px', color: '#6b7280', margin: '0' }}>
                   {calculateTotalNights} noite{calculateTotalNights !== 1 ? 's' : ''}
                 </p>
-                <p style={{ fontSize: '16px', color: '#374151', margin: '4px 0 0 0' }}>
-                  Média: <span style={{ fontWeight: '600' }}>R$ {averagePerNight.toFixed(2)}</span> /noite
+                <p style={{ fontSize: '26px', fontWeight: '700', color: '#374151', margin: '6px 0 0 0' }}>
+                  R$ {averagePerNight.toFixed(2)}/noite
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '15px', color: '#6b7280', margin: '0' }}>TOTAL</p>
+                <p style={{ fontSize: '20px', color: '#6b7280', margin: '0' }}>TOTAL</p>
                 <p style={{
-                  fontSize: '32px',
+                  fontSize: '44px',
                   fontWeight: '700',
                   color: '#059669',
                   margin: '0',
@@ -971,11 +984,11 @@ export function InquiryModal({
             <div style={{
               marginTop: 'auto',
               backgroundColor: '#f9fafb',
-              borderRadius: '12px',
-              padding: '20px',
+              borderRadius: '16px',
+              padding: '28px',
               display: 'flex',
               alignItems: 'flex-start',
-              gap: '20px',
+              gap: '28px',
             }}>
               {/* Photo Mosaic - supports 1-9 photos in various grid layouts */}
               {(() => {
@@ -1000,19 +1013,19 @@ export function InquiryModal({
                 const { columns, rows, maxPhotos } = gridLayouts[photoCount] || defaultLayout;
                 
                 // Larger mosaic height based on number of rows - increased for better visibility
-                const mosaicHeights = { 1: '80px', 2: '160px', 3: '240px' };
-                const mosaicHeight = mosaicHeights[rows] || '240px';
+                const mosaicHeights = { 1: '120px', 2: '240px', 3: '360px' };
+                const mosaicHeight = mosaicHeights[rows] || '360px';
                 
                 return (
                   <div style={{
-                    width: '240px',
+                    width: '360px',
                     height: mosaicHeight,
                     flexShrink: 0,
                     display: 'grid',
                     gridTemplateColumns: `repeat(${columns}, 1fr)`,
                     gridTemplateRows: `repeat(${rows}, 1fr)`,
-                    gap: '4px',
-                    borderRadius: '10px',
+                    gap: '6px',
+                    borderRadius: '16px',
                     overflow: 'hidden',
                   }}>
                     {photos.slice(0, maxPhotos).map((photo, index) => (
@@ -1044,16 +1057,16 @@ export function InquiryModal({
               {/* Chalet Name and Description - larger text for better visibility */}
               <div style={{ flex: '1', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <h2 style={{
-                  fontSize: '22px',
+                  fontSize: '32px',
                   fontWeight: '700',
                   color: '#1f2937',
-                  margin: '0 0 8px 0',
+                  margin: '0 0 12px 0',
                 }}>
                   {selectedUnit?.name || 'Acomodação'}
                 </h2>
                 {selectedUnit?.short_description && (
                   <p style={{
-                    fontSize: '16px',
+                    fontSize: '22px',
                     color: '#6b7280',
                     margin: '0',
                     lineHeight: '1.6',
