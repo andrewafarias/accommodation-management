@@ -215,7 +215,7 @@ SECURE_HSTS_PRELOAD = os.environ.get('SECURE_HSTS_PRELOAD', 'False') == 'True'
 # Session settings
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
-CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 # Token expiry (optional - can be implemented with custom authentication)
