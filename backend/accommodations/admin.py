@@ -5,7 +5,6 @@ from .models import AccommodationUnit, DatePriceOverride, DatePackage
 @admin.register(AccommodationUnit)
 class AccommodationUnitAdmin(admin.ModelAdmin):
     list_display = ('name', 'max_capacity', 'base_price', 'created_at')
-    list_filter = ()
     search_fields = ('name', 'short_description', 'long_description')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
