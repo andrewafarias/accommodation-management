@@ -23,7 +23,6 @@ export function AccommodationModal({
     weekend_price: '',
     holiday_price: '',
     color_hex: '#4A90E2',
-    auto_dirty_days: 3,
     default_check_in_time: '14:00',
     default_check_out_time: '12:00',
     short_description: '',
@@ -49,7 +48,6 @@ export function AccommodationModal({
           weekend_price: accommodation.weekend_price || '',
           holiday_price: accommodation.holiday_price || '',
           color_hex: accommodation.color_hex || '#4A90E2',
-          auto_dirty_days: accommodation.auto_dirty_days || 3,
           default_check_in_time: accommodation.default_check_in_time || '14:00',
           default_check_out_time: accommodation.default_check_out_time || '12:00',
           short_description: accommodation.short_description || '',
@@ -66,7 +64,6 @@ export function AccommodationModal({
           weekend_price: '',
           holiday_price: '',
           color_hex: '#4A90E2',
-          auto_dirty_days: 3,
           default_check_in_time: '14:00',
           default_check_out_time: '12:00',
           short_description: '',
@@ -101,7 +98,6 @@ export function AccommodationModal({
         weekend_price: formData.weekend_price || null,
         holiday_price: formData.holiday_price || null,
         color_hex: formData.color_hex,
-        auto_dirty_days: Number(formData.auto_dirty_days),
         default_check_in_time: formData.default_check_in_time,
         default_check_out_time: formData.default_check_out_time,
         short_description: formData.short_description || '',
@@ -259,26 +255,6 @@ export function AccommodationModal({
               />
               <p className="text-xs text-gray-500 mt-1">Feriados nacionais</p>
             </div>
-          </div>
-
-          {/* Auto Dirty Days */}
-          <div>
-            <label htmlFor="auto_dirty_days" className="block text-sm font-medium text-gray-700 mb-1">
-              Dias para Sujeira Automática *
-            </label>
-            <input
-              type="number"
-              id="auto_dirty_days"
-              name="auto_dirty_days"
-              value={formData.auto_dirty_days}
-              onChange={handleChange}
-              required
-              min="1"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Número de dias antes da unidade ficar suja automaticamente
-            </p>
           </div>
 
           {/* Default Check-in/out Times */}

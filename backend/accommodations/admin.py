@@ -4,22 +4,19 @@ from .models import AccommodationUnit, DatePriceOverride, DatePackage
 
 @admin.register(AccommodationUnit)
 class AccommodationUnitAdmin(admin.ModelAdmin):
-    list_display = ('name', 'max_capacity', 'base_price', 'status', 'created_at')
-    list_filter = ('status',)
+    list_display = ('name', 'max_capacity', 'base_price', 'created_at')
+    list_filter = ()
     search_fields = ('name', 'short_description', 'long_description')
     readonly_fields = ('created_at', 'updated_at')
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('name', 'max_capacity', 'color_hex', 'status', 'display_order')
+            'fields': ('name', 'max_capacity', 'color_hex', 'display_order')
         }),
         ('Preços', {
             'fields': ('base_price', 'weekend_price', 'holiday_price')
         }),
         ('Horários', {
             'fields': ('default_check_in_time', 'default_check_out_time')
-        }),
-        ('Limpeza', {
-            'fields': ('auto_dirty_days', 'last_cleaned_at')
         }),
         ('Descrições e Regras', {
             'fields': ('short_description', 'long_description', 'rules'),

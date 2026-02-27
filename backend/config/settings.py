@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     'reservations',
     'clients',
     'financials',
-    'housekeeping',
 ]
 
 # Add Cloudinary apps only if credentials are configured

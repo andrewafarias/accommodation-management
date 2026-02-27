@@ -310,32 +310,6 @@ class ReservationOverlapValidationTest(TestCase):
         reservation.refresh_from_db()
         self.assertEqual(reservation.guest_count_adults, 3)
         
-    def test_auto_dirty_on_checkout(self):
-        """Test that accommodation unit status changes to DIRTY on checkout."""
-        check_in = self.base_date
-        check_out = self.base_date + timedelta(days=3)
-        
-        # Ensure unit starts clean
-        self.unit.status = AccommodationUnit.CLEAN
-        self.unit.save()
-        
-        reservation = Reservation.objects.create(
-            accommodation_unit=self.unit,
-            client=self.client,
-            check_in=check_in,
-            check_out=check_out,
-            guest_count_adults=2,
-            status=Reservation.CONFIRMED
-        )
-        
-        # Change to checked out
-        reservation.status = Reservation.CHECKED_OUT
-        reservation.save()
-        
-        # Refresh unit from database
-        self.unit.refresh_from_db()
-        self.assertEqual(self.unit.status, 'DIRTY')
-    
     def test_pet_count_field(self):
         """Test that pet_count field works correctly."""
         check_in = self.base_date
