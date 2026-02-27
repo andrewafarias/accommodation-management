@@ -8,6 +8,7 @@ This accommodation management system now includes a comprehensive authentication
 
 ### Security
 - **Token-based Authentication**: Uses Django REST Framework's built-in token authentication
+- **Exponential Backoff**: Failed login attempts are rate-limited with exponentially increasing wait times to prevent online brute force attacks (wait = 2ⁿ⁻¹ seconds per failure, capped at 1 hour)
 - **Secure Session Cookies**: HttpOnly and SameSite=Lax flags enabled
 - **XSS Protection**: Browser XSS filter enabled
 - **CSRF Protection**: Cross-Site Request Forgery protection enabled
@@ -192,7 +193,7 @@ SECURE_HSTS_PRELOAD=True
 3. **Rotate Tokens**: Periodically regenerate user tokens for sensitive accounts
 4. **Strong Passwords**: Enforce strong password policies for all users
 5. **Monitor Access**: Review Django's authentication logs regularly
-6. **Limit Attempts**: Consider adding rate limiting for login attempts (e.g., django-ratelimit)
+6. **Exponential Backoff**: Built-in – failed login attempts trigger exponential backoff automatically
 
 ## Troubleshooting
 
@@ -228,7 +229,7 @@ cd backend
 python manage.py test core.test_auth
 ```
 
-All 11 authentication tests should pass.
+All 21 authentication tests should pass.
 
 ## Support
 
