@@ -12,6 +12,7 @@ import json
 import csv
 from io import StringIO
 
+from core.models import LoginAttempt
 from clients.models import Client
 from clients.serializers import ClientSerializer
 from accommodations.models import AccommodationUnit
@@ -304,12 +305,16 @@ def import_all_data(request):
 def login_view(request):
     """
     Authenticate user and return token.
-    
+
+    Applies exponential backoff after failed login attempts to defend against
+    online brute force attacks.  Wait time: 2^(failures-1) seconds, capped at
+    LoginAttempt.MAX_BACKOFF_SECONDS.
+
     Body: {
         "username": "user",
         "password": "password"
     }
-    
+
     Returns: {
         "token": "abc123...",
         "user": {
@@ -321,30 +326,56 @@ def login_view(request):
     """
     username = request.data.get('username')
     password = request.data.get('password')
-    
+
     if not username or not password:
         return Response(
             {'error': 'Username and password are required'},
             status=status.HTTP_400_BAD_REQUEST
         )
-    
-    user = authenticate(username=username, password=password)
-    
-    if user is None:
+
+    # Django usernames are at most 150 characters.  Reject and skip tracking for
+    # anything longer to prevent database bloat from invalid input.
+    MAX_USERNAME_LENGTH = 150
+    if len(username) > MAX_USERNAME_LENGTH:
         return Response(
             {'error': 'Invalid credentials'},
             status=status.HTTP_401_UNAUTHORIZED
         )
-    
+
+    # Enforce exponential backoff before attempting authentication
+    attempt, _ = LoginAttempt.objects.get_or_create(username=username)
+    if attempt.is_locked():
+        retry_after = int(attempt.seconds_until_retry())
+        return Response(
+            {
+                'error': 'Too many failed login attempts. Please try again later.',
+                'retry_after': retry_after,
+            },
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
+
+    user = authenticate(username=username, password=password)
+
+    if user is None:
+        attempt.record_failure()
+        return Response(
+            {'error': 'Invalid credentials'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
     if not user.is_active:
+        attempt.record_failure()
         return Response(
             {'error': 'User account is disabled'},
             status=status.HTTP_401_UNAUTHORIZED
         )
-    
+
+    # Successful login – clear the backoff counter
+    attempt.reset()
+
     # Get or create token
     token, created = Token.objects.get_or_create(user=user)
-    
+
     return Response({
         'token': token.key,
         'user': {
