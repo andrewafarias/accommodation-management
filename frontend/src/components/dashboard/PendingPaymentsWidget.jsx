@@ -54,14 +54,14 @@ export function PendingPaymentsWidget({ transactions }) {
   );
 
   return (
-    <Card>
+    <Card className="h-full flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center text-secondary-700">
           <AlertCircle className="w-5 h-5 mr-2" />
           Pagamentos Pendentes
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-y-auto">
         {pendingPayments.length === 0 ? (
           <p className="text-sm text-gray-500">Nenhum pagamento pendente! 🎉</p>
         ) : (
