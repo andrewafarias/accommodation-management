@@ -293,7 +293,7 @@ export function Dashboard() {
       </div>
 
       {/* Widgets Grid - left col: Próximas Chegadas + Reservas em Andamento; right col: Pagamentos Pendentes (full height) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[auto_auto]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[1fr_1fr]">
         {/* Row 1, Col 1 - Upcoming Arrivals */}
         <Card>
           <CardHeader>
