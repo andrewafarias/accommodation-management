@@ -292,9 +292,9 @@ export function Dashboard() {
         })}
       </div>
 
-      {/* Widgets Row - Upcoming Arrivals and Pending Payments */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Upcoming Arrivals Widget */}
+      {/* Widgets Grid - left col: Próximas Chegadas + Reservas em Andamento; right col: Pagamentos Pendentes (full height) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:grid-rows-[auto_auto]">
+        {/* Row 1, Col 1 - Upcoming Arrivals */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center text-primary-700">
@@ -331,11 +331,13 @@ export function Dashboard() {
             )}
           </CardContent>
         </Card>
-        <PendingPaymentsWidget transactions={transactions} />
-      </div>
 
-      {/* Active Reservations Row */}
-      <div className="grid grid-cols-1 gap-6">
+        {/* Col 2, spans both rows - Pending Payments */}
+        <div className="lg:row-span-2 flex flex-col">
+          <PendingPaymentsWidget transactions={transactions} />
+        </div>
+
+        {/* Row 2, Col 1 - Active Reservations */}
         <ActiveReservationsWidget reservations={reservations} />
       </div>
 
