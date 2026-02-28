@@ -292,7 +292,7 @@ export function Dashboard() {
         })}
       </div>
 
-      {/* Widgets Row */}
+      {/* Widgets Row - Upcoming Arrivals and Pending Payments */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Upcoming Arrivals Widget */}
         <Card>
@@ -331,12 +331,12 @@ export function Dashboard() {
             )}
           </CardContent>
         </Card>
+        <PendingPaymentsWidget transactions={transactions} />
       </div>
 
-      {/* New Widgets Row - Active Reservations and Pending Payments */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      {/* Active Reservations Row */}
+      <div className="grid grid-cols-1 gap-6">
         <ActiveReservationsWidget reservations={reservations} />
-        <PendingPaymentsWidget transactions={transactions} />
       </div>
 
       {/* Chart */}
