@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.exceptions import ValidationError
-from django.utils import timezone
 
 
 class Reservation(models.Model):
@@ -167,15 +166,10 @@ class Reservation(models.Model):
     
     def save(self, *args, **kwargs):
         """
-        Sobrescreve save para chamar validação clean() e lidar com status auto-sujo.
+        Sobrescreve save para chamar validação clean().
         """
         # Sempre chama clean antes de salvar
         self.full_clean()
-        
-        # Auto-marca unidade como suja no checkout
-        if self.status == self.CHECKED_OUT:
-            self.accommodation_unit.status = 'DIRTY'
-            self.accommodation_unit.save()
         
         super().save(*args, **kwargs)
 

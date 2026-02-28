@@ -375,31 +375,7 @@ export function TimelineCalendar({
                       <div className="text-xs text-gray-500 truncate">
                         {unit.type} • {unit.max_capacity} hóspedes
                       </div>
-                      <div className="text-xs">
-                        <span 
-                          className={cn(
-                            'inline-block px-1.5 py-0.5 rounded text-white text-[10px]',
-                            unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
-                          )}
-                          title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                        >
-                          {unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                        </span>
-                      </div>
                     </>
-                  )}
-                  {isMobile && (
-                    <div className="text-[8px]">
-                      <span 
-                        className={cn(
-                          'inline-block px-0.5 py-0.5 rounded text-white text-[7px]',
-                          unit.status === 'CLEAN' ? 'bg-green-600' : 'bg-orange-600'
-                        )}
-                        title={unit.status === 'CLEAN' ? 'Limpo' : 'Sujo'}
-                      >
-                        {unit.status === 'CLEAN' ? 'L' : 'S'}
-                      </span>
-                    </div>
                   )}
                 </div>
               </div>

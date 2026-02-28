@@ -56,8 +56,6 @@ def export_all_data(request):
             'weekend_price': unit.get('weekend_price', ''),
             'holiday_price': unit.get('holiday_price', ''),
             'color_hex': unit.get('color_hex', '#4A90E2'),
-            'status': unit.get('status', 'CLEAN'),
-            'auto_dirty_days': unit.get('auto_dirty_days', 3),
             'default_check_in_time': unit.get('default_check_in_time', '14:00:00'),
             'default_check_out_time': unit.get('default_check_out_time', '12:00:00'),
         })
