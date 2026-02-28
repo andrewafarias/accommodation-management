@@ -8,17 +8,6 @@ class AccommodationUnit(models.Model):
     Modelo de Unidade de Acomodação para gerenciar espaços de aluguel físicos.
     """
     
-    # Opções de status
-    CLEAN = 'CLEAN'
-    DIRTY = 'DIRTY'
-    INSPECTING = 'INSPECTING'
-    
-    STATUS_CHOICES = [
-        (CLEAN, 'Limpo'),
-        (DIRTY, 'Sujo'),
-        (INSPECTING, 'Inspecionando'),
-    ]
-    
     name = models.CharField(max_length=100, unique=True, verbose_name="Nome")
     max_capacity = models.PositiveIntegerField(
         verbose_name="Capacidade Máxima",
@@ -51,23 +40,6 @@ class AccommodationUnit(models.Model):
         default='#4A90E2',
         verbose_name="Cor do Calendário",
         help_text="Código de cor hex para exibição no calendário (ex: #FF5733)"
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=STATUS_CHOICES,
-        default=CLEAN,
-        verbose_name="Status"
-    )
-    auto_dirty_days = models.PositiveIntegerField(
-        default=3,
-        verbose_name="Dias Auto-Sujo",
-        help_text="Número de dias após os quais uma unidade limpa automaticamente fica suja"
-    )
-    last_cleaned_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        verbose_name="Última Limpeza",
-        help_text="Data e hora em que a unidade foi limpa pela última vez"
     )
     
     # Horários personalizados de check-in/out por unidade

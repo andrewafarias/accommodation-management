@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
-import { Home, Users, DollarSign, TrendingUp, Sparkles, CalendarCheck, Check, Plus, Download, Upload } from 'lucide-react';
+import { Home, Users, DollarSign, TrendingUp, CalendarCheck, Download, Upload } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format, addDays, parseISO, subMonths, isAfter, isBefore } from 'date-fns';
 import api from '../services/api';
@@ -11,15 +11,12 @@ import { Button } from '../components/ui/Button';
 
 export function Dashboard() {
   const [stats, setStats] = useState({
-    unitsAvailable: 0,
+    totalUnits: 0,
     checkInsToday: 0,
     pendingPayments: 0,
     totalRevenue: 0,
   });
   const [chartData, setChartData] = useState([]);
-  const [dirtyUnits, setDirtyUnits] = useState([]);
-  const [allUnits, setAllUnits] = useState([]);
-  const [showAddDirtyDropdown, setShowAddDirtyDropdown] = useState(false);
   const [upcomingArrivals, setUpcomingArrivals] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -36,14 +33,7 @@ export function Dashboard() {
       // Fetch accommodations
       const accommodationsRes = await api.get('accommodations/');
       const accommodations = accommodationsRes.data.results || accommodationsRes.data;
-      const cleanUnits = accommodations.filter(unit => unit.status === 'CLEAN').length;
-      
-      // Store all units for dropdown
-      setAllUnits(accommodations);
-      
-      // Filter dirty units for cleaning widget
-      const dirty = accommodations.filter(unit => unit.status === 'DIRTY');
-      setDirtyUnits(dirty);
+      const totalUnits = accommodations.length;
 
       // Fetch reservations
       const reservationsRes = await api.get('reservations/');
@@ -83,7 +73,7 @@ export function Dashboard() {
         .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
       setStats({
-        unitsAvailable: cleanUnits,
+        totalUnits,
         checkInsToday,
         pendingPayments,
         totalRevenue,
@@ -144,33 +134,6 @@ export function Dashboard() {
   const handlePeriodChange = (newStartDate, newEndDate) => {
     setStartDate(newStartDate);
     setEndDate(newEndDate);
-  };
-
-  const handleMarkAsClean = async (unitId) => {
-    try {
-      await api.patch(`accommodations/${unitId}/`, { status: 'CLEAN' });
-      // Refresh dashboard data
-      await fetchDashboardData();
-    } catch (error) {
-      console.error('Error marking unit as clean:', error);
-    }
-  };
-
-  const handleMarkAsDirty = async (unitId) => {
-    try {
-      await api.patch(`accommodations/${unitId}/`, { status: 'DIRTY' });
-      // Close dropdown
-      setShowAddDirtyDropdown(false);
-      // Refresh dashboard data
-      await fetchDashboardData();
-    } catch (error) {
-      console.error('Error marking unit as dirty:', error);
-    }
-  };
-
-  const getCleanUnitsForDropdown = () => {
-    // Return units that are not already dirty
-    return allUnits.filter(unit => unit.status !== 'DIRTY');
   };
 
   // Handle export all data
@@ -237,8 +200,8 @@ export function Dashboard() {
 
   const statCards = [
     {
-      title: 'Unidades Disponíveis',
-      value: stats.unitsAvailable,
+      title: 'Total de Unidades',
+      value: stats.totalUnits,
       icon: Home,
       color: 'text-green-600',
       bgColor: 'bg-green-100',
@@ -331,74 +294,6 @@ export function Dashboard() {
 
       {/* Widgets Row */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Cleaning Widget */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center text-secondary-700">
-                <Sparkles className="w-5 h-5 mr-2" />
-                Limpeza Pendente
-              </CardTitle>
-              <div className="relative">
-                <button
-                  onClick={() => setShowAddDirtyDropdown(!showAddDirtyDropdown)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-secondary-600 text-white rounded-md hover:bg-secondary-700 transition-colors"
-                  title="Reportar unidade suja"
-                >
-                  <Plus className="w-4 h-4" />
-                  Reportar
-                </button>
-                {showAddDirtyDropdown && getCleanUnitsForDropdown().length > 0 && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-md shadow-lg z-20">
-                    <div className="py-1 max-h-60 overflow-y-auto">
-                      {getCleanUnitsForDropdown().map(unit => (
-                        <button
-                          key={unit.id}
-                          onClick={() => handleMarkAsDirty(unit.id)}
-                          className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center"
-                        >
-                          <span 
-                            className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
-                            style={{ backgroundColor: unit.color_hex }}
-                          />
-                          <span className="font-medium text-gray-700">{unit.name}</span>
-                          <span className="ml-2 text-xs text-gray-500">({unit.status})</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {dirtyUnits.length === 0 ? (
-              <p className="text-sm text-gray-500">Todas as unidades estão limpas! 🎉</p>
-            ) : (
-              <ul className="space-y-2">
-                {dirtyUnits.map(unit => (
-                  <li key={unit.id} className="flex items-center justify-between text-sm group">
-                    <div className="flex items-center">
-                      <span 
-                        className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
-                        style={{ backgroundColor: unit.color_hex }}
-                      />
-                      <span className="font-medium text-gray-700">{unit.name}</span>
-                    </div>
-                    <button
-                      onClick={() => handleMarkAsClean(unit.id)}
-                      className="ml-2 p-1.5 text-accent-600 hover:bg-accent-50 rounded transition-colors opacity-0 group-hover:opacity-100"
-                      title="Marcar como limpa"
-                    >
-                      <Check className="w-4 h-4" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Upcoming Arrivals Widget */}
         <Card>
           <CardHeader>
